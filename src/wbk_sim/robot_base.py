@@ -108,18 +108,36 @@ class RobotBase:
         endeffector_id = self._link_name_to_index[endeffector]
         link_state = p.getLinkState(self.urdf,endeffector_id)
 
-        position = link_state[0]
-        orientation = link_state[1]
+        position = np.array(link_state[0])
+        orientation = np.array(link_state[1])
         return position, orientation
 
-    def set_endeffector_pose(self,endeffector,target_position,target_orientation):
+    def set_endeffector_pose(self,endeffector,target_position,target_orientation=None,iterations=1000,threshold=0.001):
         endeffector_id = self._link_name_to_index[endeffector]
-        joint_poses = p.calculateInverseKinematics(self.urdf,
-                                                   endeffector_id,
-                                                   target_position,
-                                                   targetOrientation = target_orientation,
-                                                   lowerLimits = self._lower_joint_limit,
-                                                   upperLimits = self._upper_joint_limit)
+        for _ in range(iterations):
+            # find initial solution
+            if target_orientation is None:
+                joint_poses = p.calculateInverseKinematics(self.urdf,
+                                                        endeffector_id,
+                                                        target_position,
+                                                        lowerLimits = self._lower_joint_limit,
+                                                        upperLimits = self._upper_joint_limit)
+            else:
+                joint_poses = p.calculateInverseKinematics(self.urdf,
+                                                        endeffector_id,
+                                                        target_position,
+                                                        targetOrientation = target_orientation,
+                                                        lowerLimits = self._lower_joint_limit,
+                                                        upperLimits = self._upper_joint_limit)
+
+            # compute forward kinematics for solution
+            for joint_number in range(p.getNumJoints(self.urdf)):
+                p.resetJointState(self.urdf,joint_number,joint_poses[joint_number])
+            current_position,_ = self.get_endeffector_pose(endeffector)
+            if np.linalg.norm(target_position-current_position):
+                break
+                
+
 
         print(joint_poses)
         for joint_number, joint_position in enumerate(joint_poses):
@@ -191,12 +209,13 @@ if __name__ == "__main__":
     p.setRealTimeSimulation(1)
 
     #target_state = {'q1':0,'q2':0.5,'q3':-0.5,'q4':0.5,'q5':0,'q6':0}
+    for i in range(100)
     target_state = {'joint1':0.0,'joint2':0.5,'joint3':-0.5,'joint4':0.5}
     robot.set_joint_position(target_state)
-    time.sleep(5)
+    time.sleep(1)
     target_pose, target_orientation =robot.get_endeffector_pose('link4')
     print(target_pose)
-    robot.set_endeffector_pose('link4',target_pose,start_orientation)
+    robot.set_endeffector_pose('link4',target_pose)
     time.sleep(5)
     target_pose, target_orientation =robot.get_endeffector_pose('link4')
     print(target_pose)

@@ -137,9 +137,6 @@ class RobotBase:
             if np.linalg.norm(target_position-current_position):
                 break
                 
-
-
-        print(joint_poses)
         for joint_number, joint_position in enumerate(joint_poses):
             p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
                                             force=self.max_joint_force[joint_number],
@@ -207,15 +204,11 @@ if __name__ == "__main__":
     
 
     p.setRealTimeSimulation(1)
-
-    #target_state = {'q1':0,'q2':0.5,'q3':-0.5,'q4':0.5,'q5':0,'q6':0}
-    for i in range(100)
-    target_state = {'joint1':0.0,'joint2':0.5,'joint3':-0.5,'joint4':0.5}
-    robot.set_joint_position(target_state)
-    time.sleep(1)
-    target_pose, target_orientation =robot.get_endeffector_pose('link4')
-    print(target_pose)
-    robot.set_endeffector_pose('link4',target_pose)
-    time.sleep(5)
-    target_pose, target_orientation =robot.get_endeffector_pose('link4')
-    print(target_pose)
+    
+    for i in range(100):
+        #target_state = {'q1':0,'q2':0.5,'q3':-0.5,'q4':0.5,'q5':0,'q6':0}
+        target_pose = np.array([i/200,-i/200,0.3])
+        robot.set_endeffector_pose('link4',target_pose)
+        time.sleep(0.2)
+        current_pose, target_orientation =robot.get_endeffector_pose('link4')
+        print(current_pose-target_pose)

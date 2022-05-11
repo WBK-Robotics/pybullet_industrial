@@ -1,0 +1,57 @@
+<?xml version="1.0" ?>
+<robot name="example_robot">
+
+	<!-- * * * Link Definitions * * * -->
+	
+	<link name="tcp_stl">
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="grey">
+				<color rgba="0.3 0.3 0.3 1"/>
+			</material>
+            <geometry>
+                <mesh filename="tool_mesh/KM_m.stl"/>
+            </geometry>
+		</visual>
+	</link>
+	<link name="tcp"/>
+	<link name="fl1">
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="red">
+				<color rgba="1 0 0 1"/>
+			</material>
+			<geometry>
+				<cylinder length="0.2" radius="0.05"/>
+			</geometry>
+		</visual>
+	</link>
+	<link name="fl2">
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="red">
+				<color rgba="1 0 0 1"/>
+			</material>
+			<geometry>
+				<cylinder length="0.2" radius="0.05"/>
+			</geometry>
+		</visual>
+	</link>
+	<joint name="tcp" type="fixed">
+		<parent link="tcp_stl"/>
+		<child link="tcp"/>
+		<origin xyz="0 0 0" rpy="0 0 0"/>
+	</joint>
+	<joint name="fl1" type="fixed">
+		<parent link="tcp_stl"/>
+		<child link="fl1"/>
+		<origin xyz="0.4 0 0.6928" rpy="0 -2.0943951023932 0"/>
+	</joint>
+	<joint name="fl2" type="fixed">
+		<parent link="tcp_stl"/>
+		<child link="fl2"/>
+		<origin xyz="-0.4 0 0.6928" rpy="0 2.0943951023932 0"/>
+	</joint>
+
+
+</robot>

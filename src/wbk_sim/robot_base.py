@@ -15,11 +15,22 @@ class RobotBase:
                                useFixedBase=False)
 
         self._joint_state_shape = self.get_joint_state()
-        self._joint_mappings = {}
+        self._joint_name_to_index = {}
+        self._link_name_to_index = {}
+        self._lower_joint_limit = np.zeros(p.getNumJoints(self.urdf))
+        self._upper_joint_limit = np.zeros(p.getNumJoints(self.urdf))
+
         for joint_number in range(p.getNumJoints(self.urdf)):
-            name = p.getJointInfo(self.urdf,joint_number)[1].decode("utf-8")#convert byte string to string
-            self._joint_mappings[name]=joint_number
+            joint_name = p.getJointInfo(self.urdf,joint_number)[1].decode("utf-8")
+            self._joint_name_to_index[joint_name]=joint_number
+
+            link_name = p.getJointInfo(self.urdf,joint_number)[12].decode("utf-8")
+            self._link_name_to_index[link_name]=joint_number
+
+            self._lower_joint_limit[joint_number] = p.getJointInfo(self.urdf, joint_number)[8]
+            self._upper_joint_limit[joint_number] = p.getJointInfo(self.urdf, joint_number)[9]
         
+
         self.max_joint_force = 800*np.ones(p.getNumJoints(self.urdf))
         for joint_number in range(p.getNumJoints(self.urdf)):
             p.resetJointState(self.urdf, joint_number, targetValue=0)
@@ -59,14 +70,54 @@ class RobotBase:
         """
         if all(key in self._joint_state_shape.keys() for key in target.keys()):
             for joint, joint_position in target.items():
-                joint_number = self._joint_mappings[joint]
+                joint_number = self._joint_name_to_index[joint]
+
+                lower_joint_limit = self._lower_joint_limit[joint_number]
+                upper_joint_limit = self._upper_joint_limit[joint_number]
+                if joint_position > upper_joint_limit or joint_position < lower_joint_limit:
+                    raise ValueError('The joint position '+str(joint_position)+
+                                      ' is aut of limit for joint '+joint+'. Its limits are:\n'+
+                                      str(lower_joint_limit)+'and '+str(upper_joint_limit))
+
                 p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
                                             force=self.max_joint_force[joint_number],
                                             targetPosition=joint_position)
         else:
             print([key in self._joint_state_shape.keys() for key in target.keys()])
-            raise KeyError('Error: One or more joints are not part of the robot. ' +
+            raise KeyError('One or more joints are not part of the robot. ' +
                              'correct keys are: '+str(self._joint_state_shape.keys()))
+
+
+    def get_endeffector_pose(self,endeffector):
+        """Returns the position of the endeffector in world coordinates
+
+        Args:
+            endeffector (str): The name of the endeffector link
+
+        Returns:
+            array: The position of the endeffector
+            array: The orientation of the endeffector as a quaternion
+        """
+        endeffector_id = self._link_name_to_index[endeffector]
+        link_state = p.getLinkState(self.urdf,endeffector_id)
+
+        position = link_state[0]
+        orientation = link_state[1]
+        return position, orientation
+
+    def set_endeffector_pose(self,endeffector,target_position,target_orientation):
+        endeffector_id = self._link_name_to_index[endeffector]
+        print(self._lower_joint_limit,self._upper_joint_limit)
+        joint_poses = p.calculateInverseKinematics(self.urdf,
+                                                   endeffector_id,
+                                                   target_position,
+                                                   target_orientation,
+                                                   lowerLimits=self._lower_joint_limit,
+                                                   upperLimits=self._upper_joint_limit)
+        for joint_number, joint_position in enumerate(joint_poses):
+            p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
+                                            force=self.max_joint_force[joint_number],
+                                            targetPosition=joint_position)
 
 
     def reset_robot(self, start_position, start_orientation, joint_values=None):
@@ -121,17 +172,22 @@ if __name__ == "__main__":
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = RobotBase(urdf_file1,[0,0,0],start_orientation)
 
+    
     p.createConstraint(robot.urdf,
                        -1, -1, -1,
                        p.JOINT_FIXED,
                        [0, 0, 0],
                        [0, 0, 0],
                        [0, 0, 0])
+    
 
     p.setRealTimeSimulation(1)
     for i in range(1000):
-        print(robot.get_joint_state())
         target_state = {'q1':i/100.0,'q2':i/50,'q3':i/20,'q4':i/10,'q5':i/5,'q6':i}
-        robot.set_joint_position(target_state)
+        #robot.set_joint_position(target_state)
+        target_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        target_pose = [1.5,0,2.7]
+        robot.set_endeffector_pose('link6',target_pose,start_orientation)
+        print(robot.get_endeffector_pose('link6'))
         time.sleep(0.1)
 

@@ -119,29 +119,23 @@ class RobotBase:
 
     def set_endeffector_pose(self,endeffector,target_position,target_orientation=None,iterations=1000,threshold=0.001):
         endeffector_id = self._link_name_to_index[endeffector]
-        for _ in range(iterations):
-            # find initial solution
-            if target_orientation is None:
-                joint_poses = p.calculateInverseKinematics(self.urdf,
-                                                        endeffector_id,
-                                                        target_position,
-                                                        lowerLimits = self._lower_joint_limit,
-                                                        upperLimits = self._upper_joint_limit)
-            else:
-                joint_poses = p.calculateInverseKinematics(self.urdf,
-                                                        endeffector_id,
-                                                        target_position,
-                                                        targetOrientation = target_orientation,
-                                                        lowerLimits = self._lower_joint_limit,
-                                                        upperLimits = self._upper_joint_limit)
 
-            # compute forward kinematics for solution
-            for index in range(len(self._joint_state_shape)):
-                joint_number = self._kinematic_solver_map[index]
-                p.resetJointState(self.urdf,joint_number,joint_poses[index])
-            current_position,_ = self.get_endeffector_pose(endeffector)
-            if np.linalg.norm(target_position-current_position):
-                break
+            # find initial solution
+        if target_orientation is None:
+            joint_poses = p.calculateInverseKinematics(self.urdf,
+                                                    endeffector_id,
+                                                    target_position,
+                                                    lowerLimits = self._lower_joint_limit,
+                                                    upperLimits = self._upper_joint_limit)
+        else:
+            joint_poses = p.calculateInverseKinematics(self.urdf,
+                                                    endeffector_id,
+                                                    target_position,
+                                                    targetOrientation = target_orientation,
+                                                    lowerLimits = self._lower_joint_limit,
+                                                    upperLimits = self._upper_joint_limit)
+
+
     
         for index, joint_position in enumerate(joint_poses):
             joint_number = self._kinematic_solver_map[index]
@@ -221,4 +215,4 @@ if __name__ == "__main__":
         #print(robot._joint_name_to_index)
         print(robot.get_endeffector_pose('link6')) 
         #print(robot.get_joint_state())
-        time.sleep(0.2) 
+        time.sleep(0.1) 

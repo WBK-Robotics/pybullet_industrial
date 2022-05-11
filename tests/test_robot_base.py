@@ -8,7 +8,6 @@ import wbk_sim as wbk
 
 
 class TestRobotBase(unittest.TestCase):
-
     def test_joint_interface(self):
         dirname = os.path.dirname(__file__)
         parentDir = os.path.dirname(dirname)
@@ -85,5 +84,48 @@ class TestRobotBase(unittest.TestCase):
             within_precision = within_precision and (position_error <= precision)
 
         self.assertTrue(within_precision)
+
+    def test_pose_interface_comau(self):
+        dirname = os.path.dirname(__file__)
+        parentDir = os.path.dirname(dirname)
+        urdf_file1 = os.path.join( parentDir,'src','wbk_sim','robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+
+        physics_client = p.connect(p.DIRECT)
+        p.setPhysicsEngineParameter(numSolverIterations=1000)
+        start_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        robot = wbk.RobotBase(urdf_file1,[0,0,0],start_orientation)
+
+        
+        p.createConstraint(robot.urdf,
+                        -1, -1, -1,
+                        p.JOINT_FIXED,
+                        [0, 0, 0],
+                        [0, 0, 0],
+                        [0, 0, 0])
+        
+
+        pos_precision = 0.02
+        ori_precision = 0.001
+        within_precision = True 
+        for i in range(16): 
+            target_orientation = p.getQuaternionFromEuler([0, i/10, 0]) 
+            target_position = [1.9,0,1.2]
+
+            for _ in range(1000):
+                robot.set_endeffector_pose('link6',target_position,target_orientation,iterations=1)
+                p.stepSimulation()
+            
+            current_position, current_orientation = robot.get_endeffector_pose('link6')
+
+            position_error = np.linalg.norm(current_position-target_position)
+            orientation_error = np.linalg.norm(current_orientation-target_orientation)
+            
+            #disregard first 4 measurments because inv kin solver first converges
+            if i >= 5:
+                within_precision = within_precision and (position_error <=pos_precision) and (orientation_error <= ori_precision)
+
+        self.assertTrue(within_precision)
+
+
 if __name__ == '__main__':
     unittest.main()

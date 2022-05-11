@@ -121,8 +121,15 @@ if __name__ == "__main__":
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = RobotBase(urdf_file1,[0,0,0],start_orientation)
 
+    p.createConstraint(robot.urdf,
+                       -1, -1, -1,
+                       p.JOINT_FIXED,
+                       [0, 0, 0],
+                       [0, 0, 0],
+                       [0, 0, 0])
+
     p.setRealTimeSimulation(1)
-    for i in range(100):
+    for i in range(1000):
         print(robot.get_joint_state())
         target_state = {'q1':i/100.0,'q2':i/50,'q3':i/20,'q4':i/10,'q5':i/5,'q6':i}
         robot.set_joint_position(target_state)

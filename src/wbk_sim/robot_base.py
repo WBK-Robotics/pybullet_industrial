@@ -1,3 +1,4 @@
+import string
 from typing import Dict
 
 import numpy as np
@@ -10,7 +11,7 @@ import pybullet as p
 
 class RobotBase:
 
-    def __init__(self, urdf_model, start_position, start_orientation):
+    def __init__(self, urdf_model, start_position, start_orientation,default_endeffector=None):
         """AI is creating summary for __init__
 
         Args:
@@ -35,7 +36,7 @@ class RobotBase:
             link_name = p.getJointInfo(self.urdf,joint_number)[12].decode("utf-8")
             self._link_name_to_index[link_name]=joint_number
 
-            if p.getJointInfo(self.urdf,joint_number)[2] is not 4:
+            if p.getJointInfo(self.urdf,joint_number)[2] != 4:
                 joint_name = p.getJointInfo(self.urdf,joint_number)[1].decode("utf-8")
                 self._joint_name_to_index[joint_name]=joint_number
 
@@ -50,6 +51,12 @@ class RobotBase:
                 self._upper_joint_limit[joint_number] = upper_limit
         
         self._kinematic_solver_map = np.array(kinematic_solver_map)
+
+        if default_endeffector == None:
+            last_link = max(self._link_name_to_index)
+            self._default_endeffector_id = self._link_name_to_index[last_link]
+        else:
+            self._default_endeffector_id = self.__convert_endeffector(default_endeffector)
 
         self.max_joint_force = 1000*np.ones(p.getNumJoints(self.urdf))
         for joint_number in range(p.getNumJoints(self.urdf)):
@@ -72,7 +79,7 @@ class RobotBase:
         """
         joint_state = {}
         for joint_number in range(p.getNumJoints(self.urdf)):
-            if p.getJointInfo(self.urdf,joint_number)[2] is not 4:
+            if p.getJointInfo(self.urdf,joint_number)[2] !=  4:
                 joint = p.getJointInfo(self.urdf,joint_number)[1].decode("utf-8")#convert byte string to string
                 joint_position = p.getJointState(self.urdf, joint_number)[0]
                 joint_velocity = p.getJointState(self.urdf, joint_number)[1]
@@ -115,25 +122,40 @@ class RobotBase:
                              'correct keys are: '+str(self._joint_state_shape.keys()))
 
 
-    def get_endeffector_pose(self,endeffector):
+    def get_endeffector_pose(self,endeffector_name=None):
         """Returns the position of the endeffector in world coordinates
 
         Args:
-            endeffector (str): The name of the endeffector link
+            endeffector (str, optional): The name of a different endeffector link
 
         Returns:
             array: The position of the endeffector
             array: The orientation of the endeffector as a quaternion
         """
-        endeffector_id = self._link_name_to_index[endeffector]
+        if endeffector_name is None:
+            endeffector_id = self._default_endeffector_id
+        else:
+            endeffector_id = self.__convert_endeffector(endeffector_name)
+
         link_state = p.getLinkState(self.urdf,endeffector_id)
 
         position = np.array(link_state[0])
         orientation = np.array(link_state[1])
         return position, orientation
 
-    def set_endeffector_pose(self,endeffector,target_position,target_orientation=None):
-        endeffector_id = self._link_name_to_index[endeffector]
+    def set_endeffector_pose(self,target_position,target_orientation=None,endeffector_name=None):
+        """Sets the pose of a robots endeffector
+
+        Args:
+            target_position ([type]): The desired 3D position
+            target_orientation ([type], optional): The desired orientation as a quaternion. Defaults to None.
+            endeffector_name ([type], optional): The name of a different endeffector. Defaults to None.
+        """
+        if endeffector_name is None:
+            endeffector_id = self._default_endeffector_id
+        else:
+            endeffector_id = self.__convert_endeffector(endeffector_name)
+
 
         if target_orientation is None:
             joint_poses = p.calculateInverseKinematics(self.urdf,
@@ -196,38 +218,11 @@ class RobotBase:
         """
         return p.getBasePositionAndOrientation(self.urdf)
 
-
-if __name__ == "__main__":
-    import os
-    import time
-    dirname = os.path.dirname(__file__)
-    parentDir = os.path.dirname(dirname)
-    urdf_file1 = os.path.join(
-            dirname, 'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
-
-    physics_client = p.connect(p.GUI)
-    p.setPhysicsEngineParameter(numSolverIterations=1000)
-    start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-    robot = RobotBase(urdf_file1,[0,0,0],start_orientation)
-
-    
-    p.createConstraint(robot.urdf,
-                       -1, -1, -1,
-                       p.JOINT_FIXED,
-                       [0, 0, 0],
-                       [0, 0, 0],
-                       [0, 0, 0])
-    
-
-    p.setRealTimeSimulation(1)
-    print(robot._joint_name_to_index)
-    for i in range(1000): 
-        target_state = {'q1':i/100.0,'q2':i/50,'q3':i/20,'q4':i/10,'q5':i/5,'q6':i} 
-        #robot.set_joint_position(target_state) 
-        target_orientation = p.getQuaternionFromEuler([0, i/100, 0]) 
-        target_pose = [1.9,0,1.2] 
-        robot.set_endeffector_pose('link6',target_pose,target_orientation,iterations=1) 
-        #print(robot._joint_name_to_index)
-        print(robot.get_endeffector_pose('link6')) 
-        #print(robot.get_joint_state())
-        time.sleep(0.1) 
+    def __convert_endeffector(self,endeffector):
+        if isinstance(endeffector,str):
+            if endeffector in self._link_name_to_index.keys():
+                return self._link_name_to_index[endeffector]
+            else:
+                ValueError("Invalid Endeffecot name! valid names are: "+str(self._link_name_to_index.keys()))
+        else:
+            raise TypeError("The Endeffector must be a String describing a URDF link")

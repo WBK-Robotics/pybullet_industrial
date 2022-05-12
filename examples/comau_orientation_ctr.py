@@ -10,7 +10,7 @@ if __name__ == "__main__":
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=1000)
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-    robot = wbk.RobotBase(urdf_file1,[0,0,0],start_orientation)
+    robot = wbk.RobotBase(urdf_file1,[0,0,0],start_orientation,'link6')
     
 
     p.setRealTimeSimulation(1)
@@ -22,11 +22,11 @@ if __name__ == "__main__":
     time_step = 0.01
     for i in range(300): 
         target_orientation = p.getQuaternionFromEuler([0, i/100, 0])  
-        robot.set_endeffector_pose('link6',target_position,target_orientation) 
+        robot.set_endeffector_pose(target_position,target_orientation) 
         wbk.draw_coordinate_system(drawing_position,target_orientation,life_time=10*time_step)
         time.sleep(time_step) 
     for i in range(200): 
         target_orientation = p.getQuaternionFromEuler([i/100, 300/100, 0]) 
-        robot.set_endeffector_pose('link6',target_position,target_orientation)
+        robot.set_endeffector_pose(target_position,target_orientation)
         wbk.draw_coordinate_system(drawing_position,target_orientation,life_time=10*time_step) 
         time.sleep(time_step) 

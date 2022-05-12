@@ -52,17 +52,17 @@ class TestRobotBase(unittest.TestCase):
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-        robot = wbk.RobotBase(urdf_file1,[0,0,0],start_orientation)
+        robot = wbk.RobotBase(urdf_file1,[0,0,0],start_orientation,'link4')
         
 
         precision = 0.02
         within_precision = True 
         for i in range(10):
             target_pose = np.array([i/400+0.2,-i/400-0.2,0.3])
-            robot.set_endeffector_pose('link4',target_pose)
+            robot.set_endeffector_pose(target_pose)
             for _ in range(200):
                 p.stepSimulation()
-            current_pose, _ =robot.get_endeffector_pose('link4')
+            current_pose, _ =robot.get_endeffector_pose()
             position_error = np.linalg.norm(current_pose-target_pose)
             within_precision = within_precision and (position_error <= precision)
         p.disconnect()
@@ -87,7 +87,7 @@ class TestRobotBase(unittest.TestCase):
             target_position = [1.9,0,1.2]
 
             for _ in range(1000):
-                robot.set_endeffector_pose('link6',target_position,target_orientation)
+                robot.set_endeffector_pose(target_position,target_orientation,'link6')
                 p.stepSimulation()
             
             current_position, current_orientation = robot.get_endeffector_pose('link6')

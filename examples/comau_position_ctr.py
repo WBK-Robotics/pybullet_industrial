@@ -24,6 +24,6 @@ if __name__ == "__main__":
     target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0]) 
     while True:
         for i in range(400): 
-            robot.set_endeffector_pose('link6',test_path[:,i],target_orientation) 
+            robot.set_endeffector_pose(test_path[:,i],target_orientation,'link6') 
             wbk.draw_coordinate_system(test_path[:,i],target_orientation)
             time.sleep(0.005) 

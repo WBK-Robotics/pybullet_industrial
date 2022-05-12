@@ -22,5 +22,5 @@ if __name__ == "__main__":
     wbk.draw_path(test_path)
     while True:
         for i in range(400):  
-            robot.set_endeffector_pose('link4',test_path[:,i]) 
+            robot.set_endeffector_pose(test_path[:,i],endeffector_name='link4') 
             time.sleep(0.005) 

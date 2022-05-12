@@ -25,4 +25,5 @@ if __name__ == "__main__":
     while True:
         for i in range(400): 
             robot.set_endeffector_pose('link6',test_path[:,i],target_orientation) 
+            wbk.draw_coordinate_system(test_path[:,i],target_orientation)
             time.sleep(0.005) 

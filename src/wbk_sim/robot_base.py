@@ -60,7 +60,8 @@ class RobotBase:
                                                         p.JOINT_FIXED,
                                                         [0, 0, 0],
                                                         [0, 0, 0],
-                                                        start_position)
+                                                        start_position,
+                                                        start_orientation)
 
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name

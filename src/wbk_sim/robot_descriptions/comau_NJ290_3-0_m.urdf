@@ -13,6 +13,15 @@
                 <mesh filename="mesh/base_m.stl"/>
             </geometry>
 		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray1">
+				<color rgba="0.2 0.2 0.2 1"/>
+			</material>
+            <geometry>
+                <mesh filename="mesh/base_m.stl"/>
+            </geometry>
+		</collision>
 	</link>
 	
 	<link name="link0_x_axis">
@@ -38,6 +47,15 @@
                 <mesh filename="mesh/q1_m.stl"/>
             </geometry>
 		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+            <geometry>
+                <mesh filename="mesh/q1_m.stl"/>
+            </geometry>
+		</collision>
 	</link>
 
 	<link name="link1_passive">
@@ -61,6 +79,13 @@
                 <mesh filename="mesh/q2_m.stl"/>
             </geometry>
 		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2"/>
+            <geometry>
+                <mesh filename="mesh/q2_m.stl"/>
+            </geometry>
+		</collision>
 	</link>
 
 	<link name="link2_passive">
@@ -82,6 +107,13 @@
                 <mesh filename="mesh/q3_m.stl"/>
             </geometry>
 		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2"/>
+            <geometry>
+                <mesh filename="mesh/q3_m.stl"/>
+            </geometry>
+		</collision>
 	</link>
 
 	<link name="link3_passive">
@@ -103,6 +135,13 @@
                 <mesh filename="mesh/q4_m.stl"/>
             </geometry>
 		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2"/>
+            <geometry>
+                <mesh filename="mesh/q4_m.stl"/>
+            </geometry>
+		</collision>
 	</link>
 	
 	<link name="link4_passive">
@@ -124,6 +163,13 @@
                 <mesh filename="mesh/q5_m.stl"/>
             </geometry>
 		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2"/>
+            <geometry>
+                <mesh filename="mesh/q5_m.stl"/>
+            </geometry>
+		</collision>
 	</link>
 	
 	<link name="link5_passive">
@@ -145,6 +191,13 @@
                 <mesh filename="mesh/q6_m.stl"/>
             </geometry>
 		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray1"/>
+            <geometry>
+                <mesh filename="mesh/q6_m.stl"/>
+            </geometry>
+		</collision>
 	</link>
 
 	<link name="link6_passive">

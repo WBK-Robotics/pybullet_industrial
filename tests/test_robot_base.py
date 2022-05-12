@@ -19,13 +19,6 @@ class TestRobotBase(unittest.TestCase):
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
         robot = wbk.RobotBase(urdf_file1,[0,0,0],start_orientation)
 
-        p.createConstraint(robot.urdf,
-                        -1, -1, -1,
-                        p.JOINT_FIXED,
-                        [0, 0, 0],
-                        [0, 0, 0],
-                        [0, 0, 0])
-
         precision = 10**-4 
         within_precision = True 
         for i in range(100):
@@ -61,14 +54,6 @@ class TestRobotBase(unittest.TestCase):
         p.setPhysicsEngineParameter(numSolverIterations=1000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
         robot = wbk.RobotBase(urdf_file1,[0,0,0],start_orientation)
-
-        
-        p.createConstraint(robot.urdf,
-                        -1, -1, -1,
-                        p.JOINT_FIXED,
-                        [0, 0, 0],
-                        [0, 0, 0],
-                        [0, 0, 0])
         
 
         precision = 0.02
@@ -94,14 +79,6 @@ class TestRobotBase(unittest.TestCase):
         p.setPhysicsEngineParameter(numSolverIterations=1000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
         robot = wbk.RobotBase(urdf_file1,[0,0,0],start_orientation)
-
-        
-        p.createConstraint(robot.urdf,
-                        -1, -1, -1,
-                        p.JOINT_FIXED,
-                        [0, 0, 0],
-                        [0, 0, 0],
-                        [0, 0, 0])
         
 
         pos_precision = 0.02

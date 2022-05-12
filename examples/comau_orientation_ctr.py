@@ -25,6 +25,7 @@ if __name__ == "__main__":
     p.setRealTimeSimulation(1)
     for i in range(400): 
         target_orientation = p.getQuaternionFromEuler([0, i/100, 0]) 
-        target_pose = [1.9,0,1.2] 
-        robot.set_endeffector_pose('link6',target_pose,target_orientation) 
+        target_position = [1.9,0,1.2] 
+        robot.set_endeffector_pose('link6',target_position,target_orientation) 
+        wbk.draw_point(target_position,length=0.05)
         time.sleep(0.05) 

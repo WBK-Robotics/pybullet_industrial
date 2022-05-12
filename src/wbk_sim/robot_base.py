@@ -11,6 +11,13 @@ import pybullet as p
 class RobotBase:
 
     def __init__(self, urdf_model, start_position, start_orientation):
+        """AI is creating summary for __init__
+
+        Args:
+            urdf_model ([type]): [description]
+            start_position ([type]): [description]
+            start_orientation ([type]): [description]
+        """
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,
                                start_position, start_orientation,
@@ -47,6 +54,13 @@ class RobotBase:
         self.max_joint_force = 1000*np.ones(p.getNumJoints(self.urdf))
         for joint_number in range(p.getNumJoints(self.urdf)):
             p.resetJointState(self.urdf, joint_number, targetValue=0)
+
+        self._rooting_constraint = p.createConstraint(self.urdf,
+                                                        -1, -1, -1,
+                                                        p.JOINT_FIXED,
+                                                        [0, 0, 0],
+                                                        [0, 0, 0],
+                                                        start_position)
 
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name
@@ -168,6 +182,7 @@ class RobotBase:
             start_orientation ([type]): a 4 dimensional quaternion representing
                                        the desired orientation
         """
+        p.changeConstraint(self._rooting_constraint,start_position,start_orientation)
         p.resetBasePositionAndOrientation(
             self.urdf, start_position, start_orientation)
 

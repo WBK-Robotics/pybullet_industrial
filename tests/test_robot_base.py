@@ -12,7 +12,6 @@ class TestRobotBase(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         parentDir = os.path.dirname(dirname)
         urdf_file1 = os.path.join( parentDir,'examples','robot_descriptions', 'comau_NJ290_3-0_m.urdf')
-        print(urdf_file1)
 
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)
@@ -42,7 +41,7 @@ class TestRobotBase(unittest.TestCase):
                                                      (q4_error <= precision) and 
                                                      (q5_error <= precision) and
                                                      (q6_error <= precision))
-
+        p.disconnect()
         self.assertTrue(within_precision)
 
     def test_position_interface_igus(self):
@@ -65,8 +64,8 @@ class TestRobotBase(unittest.TestCase):
                 p.stepSimulation()
             current_pose, _ =robot.get_endeffector_pose('link4')
             position_error = np.linalg.norm(current_pose-target_pose)
-            print(position_error)
             within_precision = within_precision and (position_error <= precision)
+        p.disconnect()
         self.assertTrue(within_precision)
 
     def test_pose_interface_comau(self):
@@ -99,7 +98,7 @@ class TestRobotBase(unittest.TestCase):
             #disregard first 4 measurments because inv kin solver first converges
             if i >= 5:
                 within_precision = within_precision and (position_error <=pos_precision) and (orientation_error <= ori_precision)
-
+        p.disconnect()
         self.assertTrue(within_precision)
 
 

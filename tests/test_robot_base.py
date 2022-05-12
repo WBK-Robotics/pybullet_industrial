@@ -11,7 +11,7 @@ class TestRobotBase(unittest.TestCase):
     def test_joint_interface(self):
         dirname = os.path.dirname(__file__)
         parentDir = os.path.dirname(dirname)
-        urdf_file1 = os.path.join( parentDir,'src','wbk_sim','robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+        urdf_file1 = os.path.join( parentDir,'examples','robot_descriptions', 'comau_NJ290_3-0_m.urdf')
         print(urdf_file1)
 
         physics_client = p.connect(p.DIRECT)
@@ -48,7 +48,7 @@ class TestRobotBase(unittest.TestCase):
     def test_position_interface_igus(self):
         dirname = os.path.dirname(__file__)
         parentDir = os.path.dirname(dirname)
-        urdf_file1 = os.path.join( parentDir,'src','wbk_sim','robot_descriptions', 'igus_4DOF_SV.urdf')
+        urdf_file1 = os.path.join( parentDir,'examples','robot_descriptions', 'igus_4DOF_SV.urdf')
 
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)
@@ -59,21 +59,20 @@ class TestRobotBase(unittest.TestCase):
         precision = 0.02
         within_precision = True 
         for i in range(10):
-            #target_state = {'q1':0,'q2':0.5,'q3':-0.5,'q4':0.5,'q5':0,'q6':0}
             target_pose = np.array([i/400+0.2,-i/400-0.2,0.3])
             robot.set_endeffector_pose('link4',target_pose)
-            for _ in range(100):
+            for _ in range(200):
                 p.stepSimulation()
             current_pose, _ =robot.get_endeffector_pose('link4')
             position_error = np.linalg.norm(current_pose-target_pose)
+            print(position_error)
             within_precision = within_precision and (position_error <= precision)
-
         self.assertTrue(within_precision)
 
     def test_pose_interface_comau(self):
         dirname = os.path.dirname(__file__)
         parentDir = os.path.dirname(dirname)
-        urdf_file1 = os.path.join( parentDir,'src','wbk_sim','robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+        urdf_file1 = os.path.join( parentDir,'examples','robot_descriptions', 'comau_NJ290_3-0_m.urdf')
 
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)

@@ -5,8 +5,7 @@ import wbk_sim as wbk
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
-    parentDir = os.path.dirname(dirname)
-    urdf_file1 = os.path.join( parentDir,'src','wbk_sim','robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+    urdf_file1 = os.path.join( dirname,'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
 
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=1000)

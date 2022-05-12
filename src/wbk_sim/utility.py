@@ -1,6 +1,5 @@
 import pybullet as p
 import numpy as np
-from sympy import euler
 
 def draw_point(point, color=[0.0,1.0,0.0], length = 0.05,width=2.0):
     """Draws a point in the worldspace as a cross of 3 lines

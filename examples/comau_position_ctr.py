@@ -2,7 +2,7 @@ import os
 import time
 import pybullet as p
 import wbk_sim as wbk
-import rolap
+from lemniscate import build_lemniscate_path
 import numpy as np
 
 if __name__ == "__main__":
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     p.setRealTimeSimulation(1)
 
     target_position = [1.9,0,1.2]
-    test_path = rolap.build_lemniscate_path(target_position,400,1.2,1)
+    test_path = build_lemniscate_path(target_position,400,1.2,1)
     wbk.draw_path(test_path)
     target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0]) 
     while True:

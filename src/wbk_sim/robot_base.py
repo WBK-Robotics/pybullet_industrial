@@ -1,4 +1,3 @@
-import string
 from typing import Dict
 
 import numpy as np
@@ -11,13 +10,15 @@ import pybullet as p
 
 class RobotBase:
 
-    def __init__(self, urdf_model, start_position, start_orientation,default_endeffector=None):
-        """AI is creating summary for __init__
+    def __init__(self, urdf_model: str, start_position, start_orientation,default_endeffector=None):
+        """A Base class encapsulating a URDF based industrial robot manipulator
 
         Args:
-            urdf_model ([type]): [description]
+            urdf_model (str): A valid path to a urdf file
             start_position ([type]): [description]
             start_orientation ([type]): [description]
+            default_endeffector (str, optional): The default endeffector used 
+                                                 when controlling the robots position
         """
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,
@@ -122,7 +123,7 @@ class RobotBase:
                              'correct keys are: '+str(self._joint_state_shape.keys()))
 
 
-    def get_endeffector_pose(self,endeffector_name=None):
+    def get_endeffector_pose(self,endeffector_name: str = None):
         """Returns the position of the endeffector in world coordinates
 
         Args:
@@ -143,7 +144,7 @@ class RobotBase:
         orientation = np.array(link_state[1])
         return position, orientation
 
-    def set_endeffector_pose(self,target_position,target_orientation=None,endeffector_name=None):
+    def set_endeffector_pose(self,target_position,target_orientation=None,endeffector_name : str =None):
         """Sets the pose of a robots endeffector
 
         Args:

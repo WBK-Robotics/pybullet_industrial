@@ -117,10 +117,9 @@ class RobotBase:
         orientation = np.array(link_state[1])
         return position, orientation
 
-    def set_endeffector_pose(self,endeffector,target_position,target_orientation=None,iterations=1000,threshold=0.001):
+    def set_endeffector_pose(self,endeffector,target_position,target_orientation=None):
         endeffector_id = self._link_name_to_index[endeffector]
 
-            # find initial solution
         if target_orientation is None:
             joint_poses = p.calculateInverseKinematics(self.urdf,
                                                     endeffector_id,

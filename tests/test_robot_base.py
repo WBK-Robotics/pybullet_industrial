@@ -112,7 +112,7 @@ class TestRobotBase(unittest.TestCase):
             target_position = [1.9,0,1.2]
 
             for _ in range(1000):
-                robot.set_endeffector_pose('link6',target_position,target_orientation,iterations=1)
+                robot.set_endeffector_pose('link6',target_position,target_orientation)
                 p.stepSimulation()
             
             current_position, current_orientation = robot.get_endeffector_pose('link6')

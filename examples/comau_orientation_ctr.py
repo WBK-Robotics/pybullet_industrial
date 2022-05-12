@@ -23,8 +23,8 @@ if __name__ == "__main__":
     
 
     p.setRealTimeSimulation(1)
-    for i in range(1000): 
+    for i in range(400): 
         target_orientation = p.getQuaternionFromEuler([0, i/100, 0]) 
         target_pose = [1.9,0,1.2] 
-        robot.set_endeffector_pose('link6',target_pose,target_orientation,iterations=1) 
-        time.sleep(0.1) 
+        robot.set_endeffector_pose('link6',target_pose,target_orientation) 
+        time.sleep(0.05) 

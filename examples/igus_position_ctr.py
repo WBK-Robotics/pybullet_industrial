@@ -3,6 +3,7 @@ import time
 import pybullet as p
 import wbk_sim as wbk
 from lemniscate import build_lemniscate_path
+import numpy as np
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
@@ -17,7 +18,7 @@ if __name__ == "__main__":
 
     p.setRealTimeSimulation(1)
 
-    target_position = [0.-0.05, 0.3]
+    target_position = np.array([0, 0.3])
     test_path = build_lemniscate_path(target_position,400,0,0.3)
     wbk.draw_path(test_path)
     while True:

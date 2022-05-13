@@ -2,8 +2,6 @@ import os
 import time
 import pybullet as p
 import wbk_sim as wbk
-from lemniscate import build_lemniscate_path
-import numpy as np
 
 
 class TeachingController:
@@ -26,7 +24,7 @@ if __name__ == "__main__":
     p.setRealTimeSimulation(1)
     
     teaching_button = p.addUserDebugParameter("teaching",0,1,1)
-    playback_speed = p.addUserDebugParameter("Playback Speed",1,20)
+    playback_speed = p.addUserDebugParameter("Playback Speed",0.1,20,1)
 
 
     teaching = True
@@ -42,7 +40,7 @@ if __name__ == "__main__":
         if teaching:
             if p.readUserDebugParameter(teaching_button) == 0:
                 teaching = False
-            else:
+            elif p.readUserDebugParameter(teaching_button) == 1:
                 position, orientation = robot.get_endeffector_pose()
                 wbk.draw_coordinate_system(position,orientation)
                 number_of_coordinate_systems +=1
@@ -62,7 +60,7 @@ if __name__ == "__main__":
 
                 for id in range(3*number_of_coordinate_systems):
                     p.removeUserDebugItem(id)
-            else:
+            elif p.readUserDebugParameter(teaching_button) == 0:
                 first_joint_trajectory = list(joint_trajectory.values())[0]
                 for i in range(len(first_joint_trajectory)):
                     target_state = robot.get_joint_state()

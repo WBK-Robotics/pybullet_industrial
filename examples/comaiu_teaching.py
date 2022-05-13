@@ -41,7 +41,6 @@ if __name__ == "__main__":
                 teaching = False
             else:
                 joint_state = robot.get_joint_state()
-                print(joint_trajectory)
                 for key in joint_state.keys():
                     joint_trajectory[key].append(joint_state[key]['position'])
                 time.sleep(0.01)
@@ -50,12 +49,13 @@ if __name__ == "__main__":
             if p.readUserDebugParameter(teaching_button) == 1:
                 teaching = True
                 robot.reset_robot([0,0,0],start_orientation)
+                for key in joint_trajectory.keys():
+                    joint_trajectory[key]=[]
             else:
                 first_joint_trajectory = list(joint_trajectory.values())[0]
                 for i in range(len(first_joint_trajectory)):
                     target_state = robot.get_joint_state()
                     for key in target_state.keys():
                         target_state[key]= joint_trajectory[key][i]
-                    print(target_state)
-                    robot.set_joint_position(target_state)
-                    time.sleep(1/p.readUserDebugParameter(playback_speed))
+                    robot.set_joint_position(target_state,ignore_limits=True)
+                    time.sleep(0.01/p.readUserDebugParameter(playback_speed))

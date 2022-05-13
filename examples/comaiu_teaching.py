@@ -34,12 +34,19 @@ if __name__ == "__main__":
     for key in joint_trajectory.keys():
         joint_trajectory[key]=[]
     
+    
+    number_of_coordinate_systems = 0
+
     while True:
 
         if teaching:
             if p.readUserDebugParameter(teaching_button) == 0:
                 teaching = False
             else:
+                position, orientation = robot.get_endeffector_pose()
+                wbk.draw_coordinate_system(position,orientation)
+                number_of_coordinate_systems +=1
+
                 joint_state = robot.get_joint_state()
                 for key in joint_state.keys():
                     joint_trajectory[key].append(joint_state[key]['position'])
@@ -49,8 +56,12 @@ if __name__ == "__main__":
             if p.readUserDebugParameter(teaching_button) == 1:
                 teaching = True
                 robot.reset_robot([0,0,0],start_orientation)
+
                 for key in joint_trajectory.keys():
                     joint_trajectory[key]=[]
+
+                for id in range(3*number_of_coordinate_systems):
+                    p.removeUserDebugItem(id)
             else:
                 first_joint_trajectory = list(joint_trajectory.values())[0]
                 for i in range(len(first_joint_trajectory)):

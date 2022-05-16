@@ -20,7 +20,8 @@ class EndeffectorTool:
         pass
 
     def decouple(self,robot):
-         #deletes the constrained between the choosen robot and the tool
+         #deletes the constrained between the choosen robot and the tool.
+         # The tool then remains at its current position
         pass
 
 

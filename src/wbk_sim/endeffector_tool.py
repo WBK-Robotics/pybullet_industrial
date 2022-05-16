@@ -33,8 +33,9 @@ class EndeffectorTool:
         A Tool can only be coupled with one robot
 
         Args:
-            robot (wbk_sim.robot): [description]
-            endeffector_name (str, optional): [description]. Defaults to None.
+            robot (wbk_sim.robot): The robot whith which the tool should couple.
+            endeffector_name (str, optional): The endeffector of the robot where the tool should couple to. 
+                                              Defaults to None.
 
         Raises:
             Error: [description]
@@ -59,12 +60,20 @@ class EndeffectorTool:
                                                           [0, 0, 0])
 
     def is_coupled(self):
+        """Function which returns true if the Tool is currently coupled to a robot
+
+        Returns:
+            bool: 1 if the tool is coupled, 0 if not
+        """
         if self._coupled_robot is None:
             return 0
         else:
             return 1
 
     def decouple(self):
+        """Decouples the tool from the current robot. 
+           In this case a new constraint is created rooting the tool in its current pose. 
+        """
         self._coupled_robot = None
         p.removeConstraint(self._coupling_constraint)
         position, orientation = p.getBasePositionAndOrientation(self.urdf)
@@ -82,7 +91,7 @@ class EndeffectorTool:
          #converts between the robots forward kinematics and the tool forward kinematics
         pass
 
-    def set_tool_pose(self,target_position,target_orientation=None):
+    def set_tool_pose(self,target_position,target_orientation=None,tcp_frame=None):
         #converts between the robots inverse kinematics and the tool inverse kinematics
         # Assumes the currently connected endeffector for the robot inv kin
         pass

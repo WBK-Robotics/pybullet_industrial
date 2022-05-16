@@ -24,7 +24,7 @@ class RobotBase:
         self.urdf = p.loadURDF(urdf_model,
                                start_position, start_orientation,
                                flags=urdf_flags,
-                               useFixedBase=False)
+                               useFixedBase=True)
 
         self._joint_state_shape = self.get_joint_state()
         self._joint_name_to_index = {}

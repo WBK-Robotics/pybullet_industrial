@@ -24,7 +24,7 @@ class RobotBase:
         self.urdf = p.loadURDF(urdf_model,
                                start_position, start_orientation,
                                flags=urdf_flags,
-                               useFixedBase=False)
+                               useFixedBase=True)
 
         self._joint_state_shape = self.get_joint_state()
         self._joint_name_to_index = {}
@@ -94,7 +94,7 @@ class RobotBase:
                 joint_state[joint] = single_joint_state
         return joint_state
 
-    def set_joint_position(self,target: Dict[str,  float]):
+    def set_joint_position(self,target: Dict[str,  float],ignore_limits=False):
         """Sets the target position for a number of joints.
            The maximum force of each joint is set according to the max_joint_force class attribute.
 
@@ -108,12 +108,13 @@ class RobotBase:
             for joint, joint_position in target.items():
                 joint_number = self._joint_name_to_index[joint]
 
-                lower_joint_limit = self._lower_joint_limit[joint_number]
-                upper_joint_limit = self._upper_joint_limit[joint_number]
-                if joint_position > upper_joint_limit or joint_position < lower_joint_limit:
-                    raise ValueError('The joint position '+str(joint_position)+
-                                      ' is aut of limit for joint '+joint+'. Its limits are:\n'+
-                                      str(lower_joint_limit)+' and '+str(upper_joint_limit))
+                if ignore_limits == False:
+                    lower_joint_limit = self._lower_joint_limit[joint_number]
+                    upper_joint_limit = self._upper_joint_limit[joint_number]
+                    if joint_position > upper_joint_limit or joint_position < lower_joint_limit:
+                        raise ValueError('The joint position '+str(joint_position)+
+                                        ' is aut of limit for joint '+joint+'. Its limits are:\n'+
+                                        str(lower_joint_limit)+' and '+str(upper_joint_limit))
 
                 p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
                                             force=self.max_joint_force[joint_number],

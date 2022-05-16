@@ -57,7 +57,7 @@ class RobotBase:
             last_link = max(self._link_name_to_index)
             self._default_endeffector_id = self._link_name_to_index[last_link]
         else:
-            self._default_endeffector_id = self.__convert_endeffector(default_endeffector)
+            self._default_endeffector_id = self._convert_endeffector(default_endeffector)
 
         self.max_joint_force = 1000*np.ones(p.getNumJoints(self.urdf))
         for joint_number in range(p.getNumJoints(self.urdf)):
@@ -136,7 +136,7 @@ class RobotBase:
         if endeffector_name is None:
             endeffector_id = self._default_endeffector_id
         else:
-            endeffector_id = self.__convert_endeffector(endeffector_name)
+            endeffector_id = self._convert_endeffector(endeffector_name)
 
         link_state = p.getLinkState(self.urdf,endeffector_id)
 
@@ -155,7 +155,7 @@ class RobotBase:
         if endeffector_name is None:
             endeffector_id = self._default_endeffector_id
         else:
-            endeffector_id = self.__convert_endeffector(endeffector_name)
+            endeffector_id = self._convert_endeffector(endeffector_name)
 
 
         if target_orientation is None:
@@ -219,7 +219,7 @@ class RobotBase:
         """
         return p.getBasePositionAndOrientation(self.urdf)
 
-    def __convert_endeffector(self,endeffector):
+    def _convert_endeffector(self,endeffector):
         if isinstance(endeffector,str):
             if endeffector in self._link_name_to_index.keys():
                 return self._link_name_to_index[endeffector]

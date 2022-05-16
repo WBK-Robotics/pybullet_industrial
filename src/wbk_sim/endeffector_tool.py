@@ -39,7 +39,7 @@ class EndeffectorTool:
             if endeffector_name == None:
                 endeffector_index = robot._default_endeffector_id
             else:
-                endeffector_index = robot. __convert_endeffector(endeffector_name)
+                endeffector_index = robot._convert_endeffector(endeffector_name)
             self._coupled_robot = robot
 
             p.removeConstraint(self._coupling_constraint)
@@ -113,6 +113,6 @@ if __name__ == "__main__":
             time.sleep(time_step) 
 
         if not tool.is_coupled():
-            tool.couple(robot)
+            tool.couple(robot,'link6')
         else:
             tool.decouple()

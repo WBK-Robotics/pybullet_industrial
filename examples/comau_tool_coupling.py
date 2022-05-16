@@ -2,8 +2,8 @@ import os
 import time
 import pybullet as p
 import wbk_sim as wbk
-from lemniscate import build_lemniscate_path
 import numpy as np
+
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
@@ -15,19 +15,24 @@ if __name__ == "__main__":
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = wbk.RobotBase(urdf_file1,[0,0,0],start_orientation)
 
-    tool = wbk.EndeffectorTool(urdf_file2,[1.9,0,1.2],start_orientation)
+    start_orientation = p.getQuaternionFromEuler([np.pi/2, -np.pi/4, np.pi])
+    camera_parameters = {'width':640,'height':480,'fov':60,'aspect ratio':1,'near plane distance':0.01,'far plane distance':100}
+    camera = wbk.Camera(urdf_file2,[0,-2,1.2],start_orientation,camera_parameters)
 
     
 
     p.setRealTimeSimulation(1)
 
     target_position = [1.9,0,1.2]
-    test_path = build_lemniscate_path(target_position,400,1.2,1)
-    wbk.draw_path(test_path)
-    target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0]) 
+    time_step = 0.001
     while True:
-        for i in range(400): 
-            robot.set_endeffector_pose(test_path[:,i],target_orientation,'link6') 
-            wbk.draw_coordinate_system(test_path[:,i],target_orientation)
-            time.sleep(0.005) 
-        tool.couple(robot)
+        for i in range(300): 
+            target_orientation = p.getQuaternionFromEuler([0, i/100, 0])  
+            robot.set_endeffector_pose(target_position,target_orientation) 
+            camera.get_image()
+            time.sleep(time_step) 
+
+        if not camera.is_coupled():
+            camera.couple(robot,'link6')
+        else:
+            camera.decouple()

@@ -5,6 +5,18 @@ from wbk_sim.endeffector_tool import EndeffectorTool
 
 class Camera(EndeffectorTool):
     def __init__(self, urdf_model: str, start_position, start_orientation, camera_parameters, coupled_robot=None):
+        """AI is creating summary for __init__
+
+        Args:
+            urdf_model (str): A valid path to a urdf file describint the tool geometry
+            start_position ([type]): the position at which the tool should be spawned
+            start_orientation ([type]): the orientation at which the tool should be spawned
+            camera_parameters (Dict[str,float]): A dictionary containing the camera parameters.
+                                                 The parameters are: width, height, fov, aspect ratio, 
+                                                 near plane distance and far plane distance.
+            default_endeffector (str, optional): The default endeffector used 
+                                                 when controlling the robots position
+        """
         super().__init__(urdf_model, start_position, start_orientation, coupled_robot)
 
         self.camera_parameters = camera_parameters
@@ -19,9 +31,20 @@ class Camera(EndeffectorTool):
         return  projection_matrix
 
     def set_camera_parameters(self,camera_parameters):
+        """Sets the camera parameters
+
+        Args:
+            camera_parameters (Dict[str,float]): A dictionary containing the camera parameters
+        """
         self.camera_parameters = camera_parameters
         self.projection_matrix = self.__get_projection_matrix()
+
     def get_image(self):
+        """Captures a camera image of the current simulation
+
+        Returns:
+            [type]: A list of pixel colors in rgb format in 255 color format
+        """
         link_state = p.getLinkState(self.urdf, self._tcp_id,computeForwardKinematics=True)
         com_p = np.array(link_state[0])
         com_o = np.array(link_state[1])
@@ -37,5 +60,5 @@ class Camera(EndeffectorTool):
 
         width = self.camera_parameters['width']
         height = self.camera_parameters['height']
-        img = p.getCameraImage(width , height, view_matrix, self.projection_matrix)
+        _,_,img,_,_ = p.getCameraImage(width , height, view_matrix, self.projection_matrix)
         return img

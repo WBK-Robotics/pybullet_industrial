@@ -152,19 +152,19 @@ class EndeffectorTool:
                                                    the position of the robot is controlled.
         """
 
-        _, base_ori = p.getBasePositionAndOrientation(self.urdf)
-        rot_matrix = p.getMatrixFromQuaternion(base_ori)
-        rot_matrix = np.array(rot_matrix).reshape(3, 3)
-        translation = rot_matrix@np.array(self._tcp_translation)
-        adj_target_position = target_position-translation
-
-        if target_orientation is None:
-            adj_target_orientation = None
-        else:
-            adj_target_orientation = quaternion_multiply(
-                quaternion_inverse(self._tcp_rotation), target_orientation)
-
         if self.is_coupled():
+            _, base_ori = p.getBasePositionAndOrientation(self.urdf)
+            rot_matrix = p.getMatrixFromQuaternion(base_ori)
+            rot_matrix = np.array(rot_matrix).reshape(3, 3)
+            translation = rot_matrix@np.array(self._tcp_translation)
+            adj_target_position = target_position-translation
+
+            if target_orientation is None:
+                adj_target_orientation = None
+            else:
+                adj_target_orientation = quaternion_multiply(
+                    quaternion_inverse(self._tcp_rotation), target_orientation)
+
             self._coupled_robot.set_endeffector_pose(
                 adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
         else:
@@ -173,12 +173,12 @@ class EndeffectorTool:
                     self.urdf)
             p.removeConstraint(self._coupling_constraint)
             self._coupling_constraint = p.createConstraint(self.urdf,
-                                                           -1, -1, -1,
+                                                           self._tcp_id, -1, -1,
                                                            p.JOINT_FIXED,
                                                            [0, 0, 0],
                                                            [0, 0, 0],
-                                                           adj_target_position,
-                                                           adj_target_orientation)
+                                                           target_position,
+                                                           target_orientation)
 
     def _convert_tcp(self, tcp):
         """Internal function that converts between tcp link names and pybullet specific indexes

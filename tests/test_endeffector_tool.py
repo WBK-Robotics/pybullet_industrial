@@ -7,6 +7,46 @@ import wbk_sim as wbk
 
 
 class TestEndeffectorTool(unittest.TestCase):
+    def test_direct_pose_movement(self):
+        dirname = os.path.dirname(__file__)
+        parentDir = os.path.dirname(dirname)
+        urdf_file2 = os.path.join(parentDir, 'examples',
+                                  'robot_descriptions', 'milling_head.urdf')
+
+        physics_client = p.connect(p.DIRECT)
+        p.setPhysicsEngineParameter(numSolverIterations=1000)
+        start_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        milling_head = wbk.EndeffectorTool(
+            urdf_file2, [1.9, 0, 1.2], start_orientation)
+
+        steps = 20
+        target_position = [2.5, 0, 1.2]
+        test_path = build_lemniscate_path(target_position, steps, 1.2, 0.8)
+        target_orientation = p.getQuaternionFromEuler([0, 0, 0])
+
+        pos_precision = 0.02
+        ori_precision = 0.004
+        within_precision = True
+        for i in range(steps):
+            target_position = test_path[:, i]
+            milling_head.set_tool_pose(target_position, target_orientation)
+
+            for _ in range(300):
+                p.stepSimulation()
+
+            current_position, current_orientation = milling_head.get_tool_pose()
+
+            position_error = np.linalg.norm(current_position-target_position)
+            orientation_error = np.linalg.norm(
+                current_orientation-target_orientation)
+
+            # discard first values where robot converges with path
+            if i > 2:
+                within_precision = within_precision and (
+                    position_error <= pos_precision) and (orientation_error <= ori_precision)
+        p.disconnect()
+        self.assertTrue(within_precision)
+
     def test_pose_setting(self):
         dirname = os.path.dirname(__file__)
         parentDir = os.path.dirname(dirname)

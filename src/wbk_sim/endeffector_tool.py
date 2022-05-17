@@ -46,6 +46,12 @@ class EndeffectorTool:
         else:
             self._tcp_id = self._convert_tcp(tcp_frame)
 
+        base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf)
+        tcp_pos, tcp_ori = self.get_tool_pose(tcp_frame)
+        self._tcp_translation = tcp_pos-base_pos
+        self._tcp_rotation = quaternion_multiply(
+            tcp_ori, quaternion_inverse(base_ori))
+
     def couple(self, robot, endeffector_name=None):
         """Dynamically Couples the Tool with the Endeffector of a given robot.
         Note that this endeffector can also be a virtual link to connect a sensor.
@@ -119,32 +125,22 @@ class EndeffectorTool:
         orientation = np.array(link_state[1])
         return position, orientation
 
-    def set_tool_pose(self, target_position, target_orientation=None, tcp_frame=None):
+    def set_tool_pose(self, target_position, target_orientation=None):
 
-        translation, rotation = self.compute_relative_transformation(tcp_frame)
-
+        _, base_ori = p.getBasePositionAndOrientation(self.urdf)
+        rot_matrix = p.getMatrixFromQuaternion(base_ori)
+        rot_matrix = np.array(rot_matrix).reshape(3, 3)
+        translation = rot_matrix@np.array(self._tcp_translation)
         adj_target_position = target_position-translation
 
         if not target_orientation is None:
             adj_target_orientation = quaternion_multiply(
-                quaternion_inverse(rotation), target_orientation)
+                quaternion_inverse(self._tcp_rotation), target_orientation)
         else:
             adj_target_orientation = None
 
-        print(rotation)
-        print(target_orientation, adj_target_orientation)
         self._coupled_robot.set_endeffector_pose(
             adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
-
-    def compute_relative_transformation(self, tcp_frame):
-        base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf)
-
-        tcp_pos, tcp_ori = self.get_tool_pose(tcp_frame)
-
-        translation = tcp_pos-base_pos
-        rotation = quaternion_multiply(
-            tcp_ori, quaternion_inverse(base_ori))
-        return translation, rotation
 
     def _convert_tcp(self, tcp):
         if isinstance(tcp, str):

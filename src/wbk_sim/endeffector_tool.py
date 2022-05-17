@@ -140,8 +140,9 @@ class EndeffectorTool:
         return position, orientation
 
     def set_tool_pose(self, target_position, target_orientation=None):
-        """Allows the inverse kinematic control of a coupled robot given a target state of the 
-           tool center point
+        """Allows the control of the tool.
+           If the tool is coupled the inverse kinematic control of a coupled robot is used.
+           If not the tool is moved directly.
 
         Args:
             target_position (_type_): the desired position of the tool center point (tcp)
@@ -157,14 +158,27 @@ class EndeffectorTool:
         translation = rot_matrix@np.array(self._tcp_translation)
         adj_target_position = target_position-translation
 
-        if not target_orientation is None:
+        if target_orientation is None:
+            adj_target_orientation = None
+        else:
             adj_target_orientation = quaternion_multiply(
                 quaternion_inverse(self._tcp_rotation), target_orientation)
-        else:
-            adj_target_orientation = None
 
-        self._coupled_robot.set_endeffector_pose(
-            adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
+        if self.is_coupled():
+            self._coupled_robot.set_endeffector_pose(
+                adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
+        else:
+            if target_orientation is None:
+                _, adj_target_orientation = p.getBasePositionAndOrientation(
+                    self.urdf)
+            p.removeConstraint(self._coupling_constraint)
+            self._coupling_constraint = p.createConstraint(self.urdf,
+                                                           -1, -1, -1,
+                                                           p.JOINT_FIXED,
+                                                           [0, 0, 0],
+                                                           [0, 0, 0],
+                                                           adj_target_position,
+                                                           adj_target_orientation)
 
     def _convert_tcp(self, tcp):
         """Internal function that converts between tcp link names and pybullet specific indexes

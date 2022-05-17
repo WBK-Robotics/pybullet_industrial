@@ -131,18 +131,19 @@ class EndeffectorTool:
         else:
             adj_target_orientation = None
 
+        print(rotation)
+        print(target_orientation, adj_target_orientation)
         self._coupled_robot.set_endeffector_pose(
-            adj_target_position, target_orientation, endeffector_name=self._coupling_link)
+            adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
 
     def compute_relative_transformation(self, tcp_frame):
-        base_pos, base_ori = self._coupled_robot.get_endeffector_pose()
+        base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf)
 
         tcp_pos, tcp_ori = self.get_tool_pose(tcp_frame)
 
         translation = tcp_pos-base_pos
         rotation = quaternion_multiply(
             quaternion_inverse(tcp_ori), base_ori)
-        print(tcp_ori, base_ori)
         return translation, rotation
 
     def _convert_tcp(self, tcp):
@@ -193,17 +194,17 @@ if __name__ == "__main__":
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = wbk.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
     milling_head = EndeffectorTool(
-        urdf_file2, [0, 0, 0], start_orientation)
+        urdf_file2, [1.9, 0, 1.2], start_orientation)
     milling_head.couple(robot, 'link6')
 
     target_position = [1.9, 0, 1.2]
-    test_path = build_lemniscate_path(target_position, 400, 1.2, 1)
+    test_path = build_lemniscate_path(target_position, 400, 1.2, 0.5)
     wbk.draw_path(test_path)
-    target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0])
+    target_orientation = p.getQuaternionFromEuler([0, 0, 0])
 
     p.setRealTimeSimulation(1)
     while True:
         for i in range(400):
-            milling_head.set_tool_pose(test_path[:, i], target_orientation)
+            milling_head.set_tool_pose(test_path[:, i], None)
             wbk.draw_coordinate_system(test_path[:, i], target_orientation)
             time.sleep(0.005)

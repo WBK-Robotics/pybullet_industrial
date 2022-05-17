@@ -39,11 +39,12 @@ class EndeffectorTool:
             link_name = p.getJointInfo(self.urdf, joint_number)[
                 12].decode("utf-8")
             self._link_name_to_index[link_name] = joint_number
-        if tcp_frame == None:
+
+        if tcp_frame is None:
             last_link = max(self._link_name_to_index)
             self._tcp_id = self._link_name_to_index[last_link]
         else:
-            self._tcp_id = self._convert_endeffector(tcp_frame)
+            self._tcp_id = self._convert_tcp(tcp_frame)
 
     def couple(self, robot, endeffector_name=None):
         """Dynamically Couples the Tool with the Endeffector of a given robot.
@@ -106,42 +107,69 @@ class EndeffectorTool:
                                                        orientation)
         pass
 
-    def get_tool_pose(self):
-        # converts between the robots forward kinematics and the tool forward kinematics
-        pass
+    def get_tool_pose(self, tcp_frame: str = None):
+        if tcp_frame is None:
+            tcp_id = self._tcp_id
+        else:
+            tcp_id = self._convert_tcp(tcp_frame)
+
+        link_state = p.getLinkState(self.urdf, tcp_id)
+
+        position = np.array(link_state[0])
+        orientation = np.array(link_state[1])
+        return position, orientation
 
     def set_tool_pose(self, target_position, target_orientation=None, tcp_frame=None):
-        if tcp_frame is None:
-            tcp_frame = self._tcp_id
-        else:
-            tcp_frame = self._link_name_to_index[tcp_frame]
 
         translation, rotation = self.compute_relative_transformation(tcp_frame)
 
-        adj_target_position = target_position+translation
+        adj_target_position = target_position-translation
+
+        if not target_orientation is None:
+            adj_target_orientation = quaternion_multiply(
+                target_orientation, quaternion_inverse(rotation))
+        else:
+            adj_target_orientation = None
 
         self._coupled_robot.set_endeffector_pose(
-            adj_target_position, endeffector_name=self._coupling_link)
+            adj_target_position, target_orientation, endeffector_name=self._coupling_link)
 
     def compute_relative_transformation(self, tcp_frame):
-        base_link_state = p.getLinkState(
-            self.urdf, 0, computeForwardKinematics=True)
-        base_pos = np.array(base_link_state[0])
-        base_ori = np.array(base_link_state[1])
-        base_ori_matrix = p.getMatrixFromQuaternion(base_ori)
-        base_ori_matrix = np.array(base_ori_matrix).reshape(3, 3)
+        base_pos, base_ori = self._coupled_robot.get_endeffector_pose()
 
-        tcp_link_state = p.getLinkState(
-            self.urdf, tcp_frame, computeForwardKinematics=True)
-        tcp_pos = np.array(tcp_link_state[0])
-        tcp_ori = np.array(tcp_link_state[1])
-        tcp_ori_matrix = p.getMatrixFromQuaternion(tcp_ori)
-        tcp_ori_matrix = np.array(tcp_ori_matrix).reshape(3, 3)
+        tcp_pos, tcp_ori = self.get_tool_pose(tcp_frame)
 
         translation = tcp_pos-base_pos
-        orientation = tcp_ori_matrix@np.linalg.inv(base_ori_matrix)
+        rotation = quaternion_multiply(
+            quaternion_inverse(tcp_ori), base_ori)
+        print(tcp_ori, base_ori)
+        return translation, rotation
 
-        return translation, orientation
+    def _convert_tcp(self, tcp):
+        if isinstance(tcp, str):
+            if tcp in self._link_name_to_index.keys():
+                return self._link_name_to_index[tcp]
+            else:
+                ValueError("Invalid TCP name! valid names are: " +
+                           str(self._link_name_to_index.keys()))
+        else:
+            raise TypeError(
+                "The TCP must be a String describing a URDF link")
+
+
+def quaternion_inverse(quaternion):
+    q = np.array(quaternion, copy=True)
+    np.negative(q[1:], q[1:])
+    return q / np.dot(q, q)
+
+
+def quaternion_multiply(quaternion1, quaternion0):
+    w0, x0, y0, z0 = quaternion0
+    w1, x1, y1, z1 = quaternion1
+    return np.array([
+        -x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0, x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
+        -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0, x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0
+    ])
 
 
 if __name__ == "__main__":
@@ -165,18 +193,17 @@ if __name__ == "__main__":
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = wbk.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
     milling_head = EndeffectorTool(
-        urdf_file2, [0, 0, 0], start_orientation, tcp_frame='tcp')
+        urdf_file2, [0, 0, 0], start_orientation)
     milling_head.couple(robot, 'link6')
-    p.setRealTimeSimulation(1)
 
     target_position = [1.9, 0, 1.2]
     test_path = build_lemniscate_path(target_position, 400, 1.2, 1)
     wbk.draw_path(test_path)
     target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0])
+
+    p.setRealTimeSimulation(1)
     while True:
         for i in range(400):
-            # robot.set_endeffector_pose(
-            #    test_path[:, i], target_orientation, 'link6')
-            milling_head.set_tool_pose(test_path[:, i])
+            milling_head.set_tool_pose(test_path[:, i], target_orientation)
             wbk.draw_coordinate_system(test_path[:, i], target_orientation)
             time.sleep(0.005)

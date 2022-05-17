@@ -7,24 +7,24 @@ import numpy as np
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
-    urdf_file1 = os.path.join(dirname,'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+    urdf_file1 = os.path.join(
+        dirname, 'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
 
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=1000)
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-    robot = wbk.RobotBase(urdf_file1,[0,0,0],start_orientation)
-
-    
+    robot = wbk.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
     p.setRealTimeSimulation(1)
 
-    target_position = [1.9,0,1.2]
-    test_path = build_lemniscate_path(target_position,400,1.2,1)
+    target_position = [1.9, 0, 1.2]
+    test_path = build_lemniscate_path(target_position, 400, 1.2, 1)
     wbk.draw_path(test_path)
-    target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0]) 
+    target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0])
     while True:
         for i in range(400): 
             robot.set_endeffector_pose(test_path[:,i],target_orientation,'link6') 
             time.sleep(0.005)
             position, orientation = robot.get_endeffector_pose()
             wbk.draw_coordinate_system(position, orientation)
+

@@ -11,9 +11,11 @@ class EndeffectorTool:
             urdf_model (str): A valid path to a urdf file describint the tool geometry
             start_position ([type]): the position at which the tool should be spawned
             start_orientation ([type]): the orientation at which the tool should be spawned
-            coupled_robot ([type], optional): A wbk_sim.Robot object if the robot is currently coupled. 
+            coupled_robot ([type], optional): A wbk_sim.Robot object if 
+                                              the robot is coupled from the start. 
                                               Defaults to None.
-            tcp_frame ([type], optional): The name of the urdf_link describing the tool center point.
+            tcp_frame ([type], optional): The name of the urdf_link 
+                                          describing the tool center point.
                                           Defaults to None.
         """
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
@@ -59,7 +61,8 @@ class EndeffectorTool:
 
         Args:
             robot (wbk_sim.robot): The robot whith which the tool should couple.
-            endeffector_name (str, optional): The endeffector of the robot where the tool should couple to. 
+            endeffector_name (str, optional): The endeffector of the robot 
+                                              where the tool should couple to. 
                                               Defaults to None.
 
         Raises:
@@ -114,6 +117,17 @@ class EndeffectorTool:
         pass
 
     def get_tool_pose(self, tcp_frame: str = None):
+        """Returns the pose of the tool center point. 
+           Using the tcp_frame argument the state of other links can also be returned
+
+        Args:
+            tcp_frame (str, optional): the name of the link whose pose should be returned. 
+                                       Defaults to None in which case the default tcp is used
+
+        Returns:
+            np.array: The 3D position the link the world coordinate system
+            np.array: A quaternion describing the orientation of the link in world coordinates
+        """
         if tcp_frame is None:
             tcp_id = self._tcp_id
         else:
@@ -126,6 +140,16 @@ class EndeffectorTool:
         return position, orientation
 
     def set_tool_pose(self, target_position, target_orientation=None):
+        """Allows the inverse kinematic control of a coupled robot given a target state of the 
+           tool center point
+
+        Args:
+            target_position (_type_): the desired position of the tool center point (tcp)
+            target_orientation (_type_, optional): the desired position of 
+                                                   the tool center point (tcp). 
+                                                   If none is provided only 
+                                                   the position of the robot is controlled.
+        """
 
         _, base_ori = p.getBasePositionAndOrientation(self.urdf)
         rot_matrix = p.getMatrixFromQuaternion(base_ori)
@@ -143,6 +167,17 @@ class EndeffectorTool:
             adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
 
     def _convert_tcp(self, tcp):
+        """Internal function that converts between tcp link names and pybullet specific indexes
+
+        Args:
+            tcp (str): the name of the tool center point link
+
+        Raises:
+            TypeError: If the provided object is not a string
+
+        Returns:
+            int: the pybullet specific index of the link
+        """
         if isinstance(tcp, str):
             if tcp in self._link_name_to_index.keys():
                 return self._link_name_to_index[tcp]
@@ -155,12 +190,29 @@ class EndeffectorTool:
 
 
 def quaternion_inverse(quaternion):
+    """Calculates the inverse of a given quaternion
+
+    Args:
+        quaternion (np.array): a quaternion
+
+    Returns:
+        np.array: The inverse quaternion
+    """
     q = np.array(quaternion, copy=True)
     np.negative(q[1:], q[1:])
     return q / np.dot(q, q)
 
 
 def quaternion_multiply(quaternion1, quaternion0):
+    """Multiplies two quaternions. Note that this operation is not commutative
+
+    Args:
+        quaternion1 (np.array): the first quaternion
+        quaternion0 (np.array): the second quaternion
+
+    Returns:
+        np.array: the resulting quaternion
+    """
     w0, x0, y0, z0 = quaternion0
     w1, x1, y1, z1 = quaternion1
     return np.array([

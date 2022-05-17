@@ -127,7 +127,7 @@ class EndeffectorTool:
 
         if not target_orientation is None:
             adj_target_orientation = quaternion_multiply(
-                target_orientation, quaternion_inverse(rotation))
+                quaternion_inverse(rotation), target_orientation)
         else:
             adj_target_orientation = None
 
@@ -143,7 +143,7 @@ class EndeffectorTool:
 
         translation = tcp_pos-base_pos
         rotation = quaternion_multiply(
-            quaternion_inverse(tcp_ori), base_ori)
+            tcp_ori, quaternion_inverse(base_ori))
         return translation, rotation
 
     def _convert_tcp(self, tcp):
@@ -205,6 +205,6 @@ if __name__ == "__main__":
     p.setRealTimeSimulation(1)
     while True:
         for i in range(400):
-            milling_head.set_tool_pose(test_path[:, i], None)
+            milling_head.set_tool_pose(test_path[:, i], target_orientation)
             wbk.draw_coordinate_system(test_path[:, i], target_orientation)
             time.sleep(0.005)

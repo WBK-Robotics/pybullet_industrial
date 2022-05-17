@@ -5,15 +5,75 @@ import pybullet as p
 
 import wbk_sim as wbk
 
+dirname = os.path.dirname(__file__)
+parentDir = os.path.dirname(dirname)
+urdf_file1 = os.path.join(parentDir, 'examples',
+                          'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+urdf_file2 = os.path.join(parentDir, 'examples',
+                          'robot_descriptions', 'milling_head.urdf')
+
 
 class TestEndeffectorTool(unittest.TestCase):
-    def test_direct_pose_movement(self):
-        dirname = os.path.dirname(__file__)
-        parentDir = os.path.dirname(dirname)
-        urdf_file2 = os.path.join(parentDir, 'examples',
-                                  'robot_descriptions', 'milling_head.urdf')
+    def test_coupling(self):
+        p.connect(p.DIRECT)
+        p.setPhysicsEngineParameter(numSolverIterations=5000)
+        start_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        milling_head = wbk.EndeffectorTool(
+            urdf_file2, [1.9, 0, 1.2], start_orientation)
 
-        physics_client = p.connect(p.DIRECT)
+        first_robot = wbk.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+        second_robot = wbk.RobotBase(urdf_file1, [0, 1, 0], start_orientation)
+
+        milling_head.couple(first_robot)
+
+        pos_precision = 0.02
+        ori_precision = 0.004
+        within_precision = True
+
+        for _ in range(300):
+            p.stepSimulation()
+
+        first_robot_pos, first_robot_ori = first_robot.get_endeffector_pose()
+        milling_pos, milling_ori = p.getBasePositionAndOrientation(
+            milling_head.urdf)
+        position_error = np.linalg.norm(first_robot_pos-milling_pos)
+        orientation_error = np.linalg.norm(first_robot_ori-milling_ori)
+        within_precision = within_precision and (
+            position_error <= pos_precision) and (orientation_error <= ori_precision)
+
+        target_position = [1.9, 0, 1.2]
+        first_robot.set_endeffector_pose(target_position)
+
+        for _ in range(300):
+            p.stepSimulation()
+
+        first_robot_pos, first_robot_ori = first_robot.get_endeffector_pose()
+        milling_pos, milling_ori = p.getBasePositionAndOrientation(
+            milling_head.urdf)
+        position_error = np.linalg.norm(first_robot_pos-milling_pos)
+        orientation_error = np.linalg.norm(first_robot_ori-milling_ori)
+        within_precision = within_precision and (
+            position_error <= pos_precision) and (orientation_error <= ori_precision)
+
+        milling_head.decouple()
+        milling_head.couple(second_robot)
+        for _ in range(300):
+            p.stepSimulation()
+
+        second_robot_pos, second_robot_ori = second_robot.get_endeffector_pose()
+        milling_pos, milling_ori = p.getBasePositionAndOrientation(
+            milling_head.urdf)
+        position_error = np.linalg.norm(second_robot_pos-milling_pos)
+        orientation_error = np.linalg.norm(second_robot_ori-milling_ori)
+        within_precision = within_precision and (
+            position_error <= pos_precision) and (orientation_error <= ori_precision)
+
+        p.disconnect()
+        self.assertTrue(within_precision)
+
+    def test_direct_pose_movement(self):
+
+        p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
         milling_head = wbk.EndeffectorTool(
@@ -48,14 +108,8 @@ class TestEndeffectorTool(unittest.TestCase):
         self.assertTrue(within_precision)
 
     def test_pose_setting(self):
-        dirname = os.path.dirname(__file__)
-        parentDir = os.path.dirname(dirname)
-        urdf_file1 = os.path.join(parentDir, 'examples',
-                                  'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
-        urdf_file2 = os.path.join(parentDir, 'examples',
-                                  'robot_descriptions', 'milling_head.urdf')
 
-        physics_client = p.connect(p.DIRECT)
+        p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=5000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
         robot = wbk.RobotBase(urdf_file1, [0, 0, 0], start_orientation)

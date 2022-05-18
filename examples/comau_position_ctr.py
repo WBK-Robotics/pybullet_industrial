@@ -21,6 +21,9 @@ if __name__ == "__main__":
     test_path = build_lemniscate_path(target_position, 400, 1.2, 1)
     wbk.draw_path(test_path)
     target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0])
+    for i in range(20):
+        robot.set_endeffector_pose(test_path[:, 0], target_orientation,'link6') 
+        time.sleep(0.1)
     while True:
         for i in range(400): 
             robot.set_endeffector_pose(test_path[:,i],target_orientation,'link6') 

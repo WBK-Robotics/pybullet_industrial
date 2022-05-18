@@ -50,6 +50,8 @@ def draw_coordinate_system(position, orientation, length=0.1, width=2.0, life_ti
                               of the coordinate system
         length (float, optional): The length of the lines.  Defaults to 0.5.
         width (float, optional): The width of the lines. Defaults to 2.0.
+        life_time (float, optional): How long the coordinate system remains before despawning.
+                                     Defaults to 0 in wich case it remains forever.
     """
 
     euler_angles = p.getEulerFromQuaternion(orientation)
@@ -72,3 +74,22 @@ def draw_coordinate_system(position, orientation, length=0.1, width=2.0, life_ti
                        lineColorRGB=[0, 1, 0], lineWidth=width, lifeTime=life_time)
     p.addUserDebugLine(position, position+length*z_direction,
                        lineColorRGB=[0, 0, 1], lineWidth=width, lifeTime=life_time)
+
+
+def draw_robot_frames(robot, text_size = 1, length=0.1, width=2.0, life_time=0):
+    """Visualizes the coordinate Frames of each link of a robot
+
+    Args:
+        robot ([type]): a Robot object
+        text_size (int, optional): The size at which the text is rendered. Defaults to 1.
+        length (float, optional): The length of the lines.  Defaults to 0.1.
+        width (float, optional): The width of the lines. Defaults to 2.0.
+        life_time (float, optional): How long the coordinate system remains before despawning.
+                                     Defaults to 0 in wich case it remains forever.
+    """
+    for link_name, link_id in robot._link_name_to_index.items():
+        link_state  = p.getLinkState(robot.urdf, link_id)
+        position = np.array(link_state[0])
+        orientation = np.array(link_state[1])
+        draw_coordinate_system(position,orientation,length,width,life_time)
+        p.addUserDebugText(link_name,position+length,textSize=text_size,lifeTime=life_time)

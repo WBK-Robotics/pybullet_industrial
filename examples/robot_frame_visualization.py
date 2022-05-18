@@ -19,6 +19,9 @@ if __name__ == "__main__":
 
 
     target_position = np.array([0, 0.3,0.3])
+    wbk.draw_robot_frames(robot,life_time=0)
     while True:
-        wbk.draw_robot_frames(robot,life_time=0.11)
+        connection_info = p.getConnectionInfo()
+        if not connection_info['isConnected']:
+            break
         time.sleep(0.1)

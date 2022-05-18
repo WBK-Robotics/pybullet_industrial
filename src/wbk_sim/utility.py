@@ -41,7 +41,7 @@ def draw_path(path, color=[0.0, 1.0, 0.0], width=2.0):
                            lineColorRGB=color, lineWidth=width, lifeTime=0)
 
 
-def draw_coordinate_system(position, orientation, length=0.1, width=2.0, life_time=0):
+def draw_coordinate_system(position, orientation, length=0.1, width=2.0, life_time=0,parent_id=-1,parent_index=-1):
     """This function draws a coordinate system at a given position
 
     Args:
@@ -69,11 +69,11 @@ def draw_coordinate_system(position, orientation, length=0.1, width=2.0, life_ti
     z_direction = np.cross(x_direction, y_direction)
 
     p.addUserDebugLine(position, position+length*x_direction,
-                       lineColorRGB=[1, 0, 0], lineWidth=width, lifeTime=life_time)
+                       lineColorRGB=[1, 0, 0], lineWidth=width, lifeTime=life_time,parentObjectUniqueId=parent_id,parentLinkIndex=parent_index)
     p.addUserDebugLine(position, position+length*y_direction,
-                       lineColorRGB=[0, 1, 0], lineWidth=width, lifeTime=life_time)
+                       lineColorRGB=[0, 1, 0], lineWidth=width, lifeTime=life_time,parentObjectUniqueId=parent_id,parentLinkIndex=parent_index)
     p.addUserDebugLine(position, position+length*z_direction,
-                       lineColorRGB=[0, 0, 1], lineWidth=width, lifeTime=life_time)
+                       lineColorRGB=[0, 0, 1], lineWidth=width, lifeTime=life_time,parentObjectUniqueId=parent_id,parentLinkIndex=parent_index)
 
 
 def draw_robot_frames(robot, text_size = 1, length=0.1, width=2.0, life_time=0):
@@ -88,8 +88,7 @@ def draw_robot_frames(robot, text_size = 1, length=0.1, width=2.0, life_time=0):
                                      Defaults to 0 in wich case it remains forever.
     """
     for link_name, link_id in robot._link_name_to_index.items():
-        link_state  = p.getLinkState(robot.urdf, link_id)
-        position = np.array(link_state[0])
-        orientation = np.array(link_state[1])
-        draw_coordinate_system(position,orientation,length,width,life_time)
-        p.addUserDebugText(link_name,position+length,textSize=text_size,lifeTime=life_time)
+        orientation =p.getQuaternionFromEuler([0, 0, 0])
+        draw_coordinate_system([0,0,0],orientation,length,width,life_time,robot.urdf,link_id)
+        p.addUserDebugText(link_name,[0,0,0],textSize=text_size,lifeTime=life_time,parentObjectUniqueId=robot.urdf,parentLinkIndex=link_id)
+

@@ -4,7 +4,7 @@ from wbk_sim import RobotBase
 
 
 class EndeffectorTool:
-    def __init__(self, urdf_model: str, start_position, start_orientation, coupled_robot: RobotBase = None, tcp_frame=None):
+    def __init__(self, urdf_model: str, start_position, start_orientation, coupled_robot: RobotBase = None, tcp_frame=None,connector_frame=None):
         """The base class for all Tools and Sensors connected to a Robot
 
         Args:
@@ -16,7 +16,10 @@ class EndeffectorTool:
                                               Defaults to None.
             tcp_frame ([type], optional): The name of the urdf_link 
                                           describing the tool center point.
-                                          Defaults to None.
+                                          Defaults to None in which case the last link is used.
+            connector_frame ([type], optional): The name of the urdf_link 
+                                                at which a robot connects.
+                                                Defaults to None in which case the base link is used.
         """
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,
@@ -24,15 +27,7 @@ class EndeffectorTool:
                                flags=urdf_flags,
                                useFixedBase=False)
 
-        self._coupled_robot = None
-        self._coupling_link = None
-        self._coupling_constraint = p.createConstraint(self.urdf,
-                                                       -1, -1, -1,
-                                                       p.JOINT_FIXED,
-                                                       [0, 0, 0],
-                                                       [0, 0, 0],
-                                                       start_position,
-                                                       start_orientation)
+
         if not coupled_robot is None:
             self.couple(coupled_robot)
 
@@ -46,9 +41,27 @@ class EndeffectorTool:
             last_link = max(self._link_name_to_index)
             self._tcp_id = self._link_name_to_index[last_link]
         else:
-            self._tcp_id = self._convert_tcp(tcp_frame)
+            self._tcp_id = self._convert_link_to_id(tcp_frame)
 
-        base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf)
+        if connector_frame is None:
+            self._connector_id = -1
+        else:
+            self._connector_id=self._convert_link_to_id(connector_frame)
+
+        self._coupled_robot = None
+        self._coupling_link = None
+        self._coupling_constraint = p.createConstraint(self.urdf,
+                                                       -1, -1, -1,
+                                                       p.JOINT_FIXED,
+                                                       [0, 0, 0],
+                                                       [0, 0, 0],
+                                                       start_position,
+                                                       start_orientation)
+
+
+        link_state = p.getLinkState(self.urdf, self._connector_id)
+        base_pos = link_state[0]
+        base_ori = link_state[1]
         tcp_pos, tcp_ori = self.get_tool_pose(tcp_frame)
         self._tcp_translation = tcp_pos-base_pos
         self._tcp_rotation = quaternion_multiply(
@@ -81,7 +94,7 @@ class EndeffectorTool:
             self._coupling_link = endeffector_name
             p.removeConstraint(self._coupling_constraint)
             self._coupling_constraint = p.createConstraint(self._coupled_robot.urdf, endeffector_index,
-                                                           self.urdf, -1,
+                                                           self.urdf, self._connector_id,
                                                            p.JOINT_FIXED,
                                                            [0, 0, 0],
                                                            [0, 0, 0],
@@ -131,7 +144,7 @@ class EndeffectorTool:
         if tcp_frame is None:
             tcp_id = self._tcp_id
         else:
-            tcp_id = self._convert_tcp(tcp_frame)
+            tcp_id = self._convert_link_to_id(tcp_frame)
 
         link_state = p.getLinkState(self.urdf, tcp_id)
 
@@ -153,7 +166,8 @@ class EndeffectorTool:
         """
 
         if self.is_coupled():
-            _, base_ori = p.getBasePositionAndOrientation(self.urdf)
+            link_state = p.getLinkState(self.urdf, self._connector_id)
+            base_ori = link_state[1]
             rot_matrix = p.getMatrixFromQuaternion(base_ori)
             rot_matrix = np.array(rot_matrix).reshape(3, 3)
             translation = rot_matrix@np.array(self._tcp_translation)
@@ -180,8 +194,8 @@ class EndeffectorTool:
                                                            target_position,
                                                            target_orientation)
 
-    def _convert_tcp(self, tcp):
-        """Internal function that converts between tcp link names and pybullet specific indexes
+    def _convert_link_to_id(self, tcp):
+        """Internal function that converts between link names and pybullet specific indexes
 
         Args:
             tcp (str): the name of the tool center point link
@@ -196,11 +210,11 @@ class EndeffectorTool:
             if tcp in self._link_name_to_index.keys():
                 return self._link_name_to_index[tcp]
             else:
-                ValueError("Invalid TCP name! valid names are: " +
+                ValueError("Invalid Link name! valid names are: " +
                            str(self._link_name_to_index.keys()))
         else:
             raise TypeError(
-                "The TCP must be a String describing a URDF link")
+                "The Link name must be a String describing a URDF link")
 
 
 def quaternion_inverse(quaternion):

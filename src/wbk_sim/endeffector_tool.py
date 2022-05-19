@@ -27,10 +27,6 @@ class EndeffectorTool:
                                flags=urdf_flags,
                                useFixedBase=False)
 
-
-        if not coupled_robot is None:
-            self.couple(coupled_robot)
-
         self._link_name_to_index = {}
         for joint_number in range(p.getNumJoints(self.urdf)):
             link_name = p.getJointInfo(self.urdf, joint_number)[
@@ -58,10 +54,16 @@ class EndeffectorTool:
                                                        start_position,
                                                        start_orientation)
 
+        if not coupled_robot is None:
+            self.couple(coupled_robot)
 
-        link_state = p.getLinkState(self.urdf, self._connector_id)
-        base_pos = link_state[0]
-        base_ori = link_state[1]
+        if self._connector_id == -1:
+            base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf) 
+        else:
+            link_state = p.getLinkState(self.urdf, self._connector_id)
+            base_pos = link_state[0]
+            base_ori = link_state[1]
+
         tcp_pos, tcp_ori = self.get_tool_pose(tcp_frame)
         self._tcp_translation = tcp_pos-base_pos
         self._tcp_rotation = quaternion_multiply(
@@ -166,8 +168,11 @@ class EndeffectorTool:
         """
 
         if self.is_coupled():
-            link_state = p.getLinkState(self.urdf, self._connector_id)
-            base_ori = link_state[1]
+            if self._connector_id == -1:
+                _, base_ori = p.getBasePositionAndOrientation(self.urdf)
+            else:
+                link_state = p.getLinkState(self.urdf, self._connector_id)
+                base_ori = link_state[1]
             rot_matrix = p.getMatrixFromQuaternion(base_ori)
             rot_matrix = np.array(rot_matrix).reshape(3, 3)
             translation = rot_matrix@np.array(self._tcp_translation)

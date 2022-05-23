@@ -1,7 +1,7 @@
 import os
 import time
 import pybullet as p
-import wbk_sim as wbk
+import pybullet_industrial as pi
 import numpy as np
 
 
@@ -14,12 +14,12 @@ if __name__ == "__main__":
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=1000)
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-    robot = wbk.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+    robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
     start_orientation = p.getQuaternionFromEuler([np.pi/2, -np.pi/4, np.pi])
     camera_parameters = {'width': 480, 'height': 240, 'fov': 60,
                          'aspect ratio': 1, 'near plane distance': 0.01, 'far plane distance': 100}
-    camera = wbk.Camera(urdf_file2, [0, -2, 1.2],
+    camera = pi.Camera(urdf_file2, [0, -2, 1.2],
                         start_orientation, camera_parameters)
 
     p.setRealTimeSimulation(1)

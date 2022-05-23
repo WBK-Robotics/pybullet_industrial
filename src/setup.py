@@ -21,11 +21,11 @@ for root, dirs, files in os.walk(hh):
             need_files.append(fn[1+len(hh):])
 
 setuptools.setup(
-    name='wbk_sim',
+    name='pybullet_industrial',
     version='1.0',
     author='Jan Baumgärtner',
     description='A simulation environment for the WBKrobots',
     install_requires=[req for req in requirements if req[:2] != "# "],
     packages=setuptools.find_packages(),
-    package_data={'wbk_sim': need_files}
+    package_data={'pybullet_industrial': need_files}
 )

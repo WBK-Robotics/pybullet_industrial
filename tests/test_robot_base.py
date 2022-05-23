@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pybullet as p
 
-import wbk_sim as wbk
+import pybullet_industrial as pi
 
 
 class TestRobotBase(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestRobotBase(unittest.TestCase):
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-        robot = wbk.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+        robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
         precision = 10**-4
         within_precision = True
@@ -54,7 +54,7 @@ class TestRobotBase(unittest.TestCase):
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-        robot = wbk.RobotBase(
+        robot = pi.RobotBase(
             urdf_file1, [0, 0, 0], start_orientation, 'link4')
 
         precision = 0.02
@@ -80,7 +80,7 @@ class TestRobotBase(unittest.TestCase):
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-        robot = wbk.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+        robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
         pos_precision = 0.02
         ori_precision = 0.001

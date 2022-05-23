@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pybullet as p
 
-import wbk_sim as wbk
+import pybullet_industrial as pi
 
 dirname = os.path.dirname(__file__)
 parentDir = os.path.dirname(dirname)
@@ -18,11 +18,11 @@ class TestEndeffectorTool(unittest.TestCase):
         p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=5000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-        milling_head = wbk.EndeffectorTool(
+        milling_head = pi.EndeffectorTool(
             urdf_file2, [1.9, 0, 1.2], start_orientation)
 
-        first_robot = wbk.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
-        second_robot = wbk.RobotBase(urdf_file1, [0, 1, 0], start_orientation)
+        first_robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+        second_robot = pi.RobotBase(urdf_file1, [0, 1, 0], start_orientation)
 
         milling_head.couple(first_robot)
 
@@ -76,7 +76,7 @@ class TestEndeffectorTool(unittest.TestCase):
         p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-        milling_head = wbk.EndeffectorTool(
+        milling_head = pi.EndeffectorTool(
             urdf_file2, [1.9, 0, 1.2], start_orientation)
 
         steps = 20
@@ -112,8 +112,8 @@ class TestEndeffectorTool(unittest.TestCase):
         p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=5000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-        robot = wbk.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
-        milling_head = wbk.EndeffectorTool(
+        robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+        milling_head = pi.EndeffectorTool(
             urdf_file2, [1.9, 0, 1.2], start_orientation)
         milling_head.couple(robot, 'link6')
 

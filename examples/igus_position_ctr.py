@@ -1,7 +1,7 @@
 import os
 import time
 import pybullet as p
-import wbk_sim as wbk
+import pybullet_industrial as pi
 from lemniscate import build_lemniscate_path
 import numpy as np
 
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=1000)
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-    robot = wbk.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+    robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
     p.setRealTimeSimulation(1)
 
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     target_position = np.array([0, 0.3])
     test_path = build_lemniscate_path(target_position,400,0,0.3)
 
-    wbk.draw_path(test_path)
+    pi.draw_path(test_path)
     while True:
         for i in range(400):
             robot.set_endeffector_pose(

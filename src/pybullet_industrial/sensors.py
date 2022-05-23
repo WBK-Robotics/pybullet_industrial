@@ -1,6 +1,6 @@
 import numpy as np
 import pybullet as p
-from wbk_sim.endeffector_tool import EndeffectorTool
+from pybullet_industrial.endeffector_tool import EndeffectorTool
 
 
 class Camera(EndeffectorTool):

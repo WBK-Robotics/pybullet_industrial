@@ -127,7 +127,7 @@ if __name__ == "__main__":
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
     paint = Paint(0.03,[0, 0, 1, 1])
-    plastic = Plastic(0.03,[0, 0, 1, 1])
+    plastic = Plastic(0.03,[1, 0, 0, 1])
 
     extruder_properties = {'maximum distance':0.5,'opening angle':np.pi/6,'material':paint,'number of rays':20}
     extruder = Extruder(
@@ -146,6 +146,7 @@ if __name__ == "__main__":
         extruder.set_tool_pose(test_path[:, 0], target_orientation)
         time.sleep(0.1)
     
+
     for i in range(steps):
             extruder.set_tool_pose(test_path[:, i], target_orientation)
             position, orientation = extruder.get_tool_pose()

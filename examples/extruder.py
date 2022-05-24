@@ -10,6 +10,8 @@ class GlueParticle:
         pass
 
 
+
+
 def sample_spherical(npoints, opening_angle):
     phi = np.random.uniform(-np.pi,np.pi,npoints)
     theta = np.random.uniform(-0.5*opening_angle,0.5*opening_angle,npoints)
@@ -23,11 +25,6 @@ def sample_spherical(npoints, opening_angle):
 def cast_rays(position,orientation,opening_angle,numRays,rayLen):
     rayFrom = []
     rayTo = []
-    rayIds = []
-
-    rayMissColor = [0, 1, 0]
-
-    replaceLines = True
 
     ray_directions = sample_spherical(numRays,opening_angle)
     rot_matrix = p.getMatrixFromQuaternion(orientation)
@@ -39,10 +36,7 @@ def cast_rays(position,orientation,opening_angle,numRays,rayLen):
         ray_dir = rot_matrix@ray_directions[:,i]
 
         rayTo.append(position-rayLen*ray_dir)
-        if (replaceLines):
-            rayIds.append(p.addUserDebugLine(rayFrom[i], rayTo[i], rayMissColor))
-        else:
-            rayIds.append(-1)
+
     results = p.rayTestBatch(rayFrom, rayTo)
     return results
 
@@ -65,9 +59,17 @@ if __name__ == "__main__":
     target_position = np.array([1.9, 0, 1.2])
     target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0])
 
+    visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=[1, 1, 1, 1], radius=0.03)
     while True:
         ray_pos,ray_ori = extruder.get_tool_pose()
-        cast_rays(ray_pos,ray_ori,np.pi/3,1024,1)
-        time.sleep(1)
+        ray_cast_results = cast_rays(ray_pos,ray_ori,np.pi/3,100,1)
+        for i in range(100):
+            ray_intersection = ray_cast_results[i][3]
+            mb = p.createMultiBody(baseMass=0,
+                           baseCollisionShapeIndex=-1,
+                           baseVisualShapeIndex=visualShapeId,
+                           basePosition=ray_intersection,
+                           useMaximalCoordinates=True)
+        time.sleep(0.01)
             
 

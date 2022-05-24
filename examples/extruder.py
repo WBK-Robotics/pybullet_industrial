@@ -6,7 +6,32 @@ import pybullet_industrial as pi
 import numpy as np
 from lemniscate import build_lemniscate_path
 
-class Paint:
+
+class Material:
+    def __init__(self):
+        pass
+
+    def spawn_particle(self,position):
+        pass
+
+class Plastic(Material):
+
+    def __init__(self,particle_size,color):
+        self.particle_size = particle_size
+        self.color = color
+
+        self.visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=self.color, radius=self.particle_size)
+        self.collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_SPHERE, radius=self.particle_size)
+
+    def spawn_particle(self,position):
+        particle = p.createMultiBody(baseMass=0,
+                                     baseCollisionShapeIndex=self.collisionShapeId,
+                                     baseVisualShapeIndex=self.visualShapeId,
+                                     basePosition=position)
+        return particle
+
+
+class Paint(Material):
 
     def __init__(self,particle_size,color):
         self.particle_size = particle_size
@@ -14,27 +39,41 @@ class Paint:
 
         self.visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=self.color, radius=self.particle_size)
 
-    def spawn(self,position):
-        mb = p.createMultiBody(baseMass=0,
-                        baseCollisionShapeIndex=-1,
-                        baseVisualShapeIndex=self.visualShapeId,
-                        basePosition=position)
+    def spawn_particle(self,position):
+        particle = p.createMultiBody(baseMass=0,
+                                     baseCollisionShapeIndex=-1,
+                                     baseVisualShapeIndex=self.visualShapeId,
+                                     basePosition=position)
+        return particle
+
 
 class Extruder(pi.EndeffectorTool):
 
     def __init__(self, urdf_model: str, start_position, start_orientation, extruder_properties, coupled_robots = None, tcp_frame=None, connector_frames=None):
         super().__init__(urdf_model, start_position, start_orientation, coupled_robots, tcp_frame, connector_frames)
 
-        self.spray_distance = extruder_properties['maximum distance']
-        self.spray_opening_angle = extruder_properties['opening angle']
-        self.particle = extruder_properties['material']
-        self.number_of_rays = extruder_properties['number of rays']
+        self.extruder_properties = {'opening angle':0,'number of rays':1,'maximum distance':1,'material':None}
+        self.change_extruder_properties(extruder_properties)
+        if self.extruder_properties['material'] is None:
+            raise ValueError("The extruder requires a initial Material")
 
     def extrude(self):
-        ray_cast_results = cast_rays(position, orientation,self.spray_opening_angle,self.number_of_rays,self.spray_distance)
-        for i in range(self.number_of_rays):
+        ray_cast_results = cast_rays(position, orientation,
+                                     self.extruder_properties['opening angle'],
+                                     self.extruder_properties['number of rays'],
+                                     self.extruder_properties['maximum distance'])
+        for i in range(self.extruder_properties['number of rays']):
             ray_intersection = ray_cast_results[i][3]
-            self.particle.spawn(ray_intersection)
+            self.extruder_properties['material'].spawn_particle(ray_intersection)
+
+    def change_extruder_properties(self,new_properties):
+        for key in new_properties:
+            if not key in self.extruder_properties:
+                raise KeyError("The specified property keys are not valid"+
+                               " Valid keys are: "+str(self.extruder_properties.keys()))
+            else:
+                self.extruder_properties[key]=new_properties[key]
+
 
 
 
@@ -87,7 +126,9 @@ if __name__ == "__main__":
 
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
-    paint = Paint(0.03,[1, 1, 1, 1])
+    paint = Paint(0.03,[0, 0, 1, 1])
+    plastic = Plastic(0.03,[0, 0, 1, 1])
+
     extruder_properties = {'maximum distance':0.5,'opening angle':np.pi/6,'material':paint,'number of rays':20}
     extruder = Extruder(
         urdf_file2, [1.9, 0, 1.2], start_orientation,extruder_properties)
@@ -104,6 +145,16 @@ if __name__ == "__main__":
     for i in range(20):
         extruder.set_tool_pose(test_path[:, 0], target_orientation)
         time.sleep(0.1)
+    
+    for i in range(steps):
+            extruder.set_tool_pose(test_path[:, i], target_orientation)
+            position, orientation = extruder.get_tool_pose()
+            pi.draw_coordinate_system(position, orientation)
+            extruder.extrude()
+
+            time.sleep(0.005)
+
+    extruder.change_extruder_properties({'material':plastic,'opening angle':0,'number of rays':1})
     while True:
         for i in range(steps):
             extruder.set_tool_pose(test_path[:, i], target_orientation)

@@ -6,11 +6,35 @@ import pybullet_industrial as pi
 import numpy as np
 from lemniscate import build_lemniscate_path
 
-class GlueParticle:
+class Paint:
 
-    def __init__(self,particle_size,position) -> None:
-        pass
+    def __init__(self,particle_size,color):
+        self.particle_size = particle_size
+        self.color = color
 
+        self.visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=self.color, radius=self.particle_size)
+
+    def spawn(self,position):
+        mb = p.createMultiBody(baseMass=0,
+                        baseCollisionShapeIndex=-1,
+                        baseVisualShapeIndex=self.visualShapeId,
+                        basePosition=position)
+
+class Extruder(pi.EndeffectorTool):
+
+    def __init__(self, urdf_model: str, start_position, start_orientation, extruder_properties, coupled_robots = None, tcp_frame=None, connector_frames=None):
+        super().__init__(urdf_model, start_position, start_orientation, coupled_robots, tcp_frame, connector_frames)
+
+        self.spray_distance = extruder_properties['maximum distance']
+        self.spray_opening_angle = extruder_properties['opening angle']
+        self.particle = extruder_properties['material']
+        self.number_of_rays = extruder_properties['number of rays']
+
+    def extrude(self):
+        ray_cast_results = cast_rays(position, orientation,self.spray_opening_angle,self.number_of_rays,self.spray_distance)
+        for i in range(self.number_of_rays):
+            ray_intersection = ray_cast_results[i][3]
+            self.particle.spawn(ray_intersection)
 
 
 
@@ -63,11 +87,11 @@ if __name__ == "__main__":
 
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
-    extruder = pi.EndeffectorTool(
-        urdf_file2, [1.9, 0, 1.2], start_orientation)
+    paint = Paint(0.03,[1, 1, 1, 1])
+    extruder_properties = {'maximum distance':0.5,'opening angle':np.pi/6,'material':paint,'number of rays':20}
+    extruder = Extruder(
+        urdf_file2, [1.9, 0, 1.2], start_orientation,extruder_properties)
     extruder.couple(robot, 'link6')
-
-    visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=[1, 1, 1, 1], radius=0.03)
 
     target_position = np.array([1.9, 0, 0.3])
     target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0])
@@ -85,15 +109,7 @@ if __name__ == "__main__":
             extruder.set_tool_pose(test_path[:, i], target_orientation)
             position, orientation = extruder.get_tool_pose()
             pi.draw_coordinate_system(position, orientation)
-
-            ray_cast_results = cast_rays(position, orientation,np.pi/6,20,1)
-            for i in range(20):
-                ray_intersection = ray_cast_results[i][3]
-                mb = p.createMultiBody(baseMass=0,
-                            baseCollisionShapeIndex=-1,
-                            baseVisualShapeIndex=visualShapeId,
-                            basePosition=ray_intersection,
-                            useMaximalCoordinates=True)
+            extruder.extrude()
 
             time.sleep(0.005)
 

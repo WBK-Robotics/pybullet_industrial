@@ -52,7 +52,7 @@ class Extruder(EndeffectorTool):
                                      self.extruder_properties['number of rays'],
                                      self.extruder_properties['maximum distance'])
         for i in range(self.extruder_properties['number of rays']):
-            ray_intersection = ray_cast_results[i][3]
+            ray_intersection = ray_cast_results[i]
             self.extruder_properties['material'].spawn_particle(ray_intersection)
 
     def change_extruder_properties(self,new_properties:Dict):

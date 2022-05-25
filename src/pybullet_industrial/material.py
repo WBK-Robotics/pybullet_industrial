@@ -45,7 +45,11 @@ class Paint(Material):
                 target_link_state = p.getLinkState(target_id,target_link_id)
                 target_position = np.array(target_link_state[0])
                 target_orientation = np.array(target_link_state[1])
-            adj_target_position = np.array(ray_cast_result[3])-target_position
+
+            rot_matrix = p.getMatrixFromQuaternion(target_orientation)
+            rot_matrix = np.array(rot_matrix).reshape(3, 3)
+
+            adj_target_position = np.linalg.inv(rot_matrix)@(np.array(ray_cast_result[3])-target_position)
             
             steps = 3
             width = self.particle_size*500

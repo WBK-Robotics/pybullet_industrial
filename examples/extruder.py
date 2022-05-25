@@ -7,7 +7,7 @@ import numpy as np
 from lemniscate import build_lemniscate_path
 
 
-def draw_sphere(center,radius,steps=10,color=[0.0, 1.0, 0.0]):
+def draw_sphere(center,radius,steps=3,color=[0.0, 1.0, 0.0]):
     width = radius*500
     theta2              = np.linspace(-np.pi,  0, steps)
     phi2                = np.linspace( 0 ,  5 * 2*np.pi , steps)

@@ -1,5 +1,4 @@
 import os
-import time
 import pybullet as p
 import pybullet_data
 import pybullet_industrial as pi
@@ -46,7 +45,6 @@ class Paint(Material):
         return 0
 
 
-
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(dirname,
@@ -55,6 +53,7 @@ if __name__ == "__main__":
                               'robot_descriptions', 'milling_head.urdf')
 
     physics_client = p.connect(p.GUI)
+    p.setGravity(0,0,-10)
     p.setPhysicsEngineParameter(numSolverIterations=5000)
 
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -63,9 +62,9 @@ if __name__ == "__main__":
                             flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
     orn = p.getQuaternionFromEuler([1.5707963, 0, 0])
     p.createMultiBody(0, monastryId, baseOrientation=orn)
-    #p.setGravity(0,0,-10)
-    start_orientation = p.getQuaternionFromEuler([0, 0, 0])
+    p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=False)
 
+    start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
     paint = Paint(0.03,[1, 0, 1])
@@ -75,26 +74,26 @@ if __name__ == "__main__":
         urdf_file2, [1.9, 0, 1.2], start_orientation,extruder_properties)
     extruder.couple(robot, 'link6')
 
-    target_position = np.array([1.9, 0, 0.3])
-    target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0])
-    steps = 100
-    test_path = build_lemniscate_path(target_position, steps, 0.3, 0.8)
-    pi.draw_path(test_path)
-    target_orientation = p.getQuaternionFromEuler([0, 0, 0])
 
-    p.setRealTimeSimulation(1)
+
+    target_position = np.array([1.9, 0])
+    target_orientation = p.getQuaternionFromEuler([0, 0, 0])
+    steps = 100
+    base_height = 1.03
+    test_path = build_lemniscate_path(target_position, steps, base_height, 0.3)
     for i in range(20):
         extruder.set_tool_pose(test_path[:, 0], target_orientation)
-        time.sleep(0.1)
-    
+        for _ in range(50):
+                p.stepSimulation()
 
+    pi.draw_path(test_path)
     while True:
         for i in range(steps):
             extruder.set_tool_pose(test_path[:, i], target_orientation)
             position, orientation = extruder.get_tool_pose()
-            pi.draw_coordinate_system(position, orientation)
             extruder.extrude()
 
-            time.sleep(0.005)
+            for _ in range(30):
+                p.stepSimulation()
 
 

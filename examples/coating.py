@@ -6,68 +6,6 @@ import numpy as np
 from lemniscate import build_lemniscate_path
 
 
-def draw_sphere(center,radius,steps=3,color=[0.0, 1.0, 0.0]):
-    width = radius*500
-    theta2              = np.linspace(-np.pi,  0, steps)
-    phi2                = np.linspace( 0 ,  5 * 2*np.pi , steps)
-
-
-    x_coord           = radius * np.sin(theta2) * np.cos(phi2) + center[0]
-    y_coord           = radius * np.sin(theta2) * np.sin(phi2) + center[1]
-    z_coord           = radius * np.cos(theta2)+ center[2]
-
-    path = np.array([x_coord,y_coord,z_coord])
-    pi.draw_path(path,color,width)
-
-
-class Material:
-    def __init__(self):
-        pass
-
-    def spawn_particle(self,position):
-        pass
-
-
-class Paint(Material):
-
-    def __init__(self,particle_size,color):
-        self.particle_size = particle_size
-        self.color = color
-
-        self.visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE, rgbaColor=self.color, radius=self.particle_size)
-
-    def spawn_particle(self,ray_cast_result):
-        particle_ids = []
-        target_id = ray_cast_result[0]
-        if target_id != -1:
-            target_link_id = ray_cast_result[1]
-            if target_link_id == -1:
-                target_position,target_orientation = p.getBasePositionAndOrientation(target_id)
-            else:
-                target_link_state = p.getLinkState(target_id,target_link_id)
-                target_position = np.array(target_link_state[0])
-                target_orientation = np.array(target_link_state[1])
-            adj_target_position = np.array(ray_cast_result[3])-target_position
-            
-            steps = 3
-            width = self.particle_size*500
-            theta2              = np.linspace(-np.pi,  0, steps)
-            phi2                = np.linspace( 0 ,  5 * 2*np.pi , steps)
-
-
-            x_coord           = self.particle_size * np.sin(theta2) * np.cos(phi2) + adj_target_position[0]
-            y_coord           = self.particle_size * np.sin(theta2) * np.sin(phi2) + adj_target_position[1]
-            z_coord           = self.particle_size * np.cos(theta2)+ adj_target_position[2]
-
-            path = np.array([x_coord,y_coord,z_coord])
-            path_steps = len(path[0])
-            for i in range(1, path_steps):
-                current_point = path[:, i]
-                previous_point = path[:, i-1]
-                particle_ids.append(p.addUserDebugLine(current_point, previous_point,
-                                lineColorRGB=self.color, lineWidth=width,lifeTime=0,parentObjectUniqueId=target_id,parentLinkIndex=target_link_id))
-        return particle_ids
-
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
@@ -86,14 +24,14 @@ if __name__ == "__main__":
                             flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
     orn = p.getQuaternionFromEuler([1.5707963, 0, 0])
     p.createMultiBody(0, monastryId, baseOrientation=orn)
-    p.loadURDF("cube.urdf", [1.7, 0, 0.5], useFixedBase=False)
+    p.loadURDF("cube.urdf", [1.7, 0, 0.5],p.getQuaternionFromEuler([np.pi/2, 0, np.pi/2]), useFixedBase=True)
 
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
-    paint = Paint(0.06,[0, 0, 1])
+    paint = pi.Paint(0.015,[0, 0, 1])
 
-    extruder_properties = {'maximum distance':0.5,'opening angle':np.pi/3,'material':paint,'number of rays':40}
+    extruder_properties = {'maximum distance':0.7,'opening angle':np.pi/2,'material':paint,'number of rays':6}
     extruder = pi.Extruder(
         urdf_file2, [1.9, 0, 1.2], start_orientation,extruder_properties)
     extruder.couple(robot, 'link6')
@@ -102,22 +40,27 @@ if __name__ == "__main__":
 
     target_position = np.array([1.9, 0])
     target_orientation = p.getQuaternionFromEuler([0, 0, 0])
-    steps = 100
-    base_height = 1.03
-    test_path = build_lemniscate_path(target_position, steps, base_height, 0.3)
+    steps = 500
+    base_height = 1.20
+    path_x = np.linspace(target_position[0]-0.5,target_position[0]+0.5,steps)
+    path_y = np.zeros(steps)-target_position[1]-0.5
+    path_z = np.ones(steps)*base_height
+    test_path = np.array([path_x,path_y,path_z])
+
     for i in range(20):
         extruder.set_tool_pose(test_path[:, 0], target_orientation)
-        for _ in range(50):
+        for _ in range(100):
                 p.stepSimulation()
 
-    pi.draw_path(test_path)
     while True:
         for i in range(steps):
             extruder.set_tool_pose(test_path[:, i], target_orientation)
             position, orientation = extruder.get_tool_pose()
             extruder.extrude()
+            p.stepSimulation()
 
-            for _ in range(30):
-                p.stepSimulation()
-
+        test_path[1,:] += 0.25
+        extruder.set_tool_pose(test_path[:, 0], target_orientation)
+        for _ in range(20):
+            p.stepSimulation()
 

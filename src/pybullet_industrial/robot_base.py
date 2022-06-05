@@ -62,6 +62,9 @@ class RobotBase:
         for joint_number in range(p.getNumJoints(self.urdf)):
             p.resetJointState(self.urdf, joint_number, targetValue=0)
 
+        for joint_number in range(p.getNumJoints(self.urdf)):
+            p.changeDynamics(self.urdf, joint_number, angularDamping=25.0)
+
         self._rooting_constraint = p.createConstraint(self.urdf,
                                                       -1, -1, -1,
                                                       p.JOINT_FIXED,

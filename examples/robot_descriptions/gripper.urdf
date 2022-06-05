@@ -11,18 +11,24 @@
       <geometry>
 			<box size="0.3 0.15 0.15"/>
       </geometry>
-       <material name="orange">
-        <color rgba="0.996078431372549 0.29411764705882354 0.011764705882352941 1.0"/>
+       <material name="grey">
+        <color rgba="0.5 0.5 0.5 1.0"/>
       </material>
     </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0.0 0.075"/>
+      <geometry>
+			<box size="0.3 0.15 0.15"/>
+      </geometry>
+    </collision>
   </link>
   <link name="leftfinger">
       <contact>
       <friction_anchor/>
       <stiffness value="30000.0"/>
       <damping value="1000.0"/>
-      <spinning_friction value="0.1"/>
-      <lateral_friction value="1.0"/>
+      <spinning_friction value="3.0"/>
+      <lateral_friction value="3.0"/>
     </contact>
   	<inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -40,7 +46,7 @@
       <geometry>
         <box size="0.2 0.05 0.05"/>
       </geometry>
-      <material name="panda_white"/>
+      <material name="white"/>
     </collision>
   </link>
   <link name="rightfinger">
@@ -48,8 +54,8 @@
       <friction_anchor/>
       <stiffness value="30000.0"/>
       <damping value="1000.0"/>
-      <spinning_friction value="0.1"/>
-      <lateral_friction value="1.0"/>
+      <spinning_friction value="3.0"/>
+      <lateral_friction value="3.0"/>
     </contact>
   	<inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -59,7 +65,7 @@
       <geometry>
 		<box size="0.2 0.05 0.05"/>
       </geometry>
-      <material name="panda_white"/>
+      <material name="white"/>
     <visual>
       <origin rpy="0 0 0" xyz="0.1 0.0 0.0"/>
       <geometry>
@@ -71,7 +77,7 @@
       <geometry>
         <box size="0.2 0.05 0.05"/>
       </geometry>
-      <material name="panda_white"/>
+      <material name="white"/>
     </collision>
   </link>
   <joint name="finger_joint1" type="prismatic">
@@ -79,14 +85,14 @@
     <child link="leftfinger"/>
     <origin rpy="0 -1.57079632679 0" xyz="0.15 0 0.15"/>
     <axis xyz="0 0 1"/>
-    <limit effort="20" lower="0.0" upper="0.1" velocity="0.2"/>
+    <limit effort="20" lower="0.0" upper="0.11" velocity="0.2"/>
   </joint>
   <joint name="finger_joint2" type="prismatic">
     <parent link="baseLink"/>
     <child link="rightfinger"/>
     <origin rpy="0 -1.57079632679 0" xyz="-0.15 0 0.15"/>
     <axis xyz="0 0 -1"/>
-    <limit effort="20" lower="-0" upper="0.1" velocity="0.2"/>
+    <limit effort="20" lower="-0" upper="0.11" velocity="0.2"/>
     <mimic joint="finger_joint1"/>
   </joint>
 
@@ -97,6 +103,7 @@
   </joint>
 
   <link name="tcp">
+
   </link>
 
 </robot>

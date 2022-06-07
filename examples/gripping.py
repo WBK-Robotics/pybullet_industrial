@@ -62,13 +62,13 @@ if __name__ == "__main__":
     urdf_file1 = os.path.join(dirname,
                               'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
     urdf_file2 = os.path.join(dirname,
-                              'robot_descriptions', 'gripper.urdf')
+                              'robot_descriptions', 'gripper_cad.urdf')
     urdf_file3 = os.path.join(dirname,
                               'robot_descriptions', 'cube_small.urdf')
 
 
     physics_client = p.connect(p.GUI)
-    p.setPhysicsEngineParameter(numSolverIterations=5000)
+    p.setPhysicsEngineParameter(numSolverIterations=10000)
 
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     monastryId = p.createCollisionShape(p.GEOM_MESH,
@@ -102,7 +102,7 @@ if __name__ == "__main__":
             p.stepSimulation()
             time.sleep(0.01)
     spawnpoint=[1.9, 0.25, 1.05]
-    grippoint=[1.9, 0.25, 1.125]
+    grippoint=[1.9, 0.25, 1.05]
     droppoint1=[1.9, -0.25, 1.14]
     droppoint2=[1.9, -0.05, 1.14]
     delta=0.1
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     while True:
         move_along_path(gripper, path, True)
         gripper.actuate(1.0)
-        for _ in range(100):
+        for _ in range(25):
             p.stepSimulation()
             time.sleep(0.01)
         path = build_linear_path(np.array(grippoint), np.array(droppoint2), 10)

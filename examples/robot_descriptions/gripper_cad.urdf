@@ -7,20 +7,14 @@
        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
     <visual>
-      <origin rpy="0 0 0" xyz="0 0.0 0.075"/>
+      <origin rpy="0 0 0" xyz="0 0.0 0.0"/>
       <geometry>
-			<box size="0.3 0.15 0.15"/>
+			<mesh filename="tool_mesh/base_m.stl"/>
       </geometry>
        <material name="grey">
         <color rgba="0.5 0.5 0.5 1.0"/>
       </material>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0.0 0.075"/>
-      <geometry>
-			<box size="0.3 0.15 0.15"/>
-      </geometry>
-    </collision>
   </link>
   <link name="leftfinger">
       <contact>
@@ -29,6 +23,7 @@
       <damping value="1000.0"/>
       <spinning_friction value="0.1"/>
       <lateral_friction value="1.0"/>
+      <contact_cfm value="0.2"/>
     </contact>
   	<inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -36,15 +31,15 @@
        <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
     </inertial>
     <visual>
-      <origin rpy="0 0 0" xyz="0.1 0.0 0.0"/>
+      <origin rpy="0 0 0" xyz="0 0.0 0.0"/>
       <geometry>
-        <box size="0.2 0.05 0.05"/>
+			<mesh filename="tool_mesh/finger01_m.stl"/>
       </geometry>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="0.1 0 0.0"/>
+      <origin rpy="0 0 0" xyz="0 0.0 0.0"/>
       <geometry>
-        <box size="0.2 0.05 0.05"/>
+			<mesh filename="tool_mesh/finger01_m.stl"/>
       </geometry>
       <material name="white"/>
     </collision>
@@ -56,26 +51,23 @@
       <damping value="1000.0"/>
       <spinning_friction value="0.1"/>
       <lateral_friction value="1.0"/>
+      <contact_cfm value="0.2"/>
     </contact>
   	<inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
        <mass value="0.1"/>
        <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
     </inertial>
-      <geometry>
-		<box size="0.2 0.05 0.05"/>
-      </geometry>
-      <material name="white"/>
     <visual>
-      <origin rpy="0 0 0" xyz="0.1 0.0 0.0"/>
+      <origin rpy="0 0 0" xyz="0 0.0 0.0"/>
       <geometry>
-        <box size="0.2 0.05 0.05"/>
+			<mesh filename="tool_mesh/finger02_m.stl"/>
       </geometry>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="0.1 0.0 0.0"/>
+      <origin rpy="0 0 0" xyz="0 0.0 0.0"/>
       <geometry>
-        <box size="0.2 0.05 0.05"/>
+			<mesh filename="tool_mesh/finger02_m.stl"/>
       </geometry>
       <material name="white"/>
     </collision>
@@ -83,23 +75,23 @@
   <joint name="finger_joint1" type="prismatic">
     <parent link="baseLink"/>
     <child link="leftfinger"/>
-    <origin rpy="0 -1.57079632679 0" xyz="0.15 0 0.15"/>
-    <axis xyz="0 0 1"/>
-    <limit effort="200" lower="0.0" upper="0.11" velocity="0.2"/>
+    <origin rpy="0 0 0" xyz="0.0 0 0.0"/>
+    <axis xyz="-1 0 0"/>
+    <limit effort="20" lower="0.0" upper="0.11" velocity="0.2"/>
   </joint>
   <joint name="finger_joint2" type="prismatic">
     <parent link="baseLink"/>
     <child link="rightfinger"/>
-    <origin rpy="0 -1.57079632679 0" xyz="-0.15 0 0.15"/>
-    <axis xyz="0 0 -1"/>
-    <limit effort="200" lower="-0" upper="0.11" velocity="0.2"/>
+    <origin rpy="0 0 0" xyz="0.0 0 0.0"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="20" lower="-0" upper="0.11" velocity="0.2"/>
     <mimic joint="finger_joint1"/>
   </joint>
 
   <joint name="gripping_trafo" type="fixed">
 		<parent link="baseLink"/>
 		<child link="tcp"/>
-		<origin xyz="0 0.0 0.25" rpy="0 0 0"/>
+		<origin xyz="0 0.0 0.39" rpy="0 0 0"/>
   </joint>
 
   <link name="tcp">

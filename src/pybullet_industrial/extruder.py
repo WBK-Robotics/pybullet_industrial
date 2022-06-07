@@ -51,9 +51,13 @@ class Extruder(EndeffectorTool):
                                      self.extruder_properties['opening angle'],
                                      self.extruder_properties['number of rays'],
                                      self.extruder_properties['maximum distance'])
+        
+        particle_id_list = []
         for i in range(self.extruder_properties['number of rays']):
             ray_intersection = ray_cast_results[i]
-            self.extruder_properties['material'].spawn_particle(ray_intersection)
+            particle_id = self.extruder_properties['material'].spawn_particle(ray_intersection)
+            particle_id_list.extend(particle_id)
+        return particle_id_list
 
     def change_extruder_properties(self,new_properties:Dict):
         """Allows retroactive changes to the extruder properties.

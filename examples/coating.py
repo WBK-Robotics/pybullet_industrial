@@ -3,7 +3,6 @@ import pybullet as p
 import pybullet_data
 import pybullet_industrial as pi
 import numpy as np
-from lemniscate import build_lemniscate_path
 
 
 
@@ -56,7 +55,7 @@ if __name__ == "__main__":
         for i in range(steps):
             extruder.set_tool_pose(test_path[:, i], target_orientation)
             position, orientation = extruder.get_tool_pose()
-            extruder.extrude()
+            print(extruder.extrude())
             p.stepSimulation()
 
         test_path[1,:] += 0.25

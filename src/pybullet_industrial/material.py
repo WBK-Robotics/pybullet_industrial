@@ -23,7 +23,7 @@ class Plastic(Material):
                                      baseCollisionShapeIndex=self.collisionShapeId,
                                      baseVisualShapeIndex=self.visualShapeId,
                                      basePosition=ray_cast_result[3])
-        return particle
+        return [particle]
 
 
 class Paint(Material):

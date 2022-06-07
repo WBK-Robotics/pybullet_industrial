@@ -77,7 +77,7 @@ if __name__ == "__main__":
         for i in range(steps):
             extruder.set_tool_pose(test_path[:, i], target_orientation)
             position, orientation = extruder.get_tool_pose()
-            extruder.extrude()
+            print(extruder.extrude())
 
             for _ in range(30):
                 p.stepSimulation()

@@ -55,8 +55,9 @@ class Extruder(EndeffectorTool):
         particle_id_list = []
         for i in range(self.extruder_properties['number of rays']):
             ray_intersection = ray_cast_results[i]
-            particle_id = self.extruder_properties['material'].spawn_particle(ray_intersection)
-            particle_id_list.extend(particle_id)
+            if ray_intersection[0] != -1:
+                particle_id = self.extruder_properties['material'].spawn_particle(ray_intersection)
+                particle_id_list.extend(particle_id)
         return particle_id_list
 
     def change_extruder_properties(self,new_properties:Dict):

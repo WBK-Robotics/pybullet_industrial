@@ -116,8 +116,10 @@ class TestExtruder(unittest.TestCase):
         self.assertTrue(distance_is_decreasing_linearly)
 
     def test_material_distribution(self):
-        """This test checks wheter the extruder produces a uniform material spray given the opening angle.
-           Since this requires changing the extruder properties the function also validates the change_extruder_properties method.
+        """This test checks wheter the extruder produces a uniform
+           material spray given the opening angle.
+           Since this requires changing the extruder properties the function
+           also validates the change_extruder_properties method.
         """
         p.connect(p.DIRECT)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())

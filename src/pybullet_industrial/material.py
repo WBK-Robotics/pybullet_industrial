@@ -99,21 +99,16 @@ class Paint(Particle):
         color = self.properties['color']
 
         self.particle_ids = []
-        target_id = ray_cast_result[0]
-        if target_id != -1:
-            target_link_id = ray_cast_result[1]
-            if target_link_id == -1:
-                target_position, target_orientation = p.getBasePositionAndOrientation(
-                    target_id)
-            else:
-                target_link_state = p.getLinkState(target_id, target_link_id)
-                target_position = np.array(target_link_state[0])
-                target_orientation = np.array(target_link_state[1])
+        self.target_id = ray_cast_result[0]
+        self.target_link_id = ray_cast_result[1]
+        if self.target_id != -1:
+            target_position, target_orientation = self.get_target_pose(
+                self.target_id, self.target_link_id)
 
             rot_matrix = p.getMatrixFromQuaternion(target_orientation)
             rot_matrix = np.array(rot_matrix).reshape(3, 3)
 
-            adj_target_position = np.linalg.inv(
+            self.adj_target_position = np.linalg.inv(
                 rot_matrix)@(np.array(ray_cast_result[3])-target_position)
 
             steps = 3
@@ -122,11 +117,11 @@ class Paint(Particle):
             phi2 = np.linspace(0,  5 * 2*np.pi, steps)
 
             x_coord = particle_size * \
-                np.sin(theta2) * np.cos(phi2) + adj_target_position[0]
+                np.sin(theta2) * np.cos(phi2) + self.adj_target_position[0]
             y_coord = particle_size * \
-                np.sin(theta2) * np.sin(phi2) + adj_target_position[1]
+                np.sin(theta2) * np.sin(phi2) + self.adj_target_position[1]
             z_coord = particle_size * \
-                np.cos(theta2) + adj_target_position[2]
+                np.cos(theta2) + self.adj_target_position[2]
 
             path = np.array([x_coord, y_coord, z_coord])
             path_steps = len(path[0])
@@ -137,8 +132,19 @@ class Paint(Particle):
                                                             lineColorRGB=color[:3],
                                                             lineWidth=width,
                                                             lifeTime=0,
-                                                            parentObjectUniqueId=target_id,
-                                                            parentLinkIndex=target_link_id))
+                                                            parentObjectUniqueId=self.target_id,
+                                                            parentLinkIndex=self.target_link_id))
+
+    @staticmethod
+    def get_target_pose(target_id, target_link_id):
+        if target_link_id == -1:
+            target_position, target_orientation = p.getBasePositionAndOrientation(
+                target_id)
+        else:
+            target_link_state = p.getLinkState(target_id, target_link_id)
+            target_position = np.array(target_link_state[0])
+            target_orientation = np.array(target_link_state[1])
+        return target_position, target_orientation
 
     def get_position(self):
         """Returns the position of a particle in the world frame

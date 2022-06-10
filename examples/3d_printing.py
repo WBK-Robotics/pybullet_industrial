@@ -1,11 +1,12 @@
 import os
+
+import numpy as np
 import pybullet as p
 import pybullet_data
 import pybullet_industrial as pi
-import numpy as np
 
 
-def build_circular_path(center, radius, min_angle, max_angle, steps, height):
+def build_circular_path(center, radius, min_angle, max_angle, step_num, height):
     """Function which builds a circular path
 
     Args:
@@ -18,10 +19,10 @@ def build_circular_path(center, radius, min_angle, max_angle, steps, height):
     Returns:
         array: array of 3 dimensional path points
     """
-    path = np.zeros((3, steps))
+    path = np.zeros((3, step_num))
     path[2, :] = height
-    for i in range(steps):
-        path_angle = min_angle+i*(max_angle-min_angle)/steps
+    for i in range(step_num):
+        path_angle = min_angle+i*(max_angle-min_angle)/step_num
         new_position = center + radius * \
             np.array([np.sin(path_angle), np.cos(path_angle)])
         path[:2, i] = new_position
@@ -78,7 +79,7 @@ if __name__ == "__main__":
         for i in range(steps):
             extruder.set_tool_pose(test_path[:, i], target_orientation)
             position, orientation = extruder.get_tool_pose()
-            extruder.extrude()
+            particle = extruder.extrude()
 
             for _ in range(30):
                 p.stepSimulation()

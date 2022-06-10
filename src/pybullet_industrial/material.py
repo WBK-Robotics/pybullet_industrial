@@ -1,6 +1,6 @@
-import pybullet as p
-import numpy as np
 from typing import Dict
+
+import pybullet as p
 
 
 class Particle():

@@ -4,14 +4,26 @@ from typing import Dict
 
 
 class Particle():
-    def __init__(self, ray_cast_result, material_properties):
+    def __init__(self, ray_cast_result, material_properties: Dict):
+        """A template class for material particles extruded by a extruder endeffector tool
+
+        Args:
+            ray_cast_result ([type]): The result of a pybullet ray_cast as performed by the extruder
+            material_properties (Dict): A dictionary containing the properties of the material
+        """
         self.properties = {}
         pass
 
     def get_position(self):
+        """Returns the position of a particle in the world frame
+        """
         pass
 
     def remove(self):
+        """Function to actively remove the particle from the simulation.
+           This function is deliberatly kept seperate from the __del__ method to prevent having
+           to manually save particles if there is no intention of removing them.
+        """
         pass
 
     def set_material_properties(self, new_properties: Dict):
@@ -34,7 +46,16 @@ class Particle():
 
 class Plastic(Particle):
 
-    def __init__(self, ray_cast_result,  material_properties):
+    def __init__(self, ray_cast_result,  material_properties: Dict):
+        """A class for simply Plastic particles which can be used for 3d Printing.
+           The particles are infinitely rigid and stick to each other.
+
+        Args:
+            ray_cast_result ([type]): The result of a pybullet ray_cast as performed by the extruder
+            material_properties (Dict): A dictionary containing the properties of the material.
+                                        The default properties for Plastic are:
+                                        'particle size': 0.3, 'color': [1, 0, 0, 1]
+        """
         self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
         self.set_material_properties(material_properties)
         particle_size = self.properties['particle size']
@@ -51,6 +72,8 @@ class Plastic(Particle):
                                              basePosition=ray_cast_result[3])
 
     def get_position(self):
+        """Returns the position of a particle in the world frame
+        """
         position, _ = p.getBasePositionAndOrientation(self.particle_id)
         return position
 
@@ -60,7 +83,16 @@ class Plastic(Particle):
 
 class Paint(Particle):
 
-    def __init__(self, ray_cast_result, material_properties):
+    def __init__(self, ray_cast_result, material_properties: Dict):
+        """A class for simply Paint particles which stick to objects and move with them.
+           The Paint particles are purely visible and have neither mass nor a collision mesh
+
+        Args:
+            ray_cast_result ([type]): The result of a pybullet ray_cast as performed by the extruder
+            material_properties (Dict): A dictionary containing the properties of the material.
+                                        The default properties for Paint are:
+                                        'particle size': 0.3, 'color': [1, 0, 0, 1]
+        """
         self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
         self.set_material_properties(material_properties)
         particle_size = self.properties['particle size']
@@ -109,7 +141,13 @@ class Paint(Particle):
                                                             parentLinkIndex=target_link_id))
 
     def get_position(self):
+        """Returns the position of a particle in the world frame
+        """
         return 1
 
     def remove(self):
+        """Function to actively remove the particle from the simulation.
+           This function is deliberatly kept seperate from the __del__ method to prevent having
+           to manually save particles if there is no intention of removing them.
+        """
         [p.removeUserDebugItem(id) for id in self.particle_ids]

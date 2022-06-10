@@ -61,14 +61,14 @@ class Plastic(Particle):
         particle_size = self.properties['particle size']
         color = self.properties['color']
 
-        visualShapeId = p.createVisualShape(
+        visual_shape_id = p.createVisualShape(
             shapeType=p.GEOM_SPHERE, rgbaColor=color, radius=particle_size)
-        collisionShapeId = p.createCollisionShape(
+        collision_shape_id = p.createCollisionShape(
             shapeType=p.GEOM_SPHERE, radius=particle_size)
 
         self.particle_id = p.createMultiBody(baseMass=0,
-                                             baseCollisionShapeIndex=collisionShapeId,
-                                             baseVisualShapeIndex=visualShapeId,
+                                             baseCollisionShapeIndex=collision_shape_id,
+                                             baseVisualShapeIndex=visual_shape_id,
                                              basePosition=ray_cast_result[3])
 
     def get_position(self):

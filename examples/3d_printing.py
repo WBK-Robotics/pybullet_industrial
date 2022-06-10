@@ -19,14 +19,14 @@ def build_circular_path(center, radius, min_angle, max_angle, step_num, height):
     Returns:
         array: array of 3 dimensional path points
     """
-    path = np.zeros((3, step_num))
-    path[2, :] = height
+    circular_path = np.zeros((3, step_num))
+    circular_path[2, :] = height
     for i in range(step_num):
         path_angle = min_angle+i*(max_angle-min_angle)/step_num
         new_position = center + radius * \
             np.array([np.sin(path_angle), np.cos(path_angle)])
-        path[:2, i] = new_position
-    return path
+        circular_path[:2, i] = new_position
+    return circular_path
 
 
 if __name__ == "__main__":

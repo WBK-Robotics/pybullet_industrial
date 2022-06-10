@@ -5,7 +5,8 @@ from pybullet_industrial import RobotBase
 
 
 class EndeffectorTool:
-    def __init__(self, urdf_model: str, start_position, start_orientation, coupled_robots: List[RobotBase] = None, tcp_frame=None,connector_frames=None):
+    def __init__(self, urdf_model: str, start_position, start_orientation,
+                 coupled_robots: List[RobotBase] = None, tcp_frame=None, connector_frames=None):
         """The base class for all Tools and Sensors connected to a Robot
 
         Args:
@@ -41,12 +42,11 @@ class EndeffectorTool:
         else:
             self._tcp_id = self._convert_link_to_id(tcp_frame)
 
-        
         if connector_frames is None:
             self._connector_id = -1
         else:
             for frame in connector_frames:
-                self._connector_id=self._convert_link_to_id(connector_frames)
+                self._connector_id = self._convert_link_to_id(connector_frames)
 
         self._coupled_robot = None
         self._coupling_link = None
@@ -62,7 +62,7 @@ class EndeffectorTool:
             self.couple(coupled_robots)
 
         if self._connector_id == -1:
-            base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf) 
+            base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf)
         else:
             link_state = p.getLinkState(self.urdf, self._connector_id)
             base_pos = link_state[0]

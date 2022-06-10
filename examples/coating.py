@@ -32,8 +32,8 @@ if __name__ == "__main__":
                            'opening angle': np.pi/2,
                            'material': pi.Paint,
                            'number of rays': 6,
-                           'particle size': 0.015,
-                           'color': [0, 0, 1, 1]}
+                           'material properties': {'particle size': 0.015,
+                                                   'color': [0, 0, 1, 1]}}
     extruder = pi.Extruder(
         urdf_file2, [1.9, 0, 1.2], start_orientation, extruder_properties)
     extruder.couple(robot, 'link6')

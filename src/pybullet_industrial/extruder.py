@@ -19,7 +19,8 @@ class Extruder(EndeffectorTool):
                                        During initialization only 'material' has to be set.
                                        Default Values are:
                                        'opening angle':0,'number of rays':1,
-                                       'particle size': 0.03, 'color' : [1, 0, 0, 1],
+                                       'material properties': {'particle size':0.03,
+                                                               'color' : [1, 0, 0, 1]},
                                        'maximum distance':1,'material':None,
             coupled_robot ([type], optional): A wbk_sim.Robot object if 
                                               the robot is coupled from the start. 
@@ -40,9 +41,9 @@ class Extruder(EndeffectorTool):
         self.extruder_properties = {'opening angle': 0,
                                     'number of rays': 1,
                                     'maximum distance': 1,
-                                    'particle size': 0.03,
-                                    'color': [1, 0, 0, 1],
-                                    'material': None}
+                                    'material': None,
+                                    'material properties': {'particle size': 0.03,
+                                                            'color': [1, 0, 0, 1]}}
         self.change_extruder_properties(extruder_properties)
         if self.extruder_properties['material'] is None:
             raise ValueError("The extruder requires a initial Material")
@@ -65,9 +66,7 @@ class Extruder(EndeffectorTool):
             ray_intersection = ray_cast_results[i]
             if ray_intersection[0] != -1:
                 particle = self.extruder_properties['material'](ray_intersection,
-                                                                self.extruder_properties['particle size'],
-                                                                self.extruder_properties['color'])
-                print(particle.get_position())
+                                                                self.extruder_properties['material properties'])
                 particle_list.append(particle)
         return particle_list
 

@@ -1,9 +1,11 @@
 import pybullet as p
 import numpy as np
+from typing import Dict
 
 
 class Particle():
-    def __init__(self, ray_cast_result, particle_size, color):
+    def __init__(self, ray_cast_result, material_properties):
+        self.properties = {}
         pass
 
     def get_position(self):
@@ -12,10 +14,31 @@ class Particle():
     def remove(self):
         pass
 
+    def set_material_properties(self, new_properties: Dict):
+        """Checks if the matieral properties contain the proper keys
+
+
+        Args:
+            new_properties (Dict): A dictionary containing the material properties
+
+        Raises:
+            KeyError: If a key is not a valid extruder property
+        """
+        for key in new_properties:
+            if not key in self.properties:
+                raise KeyError("The specified property keys are not valid" +
+                               " Valid keys are: "+str(self.properties.keys()))
+            else:
+                self.properties[key] = new_properties[key]
+
 
 class Plastic(Particle):
 
-    def __init__(self, ray_cast_result, particle_size, color):
+    def __init__(self, ray_cast_result,  material_properties):
+        self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
+        self.set_material_properties(material_properties)
+        particle_size = self.properties['particle size']
+        color = self.properties['color']
 
         visualShapeId = p.createVisualShape(
             shapeType=p.GEOM_SPHERE, rgbaColor=color, radius=particle_size)
@@ -37,7 +60,11 @@ class Plastic(Particle):
 
 class Paint(Particle):
 
-    def __init__(self, ray_cast_result, particle_size, color):
+    def __init__(self, ray_cast_result, material_properties):
+        self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
+        self.set_material_properties(material_properties)
+        particle_size = self.properties['particle size']
+        color = self.properties['color']
 
         self.particle_ids = []
         target_id = ray_cast_result[0]

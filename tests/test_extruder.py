@@ -61,7 +61,8 @@ class TestExtruder(unittest.TestCase):
                                'opening angle': 0,
                                'material': pi.Plastic,
                                'number of rays': 1,
-                               'particle size': plasstic_diameter}
+                               'material properties': {'particle size': plasstic_diameter,
+                                                       'color': [1, 0, 0, 1]}}
         extruder = pi.Extruder(
             urdf_file2, [1.9, 0, 1.2], start_orientation, extruder_properties)
         extruder.couple(robot, 'link6')
@@ -100,7 +101,8 @@ class TestExtruder(unittest.TestCase):
                                'opening angle': 0,
                                'material': pi.Plastic,
                                'number of rays': 1,
-                               'particle size': plasstic_diameter}
+                               'material properties': {'particle size': plasstic_diameter,
+                                                       'color': [1, 0, 0, 1]}}
         extruder = pi.Extruder(
             urdf_file2, [1.9, 0, 1.2], start_orientation, extruder_properties)
         extruder.couple(robot, 'link6')
@@ -138,7 +140,7 @@ class TestExtruder(unittest.TestCase):
                                'opening angle': 0,
                                'material': pi.Plastic,
                                'number of rays': 1,
-                               'particle size': plasstic_diameter}
+                               'material properties': {'particle size': plasstic_diameter}}
         extruder = pi.Extruder(
             urdf_file2, [1.9, 0, 1.2], start_orientation, extruder_properties)
         extruder.couple(robot, 'link6')

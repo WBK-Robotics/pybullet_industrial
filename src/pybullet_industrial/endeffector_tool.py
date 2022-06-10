@@ -5,20 +5,21 @@ from pybullet_industrial import RobotBase
 
 
 class EndeffectorTool:
-    def __init__(self, urdf_model: str, start_position, start_orientation, coupled_robots: List[RobotBase] = None, tcp_frame=None,connector_frames=None):
+    def __init__(self, urdf_model: str, start_position, start_orientation,
+                 coupled_robots: List[RobotBase] = None, tcp_frame=None, connector_frames=None):
         """The base class for all Tools and Sensors connected to a Robot
 
         Args:
             urdf_model (str): A valid path to a urdf file describint the tool geometry
             start_position ([type]): the position at which the tool should be spawned
             start_orientation ([type]): the orientation at which the tool should be spawned
-            coupled_robot ([type], optional): A wbk_sim.Robot object if 
-                                              the robot is coupled from the start. 
+            coupled_robot ([type], optional): A wbk_sim.Robot object if
+                                              the robot is coupled from the start.
                                               Defaults to None.
-            tcp_frame ([type], optional): The name of the urdf_link 
+            tcp_frame ([type], optional): The name of the urdf_link
                                           describing the tool center point.
                                           Defaults to None in which case the last link is used.
-            connector_frame ([type], optional): The name of the urdf_link 
+            connector_frame ([type], optional): The name of the urdf_link
                                                 at which a robot connects.
                                                 Defaults to None in which case the base link is used.
         """
@@ -41,32 +42,22 @@ class EndeffectorTool:
         else:
             self._tcp_id = self._convert_link_to_id(tcp_frame)
 
-        
         if connector_frames is None:
             self._connector_id = -1
+            base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf)
         else:
-            for frame in connector_frames:
-                self._connector_id=self._convert_link_to_id(connector_frames)
-
-        self._coupled_robot = None
-        self._coupling_link = None
-        self._coupling_constraint = p.createConstraint(self.urdf,
-                                                       -1, -1, -1,
-                                                       p.JOINT_FIXED,
-                                                       [0, 0, 0],
-                                                       [0, 0, 0],
-                                                       start_position,
-                                                       start_orientation)
-
-        if not coupled_robots is None:
-            self.couple(coupled_robots)
-
-        if self._connector_id == -1:
-            base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf) 
-        else:
+            self._connector_id = self._convert_link_to_id(connector_frames)
             link_state = p.getLinkState(self.urdf, self._connector_id)
             base_pos = link_state[0]
             base_ori = link_state[1]
+
+        self._coupled_robot = None
+        self._coupling_link = None
+        self._coupling_constraint = p.createConstraint(
+            self.urdf, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], start_position, start_orientation)
+
+        if not coupled_robots is None:
+            self.couple(coupled_robots)
 
         tcp_pos, tcp_ori = self.get_tool_pose(tcp_frame)
         self._tcp_translation = tcp_pos-base_pos
@@ -80,8 +71,8 @@ class EndeffectorTool:
 
         Args:
             robot (wbk_sim.robot): The robot whith which the tool should couple.
-            endeffector_name (str, optional): The endeffector of the robot 
-                                              where the tool should couple to. 
+            endeffector_name (str, optional): The endeffector of the robot
+                                              where the tool should couple to.
                                               Defaults to None.
 
         Raises:
@@ -119,8 +110,8 @@ class EndeffectorTool:
             return 1
 
     def decouple(self):
-        """Decouples the tool from the current robot. 
-           In this case a new constraint is created rooting the tool in its current pose. 
+        """Decouples the tool from the current robot.
+           In this case a new constraint is created rooting the tool in its current pose.
         """
         self._coupled_robot = None
         self._coupling_link = None
@@ -136,11 +127,11 @@ class EndeffectorTool:
         pass
 
     def get_tool_pose(self, tcp_frame: str = None):
-        """Returns the pose of the tool center point. 
+        """Returns the pose of the tool center point.
            Using the tcp_frame argument the state of other links can also be returned
 
         Args:
-            tcp_frame (str, optional): the name of the link whose pose should be returned. 
+            tcp_frame (str, optional): the name of the link whose pose should be returned.
                                        Defaults to None in which case the default tcp is used
 
         Returns:
@@ -165,9 +156,9 @@ class EndeffectorTool:
 
         Args:
             target_position (_type_): the desired position of the tool center point (tcp)
-            target_orientation (_type_, optional): the desired position of 
-                                                   the tool center point (tcp). 
-                                                   If none is provided only 
+            target_orientation (_type_, optional): the desired position of
+                                                   the tool center point (tcp).
+                                                   If none is provided only
                                                    the position of the robot is controlled.
         """
 

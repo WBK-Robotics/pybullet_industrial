@@ -4,6 +4,7 @@ import numpy as np
 import pybullet as p
 
 from pybullet_industrial.endeffector_tool import EndeffectorTool
+from pybullet_industrial.material import Plastic
 
 
 class Extruder(EndeffectorTool):
@@ -21,7 +22,7 @@ class Extruder(EndeffectorTool):
                                        'opening angle':0,'number of rays':1,
                                        'material properties': {'particle size':0.03,
                                                                'color' : [1, 0, 0, 1]},
-                                       'maximum distance':1,'material':None,
+                                       'maximum distance':1,'material':Particle,
             coupled_robot ([type], optional): A wbk_sim.Robot object if
                                               the robot is coupled from the start.
                                               Defaults to None.
@@ -41,7 +42,7 @@ class Extruder(EndeffectorTool):
         self.extruder_properties = {'opening angle': 0,
                                     'number of rays': 1,
                                     'maximum distance': 1,
-                                    'material': None,
+                                    'material': Plastic,
                                     'material properties': {'particle size': 0.03,
                                                             'color': [1, 0, 0, 1]}}
         self.change_extruder_properties(extruder_properties)

@@ -19,7 +19,8 @@ class Extruder(EndeffectorTool):
                                        During initialization only 'material' has to be set.
                                        Default Values are:
                                        'opening angle':0,'number of rays':1,
-                                       'maximum distance':1,'material':None
+                                       'particle size': 0.03, 'color' : [1, 0, 0, 1],
+                                       'maximum distance':1,'material':None,
             coupled_robot ([type], optional): A wbk_sim.Robot object if 
                                               the robot is coupled from the start. 
                                               Defaults to None.
@@ -36,8 +37,12 @@ class Extruder(EndeffectorTool):
         super().__init__(urdf_model, start_position, start_orientation,
                          coupled_robots, tcp_frame, connector_frames)
 
-        self.extruder_properties = {
-            'opening angle': 0, 'number of rays': 1, 'maximum distance': 1, 'material': None}
+        self.extruder_properties = {'opening angle': 0,
+                                    'number of rays': 1,
+                                    'maximum distance': 1,
+                                    'particle size': 0.03,
+                                    'color': [1, 0, 0, 1],
+                                    'material': None}
         self.change_extruder_properties(extruder_properties)
         if self.extruder_properties['material'] is None:
             raise ValueError("The extruder requires a initial Material")
@@ -55,14 +60,16 @@ class Extruder(EndeffectorTool):
                                           self.extruder_properties['number of rays'],
                                           self.extruder_properties['maximum distance'])
 
-        particle_id_list = []
+        particle_list = []
         for i in range(self.extruder_properties['number of rays']):
             ray_intersection = ray_cast_results[i]
             if ray_intersection[0] != -1:
-                particle_id = self.extruder_properties['material'].spawn_particle(
-                    ray_intersection)
-                particle_id_list.extend(particle_id)
-        return particle_id_list
+                particle = self.extruder_properties['material'](ray_intersection,
+                                                                self.extruder_properties['particle size'],
+                                                                self.extruder_properties['color'])
+                print(particle.get_position())
+                particle_list.append(particle)
+        return particle_list
 
     def change_extruder_properties(self, new_properties: Dict):
         """Allows retroactive changes to the extruder properties.

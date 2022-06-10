@@ -28,10 +28,12 @@ if __name__ == "__main__":
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
-    paint = pi.Paint(0.015, [0, 0, 1])
-
     extruder_properties = {'maximum distance': 0.7,
-                           'opening angle': np.pi/2, 'material': paint, 'number of rays': 6}
+                           'opening angle': np.pi/2,
+                           'material': pi.Paint,
+                           'number of rays': 6,
+                           'particle size': 0.015,
+                           'color': [0, 0, 1, 1]}
     extruder = pi.Extruder(
         urdf_file2, [1.9, 0, 1.2], start_orientation, extruder_properties)
     extruder.couple(robot, 'link6')
@@ -54,7 +56,7 @@ if __name__ == "__main__":
         for i in range(steps):
             extruder.set_tool_pose(test_path[:, i], target_orientation)
             position, orientation = extruder.get_tool_pose()
-            print(extruder.extrude())
+            extruder.extrude()
             p.stepSimulation()
 
         test_path[1, :] += 0.25

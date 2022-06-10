@@ -2,45 +2,44 @@ import pybullet as p
 import numpy as np
 
 
-class Material:
-    def __init__(self):
+class Particle():
+    def __init__(self, ray_cast_result, particle_size, color):
         pass
 
-    def spawn_particle(self, ray_cast_result):
+    def get_position(self):
+        pass
+
+    def remove(self):
         pass
 
 
-class Plastic(Material):
+class Plastic(Particle):
 
-    def __init__(self, particle_size, color):
-        self.particle_size = particle_size
-        self.color = color
+    def __init__(self, ray_cast_result, particle_size, color):
 
-        self.visualShapeId = p.createVisualShape(
-            shapeType=p.GEOM_SPHERE, rgbaColor=self.color, radius=self.particle_size)
-        self.collisionShapeId = p.createCollisionShape(
-            shapeType=p.GEOM_SPHERE, radius=self.particle_size)
+        visualShapeId = p.createVisualShape(
+            shapeType=p.GEOM_SPHERE, rgbaColor=color, radius=particle_size)
+        collisionShapeId = p.createCollisionShape(
+            shapeType=p.GEOM_SPHERE, radius=particle_size)
 
-    def spawn_particle(self, ray_cast_result):
-        particle = p.createMultiBody(baseMass=0,
-                                     baseCollisionShapeIndex=self.collisionShapeId,
-                                     baseVisualShapeIndex=self.visualShapeId,
-                                     basePosition=ray_cast_result[3])
-        return [particle]
+        self.particle_id = p.createMultiBody(baseMass=0,
+                                             baseCollisionShapeIndex=collisionShapeId,
+                                             baseVisualShapeIndex=visualShapeId,
+                                             basePosition=ray_cast_result[3])
+
+    def get_position(self):
+        position, _ = p.getBasePositionAndOrientation(self.particle_id)
+        return position
+
+    def remove(self):
+        p.removeBody(self.particle_id)
 
 
-class Paint(Material):
+class Paint(Particle):
 
-    def __init__(self, particle_size, color):
-        self.particle_size = particle_size
-        self.color = color
+    def __init__(self, ray_cast_result, particle_size, color):
 
-        self.visualShapeId = p.createVisualShape(shapeType=p.GEOM_SPHERE,
-                                                 rgbaColor=self.color,
-                                                 radius=self.particle_size)
-
-    def spawn_particle(self, ray_cast_result):
-        particle_ids = []
+        self.particle_ids = []
         target_id = ray_cast_result[0]
         if target_id != -1:
             target_link_id = ray_cast_result[1]
@@ -59,15 +58,15 @@ class Paint(Material):
                 rot_matrix)@(np.array(ray_cast_result[3])-target_position)
 
             steps = 3
-            width = self.particle_size*500
+            width = particle_size*500
             theta2 = np.linspace(-np.pi,  0, steps)
             phi2 = np.linspace(0,  5 * 2*np.pi, steps)
 
-            x_coord = self.particle_size * \
+            x_coord = particle_size * \
                 np.sin(theta2) * np.cos(phi2) + adj_target_position[0]
-            y_coord = self.particle_size * \
+            y_coord = particle_size * \
                 np.sin(theta2) * np.sin(phi2) + adj_target_position[1]
-            z_coord = self.particle_size * \
+            z_coord = particle_size * \
                 np.cos(theta2) + adj_target_position[2]
 
             path = np.array([x_coord, y_coord, z_coord])
@@ -75,10 +74,15 @@ class Paint(Material):
             for i in range(1, path_steps):
                 current_point = path[:, i]
                 previous_point = path[:, i-1]
-                particle_ids.append(p.addUserDebugLine(current_point, previous_point,
-                                                       lineColorRGB=self.color, 
-                                                       lineWidth=width, 
-                                                       lifeTime=0, 
-                                                       parentObjectUniqueId=target_id,
-                                                       parentLinkIndex=target_link_id))
-        return particle_ids
+                self.particle_ids.append(p.addUserDebugLine(current_point, previous_point,
+                                                            lineColorRGB=color[:3],
+                                                            lineWidth=width,
+                                                            lifeTime=0,
+                                                            parentObjectUniqueId=target_id,
+                                                            parentLinkIndex=target_link_id))
+
+    def get_position(self):
+        return 1
+
+    def remove(self):
+        [p.removeUserDebugItem(id) for id in self.particle_ids]

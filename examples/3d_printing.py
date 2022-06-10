@@ -49,11 +49,11 @@ if __name__ == "__main__":
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
-    plastic = pi.Plastic(0.03, [1, 0, 0, 1])
+    #plastic = pi.Plastic(0.03, [1, 0, 0, 1])
 
     extruder_properties = {'maximum distance': 0.5,
                            'opening angle': 0,
-                           'material': plastic,
+                           'material': pi.Plastic,
                            'number of rays': 1}
     extruder = pi.Extruder(
         urdf_file2, [1.9, 0, 1.2], start_orientation, extruder_properties)
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         for i in range(steps):
             extruder.set_tool_pose(test_path[:, i], target_orientation)
             position, orientation = extruder.get_tool_pose()
-            print(extruder.extrude())
+            extruder.extrude()
 
             for _ in range(30):
                 p.stepSimulation()

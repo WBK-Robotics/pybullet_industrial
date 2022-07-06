@@ -16,9 +16,9 @@ def spawn_voxel_block(base_position, dimensions, voxel_size):
         for y in range(int(dimensions[1]/voxel_size)):
             for z in range(int(dimensions[2]/voxel_size)):
                 batchPositions.append(
-                    [x * half_extents * 2+base_position[0],
-                     y * half_extents * 2+base_position[1],
-                     z * half_extents * 2+base_position[2]])
+                    [x * voxel_size+base_position[0]+half_extents,
+                     y * voxel_size+base_position[1]+half_extents,
+                     z * voxel_size+base_position[2]+half_extents])
 
     bodyUids = p.createMultiBody(baseMass=0.0,
                                  baseInertialFramePosition=[0, 0, 0],
@@ -38,7 +38,7 @@ p.setPhysicsEngineParameter(numSolverIterations=4,
 # disable rendering during creation.
 p.setPhysicsEngineParameter(contactBreakingThreshold=0.04)
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
-p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
+#p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 
 
 size_progression = [1, 0.5, 0.2, 0.1, 0.05, 0.02]

@@ -1,10 +1,9 @@
 import pybullet as p
 import pybullet_industrial as pi
-cid = p.connect(p.GUI)
 
+p.connect(p.GUI)
 p.setPhysicsEngineParameter(numSolverIterations=4,
                             minimumSolverIslandSize=1024)
-p.setTimeStep(1. / 120.)
 
 # disable rendering during creation.
 p.setPhysicsEngineParameter(contactBreakingThreshold=0.04)
@@ -18,8 +17,7 @@ visualShapeId = p.createVisualShape(shapeType=p.GEOM_BOX,
                                     specularColor=[0.4, .4, 0],
                                     halfExtents=voxel_scale)
 collisionShapeId = p.createCollisionShape(
-    shapeType=p.GEOM_BOX, halfExtents=voxel_scale
-)  # MESH, vertices=vertices, collisionFramePosition=shift,meshScale=meshScale)
+    shapeType=p.GEOM_BOX, halfExtents=voxel_scale)
 
 
 batchPositions = []
@@ -37,9 +35,7 @@ bodyUids = p.createMultiBody(baseMass=0.0,
                              basePosition=[0, 0, 2],
                              batchPositions=batchPositions,
                              useMaximalCoordinates=True)
-# p.changeVisualShape(bodyUids[0], -1, textureUniqueId=texUid)
 
-# p.syncBodyInfo()
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 
 

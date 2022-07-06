@@ -2,10 +2,10 @@ import pybullet as p
 import pybullet_industrial as pi
 
 
-def spawn_voxel_block(base_position, dimensions, voxel_size):
+def spawn_voxel_block(base_position, dimensions, voxel_size, color=[1, 1, 1, 1]):
     half_extents = voxel_size*0.5
     visualShapeId = p.createVisualShape(shapeType=p.GEOM_BOX,
-                                        rgbaColor=[1, 1, 1, 1],
+                                        rgbaColor=color,
                                         halfExtents=[half_extents, half_extents, half_extents])
     collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_BOX,
                                               halfExtents=[half_extents, half_extents, half_extents])
@@ -24,7 +24,6 @@ def spawn_voxel_block(base_position, dimensions, voxel_size):
                                  baseInertialFramePosition=[0, 0, 0],
                                  baseCollisionShapeIndex=collisionShapeId,
                                  baseVisualShapeIndex=visualShapeId,
-                                 basePosition=base_position,
                                  batchPositions=batchPositions,
                                  useMaximalCoordinates=True)
 
@@ -35,8 +34,8 @@ p.connect(p.GUI)
 p.setPhysicsEngineParameter(numSolverIterations=4,
                             minimumSolverIslandSize=1024)
 
-# disable rendering during creation.
 p.setPhysicsEngineParameter(contactBreakingThreshold=0.04)
+# disable rendering during creation
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
 #p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 

@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(dirname,
-                              'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+                              'robot_descriptions', 'comau_NJ290_3-0_m_clean.urdf')
     urdf_file2 = os.path.join(dirname,
                               'robot_descriptions', 'gripper_cad.urdf')
     urdf_file3 = os.path.join(dirname,

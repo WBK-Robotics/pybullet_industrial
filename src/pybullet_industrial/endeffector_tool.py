@@ -56,6 +56,7 @@ class EndeffectorTool:
                                                        [0, 0, 0],
                                                        [0, 0, 0],
                                                        start_position,
+                                                       p.getQuaternionFromEuler([0, 0, 0]),
                                                        start_orientation)
 
         if not coupled_robots is None:
@@ -72,6 +73,15 @@ class EndeffectorTool:
         self._tcp_translation = tcp_pos-base_pos
         self._tcp_rotation = quaternion_multiply(
             tcp_ori, quaternion_inverse(base_ori))
+
+        rot_matrix = p.getMatrixFromQuaternion(base_ori)
+        rot_matrix = np.array(rot_matrix).reshape(3, 3)
+
+        self._tcp_translation = rot_matrix @ np.array(self._tcp_translation)
+
+        base_pos_inv, base_ori_inv = p.invertTransform(base_pos, base_ori)
+        print(tcp_pos, base_pos_inv)
+        self._tcp_translation, self._tcp_rotation = p.multiplyTransforms( base_pos_inv, base_ori_inv, tcp_pos, tcp_ori)
 
     def couple(self, robot, endeffector_name=None):
         """Dynamically Couples the Tool with the Endeffector of a given robot.
@@ -132,6 +142,7 @@ class EndeffectorTool:
                                                        [0, 0, 0],
                                                        [0, 0, 0],
                                                        position,
+                                                       p.getQuaternionFromEuler([0,0,0]),
                                                        orientation)
         pass
 
@@ -179,15 +190,16 @@ class EndeffectorTool:
                 base_ori = link_state[1]
             rot_matrix = p.getMatrixFromQuaternion(base_ori)
             rot_matrix = np.array(rot_matrix).reshape(3, 3)
+
             translation = rot_matrix@np.array(self._tcp_translation)
             adj_target_position = target_position-translation
-
             if target_orientation is None:
                 adj_target_orientation = None
             else:
                 adj_target_orientation = quaternion_multiply(
                     quaternion_inverse(self._tcp_rotation), target_orientation)
-
+            tcp_translation_inv, tcp_rotation_inv = p.invertTransform(self._tcp_translation, self._tcp_rotation)
+            adj_target_position, adj_target_orientation = p.multiplyTransforms(target_position, target_orientation, tcp_translation_inv, tcp_rotation_inv)
             self._coupled_robot.set_endeffector_pose(
                 adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
         else:
@@ -201,6 +213,7 @@ class EndeffectorTool:
                                                            [0, 0, 0],
                                                            [0, 0, 0],
                                                            target_position,
+                                                           p.getQuaternionFromEuler([0,0,0]),
                                                            target_orientation)
 
     def _convert_link_to_id(self, tcp):

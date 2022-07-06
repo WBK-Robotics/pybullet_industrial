@@ -6,7 +6,6 @@ def spawn_voxel_block(base_position, dimensions, voxel_size):
     half_extents = voxel_size*0.5
     visualShapeId = p.createVisualShape(shapeType=p.GEOM_BOX,
                                         rgbaColor=[1, 1, 1, 1],
-                                        specularColor=[0.4, .4, 0],
                                         halfExtents=[half_extents, half_extents, half_extents])
     collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_BOX,
                                               halfExtents=[half_extents, half_extents, half_extents])
@@ -17,7 +16,9 @@ def spawn_voxel_block(base_position, dimensions, voxel_size):
         for y in range(int(dimensions[1]/voxel_size)):
             for z in range(int(dimensions[2]/voxel_size)):
                 batchPositions.append(
-                    [x * half_extents * 2+base_position[0], y * half_extents * 2+base_position[1],  z * half_extents * 2+base_position[2]])
+                    [x * half_extents * 2+base_position[0],
+                     y * half_extents * 2+base_position[1],
+                     z * half_extents * 2+base_position[2]])
 
     bodyUids = p.createMultiBody(baseMass=0.0,
                                  baseInertialFramePosition=[0, 0, 0],
@@ -37,13 +38,16 @@ p.setPhysicsEngineParameter(numSolverIterations=4,
 # disable rendering during creation.
 p.setPhysicsEngineParameter(contactBreakingThreshold=0.04)
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
-#p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
+p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 
 
-spawn_voxel_block([0, 0, 0], [1, 1, 1], 0.1)
-
-spawn_voxel_block([0, -0.5, 0], [0.1, 0.1, 0.1], 0.01)
-
+size_progression = [1, 0.5, 0.2, 0.1, 0.05, 0.02]
+start = 0
+for size in size_progression:
+    spawn_voxel_block([0, start, 0],
+                      [size, size, size],
+                      size/10)
+    start += size
 
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 

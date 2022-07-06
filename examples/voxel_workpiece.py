@@ -1,6 +1,35 @@
 import pybullet as p
 import pybullet_industrial as pi
 
+
+def spawn_voxel_block(base_position, dimensions, voxel_size):
+    half_extents = voxel_size*0.5
+    visualShapeId = p.createVisualShape(shapeType=p.GEOM_BOX,
+                                        rgbaColor=[1, 1, 1, 1],
+                                        specularColor=[0.4, .4, 0],
+                                        halfExtents=[half_extents, half_extents, half_extents])
+    collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_BOX,
+                                              halfExtents=[half_extents, half_extents, half_extents])
+
+    batchPositions = []
+
+    for x in range(int(dimensions[0]/voxel_size)):
+        for y in range(int(dimensions[1]/voxel_size)):
+            for z in range(int(dimensions[2]/voxel_size)):
+                batchPositions.append(
+                    [x * half_extents * 2+base_position[0], y * half_extents * 2+base_position[1],  z * half_extents * 2+base_position[2]])
+
+    bodyUids = p.createMultiBody(baseMass=0.0,
+                                 baseInertialFramePosition=[0, 0, 0],
+                                 baseCollisionShapeIndex=collisionShapeId,
+                                 baseVisualShapeIndex=visualShapeId,
+                                 basePosition=base_position,
+                                 batchPositions=batchPositions,
+                                 useMaximalCoordinates=True)
+
+    return bodyUids
+
+
 p.connect(p.GUI)
 p.setPhysicsEngineParameter(numSolverIterations=4,
                             minimumSolverIslandSize=1024)
@@ -8,33 +37,13 @@ p.setPhysicsEngineParameter(numSolverIterations=4,
 # disable rendering during creation.
 p.setPhysicsEngineParameter(contactBreakingThreshold=0.04)
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
-p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
+#p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 
 
-voxel_scale = [0.1, 0.1, 0.1]
-visualShapeId = p.createVisualShape(shapeType=p.GEOM_BOX,
-                                    rgbaColor=[1, 1, 1, 1],
-                                    specularColor=[0.4, .4, 0],
-                                    halfExtents=voxel_scale)
-collisionShapeId = p.createCollisionShape(
-    shapeType=p.GEOM_BOX, halfExtents=voxel_scale)
+spawn_voxel_block([0, 0, 0], [1, 1, 1], 0.1)
 
+spawn_voxel_block([0, -0.5, 0], [0.1, 0.1, 0.1], 0.01)
 
-batchPositions = []
-
-for x in range(32):
-    for y in range(32):
-        for z in range(10):
-            batchPositions.append(
-                [x * voxel_scale[0] * 2, y * voxel_scale[1] * 2, (0.0 + z) * voxel_scale[2] * 2])
-
-bodyUids = p.createMultiBody(baseMass=0.0,
-                             baseInertialFramePosition=[0, 0, 0],
-                             baseCollisionShapeIndex=collisionShapeId,
-                             baseVisualShapeIndex=visualShapeId,
-                             basePosition=[0, 0, 2],
-                             batchPositions=batchPositions,
-                             useMaximalCoordinates=True)
 
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 

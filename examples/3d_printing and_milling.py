@@ -67,6 +67,7 @@ if __name__ == "__main__":
                           'number of rays': 1}
     remover = Remover(
         urdf_file2, [1.9, 1, 1.2], start_orientation, remover_properties)
+    p.changeVisualShape(remover.urdf, -1, rgbaColor=[0, 0, 1, 1])
 
     target_position = np.array([1.9, 0])
     target_orientation = p.getQuaternionFromEuler([0, 0, 0])
@@ -95,6 +96,7 @@ if __name__ == "__main__":
             extruder.decouple()
             remover.couple(robot, 'link6')
             extruding = 0
+            continue
         if not extruding:
             for i in range(steps):
                 remover.remove()

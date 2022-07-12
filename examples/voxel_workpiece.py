@@ -134,10 +134,10 @@ if __name__ == "__main__":
     p.setPhysicsEngineParameter(numSolverIterations=5000)
 
     remover_properties = {'maximum distance': 2.0,
-                          'opening angle': 0.1,
-                          'number of rays': 10}
+                          'opening angle': 0.0,
+                          'number of rays': 1}
 
-    position = [-0.01, -0.5, 1.2]
+    position = [0.01, -0.5, 1.2]
     remover = Remover(
         urdf_file2, position, [0, 0, 0, 1], remover_properties)
 
@@ -160,6 +160,9 @@ if __name__ == "__main__":
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 
     while (1):
+        remover.remove()
+        remover.remove()
+        remover.remove()
         remover.remove()
         position[1] += 0.005
         remover.set_tool_pose(position, [0, 0, 0, 1])

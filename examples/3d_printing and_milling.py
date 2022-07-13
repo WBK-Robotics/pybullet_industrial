@@ -50,11 +50,10 @@ if __name__ == "__main__":
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
-    #plastic = pi.Plastic(0.03, [1, 0, 0, 1])
-
     extruder_properties = {'maximum distance': 0.5,
                            'opening angle': 0,
                            'material': pi.Plastic,
+                           'material properties': {'particle size': 0.05},
                            'number of rays': 1}
     extruder = pi.Extruder(
         urdf_file2, [1.9, 0, 1.2], start_orientation, extruder_properties)
@@ -67,18 +66,16 @@ if __name__ == "__main__":
         urdf_file2, [1.9, 1, 1.2], start_orientation, remover_properties)
     p.changeVisualShape(remover.urdf, -1, rgbaColor=[0, 0, 1, 1])
 
-    target_position = np.array([1.9, 0])
+    target_position = np.array([1.9, 0.0])
     target_orientation = p.getQuaternionFromEuler([0, 0, 0])
-    steps = 100
+    steps = 20
     base_height = 1.03
     test_path = build_circular_path(
-        target_position, 0.3, 0, 2*np.pi, steps, base_height)
-
-    test_path = build_circular_path(
-        target_position, 0.3, 0, 2*np.pi, steps, base_height)
+        target_position, 0.2, 0, 2*np.pi, steps, base_height)
     pi.draw_path(test_path)
 
     extruding = 1
+    current_particles = []
     while True:
         for i in range(20):
             extruder.set_tool_pose(test_path[:, 0], target_orientation)
@@ -88,23 +85,30 @@ if __name__ == "__main__":
             for i in range(steps):
                 extruder.set_tool_pose(test_path[:, i], target_orientation)
                 particle = extruder.extrude()
+                current_particles.append(particle[0].particle_id)
 
                 for _ in range(30):
                     p.stepSimulation()
             extruder.decouple()
             remover.couple(robot, 'link6')
             extruding = 0
+            print(current_particles)
             continue
         if not extruding:
             for i in range(steps):
-                remover.remove()
-                remover.remove()
-                remover.remove()
-
+                for _ in range(3):
+                    removed_particles = remover.remove()
+                    for elements in removed_particles:
+                        current_particles.remove(elements)
                 remover.set_tool_pose(test_path[:, i], target_orientation)
+                for _ in range(3):
+                    removed_particles = remover.remove()
+                    for elements in removed_particles:
+                        current_particles.remove(elements)
 
                 for _ in range(30):
                     p.stepSimulation()
             remover.decouple()
             extruder.couple(robot, 'link6')
             extruding = 1
+            print(current_particles)

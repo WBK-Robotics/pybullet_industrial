@@ -34,7 +34,7 @@ class Extruder(RayCaster):
         Raises:
             ValueError: If no material is provided during initialization.
         """
-        print(self.properties)
+        # print(self.properties)
         raycast_properties = dict(extruder_properties)
         del raycast_properties['material']
         del raycast_properties['material properties']
@@ -58,10 +58,7 @@ class Extruder(RayCaster):
                                        Defaults to None in which case the default tcp is used
         """
         position, orientation = self.get_tool_pose(tcp_frame)
-        ray_cast_results = self.cast_rays(position, orientation,
-                                          self.properties['opening angle'],
-                                          self.properties['number of rays'],
-                                          self.properties['maximum distance'])
+        ray_cast_results = self.cast_rays(position, orientation)
 
         particle_list = []
         for i in range(self.properties['number of rays']):

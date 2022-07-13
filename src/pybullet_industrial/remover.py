@@ -52,10 +52,7 @@ class Remover(RayCaster):
                                        Defaults to None in which case the default tcp is used
         """
         position, orientation = self.get_tool_pose(tcp_frame)
-        ray_cast_results = self.cast_rays(position, orientation,
-                                          self.properties['opening angle'],
-                                          self.properties['number of rays'],
-                                          self.properties['maximum distance'])
+        ray_cast_results = self.cast_rays(position, orientation)
 
         removed_objects = []
         for i in range(self.properties['number of rays']):

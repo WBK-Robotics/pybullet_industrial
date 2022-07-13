@@ -57,20 +57,19 @@ class RayCaster(EndeffectorTool):
             else:
                 self.properties[key] = new_properties[key]
 
-    @staticmethod
-    def cast_rays(position, orientation, opening_angle, number_of_rays, ray_length):
+    def cast_rays(self, position, orientation):
         """Randomly casts rays withn a given range from a specified position and orientation
 
         Args:
-            position ([type]): start position of the rays
-            orientation ([type]): start orientation of the rays
-            opening_angle ([type]): the opening angle in which the rays should be cast
-            number_of_rays ([type]): The number of rays which are cast
-            ray_length ([type]): The maximum range of the rays
+            position ([type]): start position of the raycast
+            orientation ([type]): start orientation of the raycast
 
         Returns:
             [type]: [description]
         """
+        opening_angle = self.properties['opening angle']
+        number_of_rays = self.properties['number of rays']
+        ray_length = self.properties['maximum distance']
         ray_start_pos = []
         ray_end_pos = []
 

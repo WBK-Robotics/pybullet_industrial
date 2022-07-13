@@ -85,6 +85,10 @@ class Plastic(Particle):
 
     def get_position(self):
         """Returns the position of a particle in the world frame
+
+        Returns:
+            [float,float,float]: The three dimensional position of the particle 
+                                 in the world coordinate system 
         """
         position, _ = p.getBasePositionAndOrientation(self.particle_id)
         return position

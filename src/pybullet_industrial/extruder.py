@@ -38,7 +38,6 @@ class Extruder(RayCaster):
         super().__init__(urdf_model, start_position, start_orientation,
                          coupled_robots, tcp_frame, connector_frames)
 
-        self.properties
         self.properties['material'] = Plastic
         self.properties['material properties'] = {
             'particle size': 0.03, 'color': [1, 0, 0, 1]}
@@ -57,7 +56,6 @@ class Extruder(RayCaster):
 
         particle_list = []
         for ray_intersection in ray_cast_results:
-            #ray_intersection = ray_cast_results[i]
             if ray_intersection[0] != -1:
                 particle = self.properties['material'](ray_intersection,
                                                        self.properties['material properties'])

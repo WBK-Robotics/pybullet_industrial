@@ -55,8 +55,7 @@ class Remover(RayCaster):
         ray_cast_results = self.cast_rays(position, orientation)
 
         removed_objects = []
-        for i in range(self.properties['number of rays']):
-            ray_intersection = ray_cast_results[i]
+        for ray_intersection in ray_cast_results:
             if ray_intersection[0] != -1:
                 p.removeBody(ray_intersection[0])
 

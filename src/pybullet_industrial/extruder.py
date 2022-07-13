@@ -56,8 +56,8 @@ class Extruder(RayCaster):
         ray_cast_results = self.cast_rays(position, orientation)
 
         particle_list = []
-        for i in range(self.properties['number of rays']):
-            ray_intersection = ray_cast_results[i]
+        for ray_intersection in ray_cast_results:
+            #ray_intersection = ray_cast_results[i]
             if ray_intersection[0] != -1:
                 particle = self.properties['material'](ray_intersection,
                                                        self.properties['material properties'])

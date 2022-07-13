@@ -5,8 +5,6 @@ import pybullet as p
 import pybullet_data
 import pybullet_industrial as pi
 
-from voxel_workpiece import Remover
-
 
 def build_circular_path(center, radius, min_angle, max_angle, step_num, height):
     """Function which builds a circular path
@@ -65,7 +63,7 @@ if __name__ == "__main__":
     remover_properties = {'maximum distance': 0.02,
                           'opening angle': 0,
                           'number of rays': 1}
-    remover = Remover(
+    remover = pi.Remover(
         urdf_file2, [1.9, 1, 1.2], start_orientation, remover_properties)
     p.changeVisualShape(remover.urdf, -1, rgbaColor=[0, 0, 1, 1])
 

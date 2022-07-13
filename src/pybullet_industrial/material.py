@@ -178,4 +178,4 @@ def spawn_material_block(base_position, dimensions, material, material_propertie
         particle = material([0, 0, 0, positions], material_properties)
         objects.append(particle)
 
-    return particle
+    return objects

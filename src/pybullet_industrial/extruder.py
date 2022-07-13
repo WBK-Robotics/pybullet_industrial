@@ -34,11 +34,8 @@ class Extruder(RayCaster):
         Raises:
             ValueError: If no material is provided during initialization.
         """
-        # print(self.properties)
-        raycast_properties = dict(extruder_properties)
-        del raycast_properties['material']
-        del raycast_properties['material properties']
-        super().__init__(urdf_model, start_position, start_orientation, raycast_properties,
+
+        super().__init__(urdf_model, start_position, start_orientation,
                          coupled_robots, tcp_frame, connector_frames)
 
         self.properties
@@ -47,8 +44,6 @@ class Extruder(RayCaster):
             'particle size': 0.03, 'color': [1, 0, 0, 1]}
 
         self.change_properties(extruder_properties)
-        if self.properties['material'] is None:
-            raise ValueError("The extruder requires a initial Material")
 
     def extrude(self, tcp_frame=None):
         """Extrudes material from the specified tcp_frame.

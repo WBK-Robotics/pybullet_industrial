@@ -8,8 +8,8 @@ from pybullet_industrial.endeffector_tool import EndeffectorTool
 
 class RayCaster(EndeffectorTool):
 
-    def __init__(self, urdf_model: str, start_position, start_orientation, raycast_properties: Dict,
-                 coupled_robots=None, tcp_frame=None, connector_frames=None):
+    def __init__(self, urdf_model: str, start_position, start_orientation,
+                 raycast_properties: Dict = None, coupled_robots=None, tcp_frame=None, connector_frames=None):
         """Special Endeffector Tool which can cast rays. Base for Extruder and Remover classes.
 
         Args:
@@ -37,7 +37,8 @@ class RayCaster(EndeffectorTool):
         self.properties = {'opening angle': 0,
                            'number of rays': 1,
                            'maximum distance': 1}
-        self.change_properties(raycast_properties)
+        if raycast_properties is not None:
+            self.change_properties(raycast_properties)
 
     def change_properties(self, new_properties: Dict):
         """Allows retroactive changes to the ray casting properties.

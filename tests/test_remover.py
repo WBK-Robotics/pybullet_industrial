@@ -111,7 +111,7 @@ class TestRemover(unittest.TestCase):
             for _ in range(30):
                 p.stepSimulation()
 
-        print(current_particles)
+        p.disconnect()
         self.assertTrue(current_particles == [])
 
 

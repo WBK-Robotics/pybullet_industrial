@@ -35,7 +35,7 @@ def linear_interpolation(start_point, end_point, samples):
     return final_path.transpose()
 
 
-def circular_interpolation(start_point, end_point, radius, samples, clockwise=True):
+def circle_center_from_points(start_point, end_point, radius, clockwise=True):
     planar_end_point = np.array([end_point[0], end_point[1], start_point[2]])
     connecting_line = planar_end_point-start_point
     distance_between_points = np.linalg.norm(connecting_line)
@@ -55,7 +55,17 @@ def circular_interpolation(start_point, end_point, radius, samples, clockwise=Tr
 
     circle_center = start_point+connecting_line/2+center_distance_from_connecting_line * \
         orthogonal_vector/np.linalg.norm(orthogonal_vector)
+    return circle_center
 
+
+def circular_interpolation(start_point, end_point, radius, samples, clockwise=True):
+    circle_center = circle_center_from_points(
+        start_point, end_point, radius, clockwise)
+
+    distance_between_planar_points = np.sqrt((start_point[0]-end_point[0])**2 +
+                                             (start_point[1]-end_point[1])**2)
+    center_distance_from_connecting_line = np.sqrt(
+        radius**2-distance_between_planar_points**2/4)
     angle_range = np.arccos(center_distance_from_connecting_line/radius)*2
     initial_angle = np.arctan2(
         start_point[1]-circle_center[1], start_point[0]-circle_center[0])

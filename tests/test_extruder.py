@@ -146,7 +146,7 @@ class TestExtruder(unittest.TestCase):
         extruder.couple(robot, 'link6')
 
         target_position = np.array([1.9, 0.3, 0.6])
-        extruder.change_extruder_properties(
+        extruder.change_properties(
             {'maximum distance': 0.7, 'opening angle': np.pi/6, 'number of rays': 300})
         for _ in range(20):
             extruder.set_tool_pose(
@@ -159,7 +159,7 @@ class TestExtruder(unittest.TestCase):
         cone_height = target_position[2]
         cone_radius = np.tan(np.pi/6/2)*cone_height
         particle_list = extruder.extrude()
-        extruder.change_extruder_properties(
+        extruder.change_properties(
             {'maximum distance': 0.5, 'opening angle': 0, 'number of rays': 1})
 
         distance_from_center_list = []

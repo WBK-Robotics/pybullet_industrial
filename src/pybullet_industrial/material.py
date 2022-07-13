@@ -8,7 +8,13 @@ class Particle():
         """A template class for material particles extruded by a extruder endeffector tool
 
         Args:
-            ray_cast_result ([type]): The result of a pybullet ray_cast as performed by the extruder
+            ray_cast_result ([type]): The result of a pybullet ray_cast 
+                                      as performed by the Extruder class. 
+                                      It is made up of: [objectUniqueId, 
+                                                         linkIndex,
+                                                         hit fraction,
+                                                         hit position,
+                                                         hit normal]
             material_properties (Dict): A dictionary containing the properties of the material
         """
         self.properties = {}
@@ -51,7 +57,13 @@ class Plastic(Particle):
            The particles are infinitely rigid and stick to each other.
 
         Args:
-            ray_cast_result ([type]): The result of a pybullet ray_cast as performed by the extruder
+            ray_cast_result ([type]): The result of a pybullet ray_cast
+                                      as performed by the Extruder class.
+                                      It is made up of: [objectUniqueId, 
+                                                         linkIndex,
+                                                         hit fraction,
+                                                         hit position,
+                                                         hit normal]
             material_properties (Dict): A dictionary containing the properties of the material.
                                         The default properties for Plastic are:
                                         'particle size': 0.3, 'color': [1, 0, 0, 1]

@@ -3,7 +3,7 @@ import pybullet_industrial as pi
 import numpy as np
 
 
-def build_circular_path(center, radius, min_angle, max_angle, step_num):
+def build_circular_path(center, radius, min_angle, max_angle, step_num, clockwise=True):
     """Function which builds a circular path
 
     Args:
@@ -20,7 +20,10 @@ def build_circular_path(center, radius, min_angle, max_angle, step_num):
     circular_path = np.zeros((3, step_num))
     circular_path[2, :] = center[2]
     for j in range(step_num):
-        path_angle = min_angle-j*(max_angle-min_angle)/step_num
+        if clockwise:
+            path_angle = min_angle-j*(max_angle-min_angle)/step_num
+        else:
+            path_angle = min_angle+j*(max_angle-min_angle)/step_num
         new_position = center[:2] + radius * \
             np.array([np.cos(path_angle), np.sin(path_angle)])
         circular_path[:2, j] = new_position
@@ -56,8 +59,9 @@ def circular_interpolation(start_point, end_point, radius, samples, clockwise=Tr
     angle_range = np.arccos(center_distance_from_connecting_line/radius)*2
     initial_angle = np.arctan2(
         start_point[1]-circle_center[1], start_point[0]-circle_center[0])
+
     planar_path = build_circular_path(
-        circle_center, radius, initial_angle, initial_angle+angle_range, samples)
+        circle_center, radius, initial_angle, initial_angle+angle_range, samples, clockwise)
     planar_path[2] = np.linspace(start_point[2], end_point[2], samples)
     return planar_path
 
@@ -90,6 +94,11 @@ if __name__ == "__main__":
     test_path = circular_interpolation(
         np.array([0, -1, 0]), np.array([-1, 0, 0.5]), 1, 50)
     pi.draw_path(test_path, color=[0, 0, 1])
+
+    # -+ quadrant
+    test_path = circular_interpolation(
+        np.array([0, 1, 0.5]), np.array([-1, 0, 0.5]), 1, 50, False)
+    pi.draw_path(test_path, color=[0, 1, 1])
 
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 

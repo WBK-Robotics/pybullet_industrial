@@ -3,35 +3,6 @@ import pybullet_industrial as pi
 import os
 
 
-
-def spawn_voxel_block(base_position, dimensions, voxel_size, color=[1, 1, 1, 1]):
-    half_extents = voxel_size*0.5
-    visualShapeId = p.createVisualShape(shapeType=p.GEOM_BOX,
-                                        rgbaColor=color,
-                                        halfExtents=[half_extents, half_extents, half_extents])
-    collisionShapeId = p.createCollisionShape(shapeType=p.GEOM_BOX,
-                                              halfExtents=[half_extents, half_extents, half_extents])
-
-    batchPositions = []
-
-    for x in range(int(dimensions[0]/voxel_size)):
-        for y in range(int(dimensions[1]/voxel_size)):
-            for z in range(int(dimensions[2]/voxel_size)):
-                batchPositions.append(
-                    [x * voxel_size+base_position[0]+half_extents,
-                     y * voxel_size+base_position[1]+half_extents,
-                     z * voxel_size+base_position[2]+half_extents])
-
-    bodyUids = p.createMultiBody(baseMass=0.0,
-                                 baseInertialFramePosition=[0, 0, 0],
-                                 baseCollisionShapeIndex=collisionShapeId,
-                                 baseVisualShapeIndex=visualShapeId,
-                                 batchPositions=batchPositions,
-                                 useMaximalCoordinates=True)
-
-    return bodyUids
-
-
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     urdf_file2 = os.path.join(dirname,
@@ -59,9 +30,10 @@ if __name__ == "__main__":
     size_progression = [1, 0.5, 0.2, 0.1, 0.05, 0.02]
     start = 0
     for size in size_progression:
-        spawn_voxel_block([0, start, 0],
-                          [size, size, size],
-                          size/10)
+        pi.spawn_material_block([0, start, 0],
+                                [size, size, size],
+                                pi.MetalVoxel,
+                                {'particle size': size/10})
         start += size
 
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)

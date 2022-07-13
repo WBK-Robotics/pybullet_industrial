@@ -91,3 +91,87 @@ class Plastic(Particle):
 
     def remove(self):
         p.removeBody(self.particle_id)
+
+
+class MetalVoxel(Particle):
+    def __init__(self, ray_cast_result,  material_properties: Dict):
+        """A simple voxel class for cutting and milling simulations
+
+        Args:
+            ray_cast_result ([type]): The result of a pybullet ray_cast
+                                      as performed by the Extruder class.
+                                      It is made up of: [objectUniqueId, 
+                                                         linkIndex,
+                                                         hit fraction,
+                                                         hit position,
+                                                         hit normal]
+            material_properties (Dict): A dictionary containing the properties of the material.
+                                        The default properties for Plastic are:
+                                        'particle size': 0.3, 'color': [1, 0, 0, 1]
+        """
+        self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
+        self.set_material_properties(material_properties)
+        particle_size = self.properties['particle size']
+        color = self.properties['color']
+
+        half_extents = particle_size*0.5
+        visual_shape_id = p.createVisualShape(shapeType=p.GEOM_BOX,
+                                              rgbaColor=color,
+                                              halfExtents=[half_extents,
+                                                           half_extents,
+                                                           half_extents])
+        collision_shape_id = p.createCollisionShape(shapeType=p.GEOM_BOX,
+                                                    halfExtents=[half_extents,
+                                                                 half_extents,
+                                                                 half_extents])
+
+        self.particle_id = p.createMultiBody(baseMass=0,
+                                             baseCollisionShapeIndex=collision_shape_id,
+                                             baseVisualShapeIndex=visual_shape_id,
+                                             basePosition=ray_cast_result[3])
+
+    def get_position(self):
+        """Returns the position of a particle in the world frame
+        """
+        position, _ = p.getBasePositionAndOrientation(self.particle_id)
+        return position
+
+    def remove(self):
+        p.removeBody(self.particle_id)
+
+
+def spawn_material_block(base_position, dimensions, material, material_properties):
+    """Spawns a block of a give material.
+
+    Args:
+        base_position ([float,float,float]): The position of the lower left base corner of the block
+        dimensions ([float,float,float]): The dimensions of the block in [width,breath,height]
+        material (Particle): A particle that should be spawned 
+        material_properties (Dict): A dictionary containing the properties of the material.
+                                    It needs to contain a key 'particle size'.
+
+    Returns:
+        _type_: _description_
+    """
+    if 'particle size' not in material_properties.keys():
+        raise KeyError(
+            "The material properties must contain the key 'particle size'!")
+    particle_size = material_properties['particle size']
+    half_extents = particle_size*0.5
+
+    batchPositions = []
+
+    for x in range(int(dimensions[0]/particle_size)):
+        for y in range(int(dimensions[1]/particle_size)):
+            for z in range(int(dimensions[2]/particle_size)):
+                batchPositions.append(
+                    [x * particle_size+base_position[0]+half_extents,
+                     y * particle_size+base_position[1]+half_extents,
+                     z * particle_size+base_position[2]+half_extents])
+
+    objects = []
+    for positions in batchPositions:
+        particle = material([0, 0, 0, positions], material_properties)
+        objects.append(particle)
+
+    return particle

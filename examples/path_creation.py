@@ -16,12 +16,16 @@ def build_circular_path(center, radius, min_angle, max_angle, step_num):
     Returns:
         array: array of 3 dimensional path points
     """
+    if min_angle <= 0:
+        min_angle += 2*np.pi
+    if max_angle <= 0:
+        max_angle += 2*np.pi
     circular_path = np.zeros((3, step_num))
     circular_path[2, :] = center[2]
     for j in range(step_num):
-        path_angle = min_angle+j*(max_angle-min_angle)/step_num
+        path_angle = min_angle-j*(max_angle-min_angle)/step_num
         new_position = center[:2] + radius * \
-            np.array([-np.cos(path_angle), np.sin(path_angle)])
+            np.array([np.cos(path_angle), np.sin(path_angle)])
         circular_path[:2, j] = new_position
     return circular_path
 
@@ -53,8 +57,8 @@ def circular_interpolation(start_point, end_point, radius, samples, clockwise=Tr
 
     circle_center = start_point+connecting_line/2+center_distance_from_connecting_line * \
         orthogonal_vector/np.linalg.norm(orthogonal_vector)
-    print(circle_center, center_distance_from_connecting_line *
-          orthogonal_vector/np.linalg.norm(orthogonal_vector))
+    print(circle_center, start_point+connecting_line/2, orthogonal_vector /
+          np.linalg.norm(orthogonal_vector), distance_between_points, center_distance_from_connecting_line)
 
     angle_range = np.arccos(center_distance_from_connecting_line/radius)*2
     initial_angle = np.arctan2(
@@ -79,11 +83,11 @@ if __name__ == "__main__":
 
     # +- quadrant
     test_path = linear_interpolation(
-        [0, 0, 0], [2/np.sqrt(1), -2/np.sqrt(1), 0], 10)
+        [1, -1, 0], [1-1/np.sqrt(2), -1+1/np.sqrt(2), 0], 10)
     pi.draw_path(test_path, color=[0, 1, 0])
 
     test_path = circular_interpolation(
-        np.array([0, -1, 0]), np.array([1, 0, 0]), 2, 50)
+        np.array([0, -1, 0]), np.array([1, 0, 0]), 1, 50)
     pi.draw_path(test_path, color=[0, 1, 0])
 
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)

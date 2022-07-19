@@ -4,6 +4,51 @@ import numpy as np
 import scipy.interpolate as sci
 
 
+class ToolPath:
+
+    def __init__(self, positions, orientations=None, tool_acivations=None):
+        self.positions = positions
+        if orientations != None:
+            self.orientations = np.zeros((4, len(self.positions[0])))
+            self.orientations[3] = 1
+        else:
+            # TODO check if array has correct dimensions.
+            self.orientations = orientations
+
+        self.tool_activations = tool_acivations
+
+    def translate(self, vector):
+        self.positions[0] += vector[0]
+        self.positions[1] += vector[1]
+        self.positions[2] += vector[2]
+
+    def rotate(self, quaternion):
+        path_positions = np.transpose(self.positions)
+        path_orientations = np.transpose(self.orientations)
+
+        rot_matrix = p.getMatrixFromQuaternion(quaternion)
+        rot_matrix = np.array(rot_matrix).reshape(3, 3)
+        for i in range(len(self.positions[0])):
+            path_positions[i] = rot_matrix@path_positions[i]
+            path_orientations[i] = pi.quaternion_multiply(
+                path_orientations, quaternion)
+
+        self.positions = np.transpose(path_positions)
+        self.orientations = np.transpose(path_orientations)
+
+    def __len__(self):
+        return len(self.positions[0])
+
+    def __iter__(self):
+        self.current_index = 0
+        return self
+
+    def __next__(self):
+        i = self.current_index
+        self.current_index += 1
+        return self.positions[:, i], self.orientations[:, i]
+
+
 def build_circular_path(center, radius, min_angle, max_angle, step_num, clockwise=True):
     """Function which builds a circular path
 

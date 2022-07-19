@@ -60,26 +60,23 @@ if __name__ == "__main__":
         urdf_file2, [1.9, 0, 1.2], start_orientation, extruder_properties)
     extruder.couple(robot, 'link6')
 
-    target_position = np.array([1.9, 0])
-    target_orientation = p.getQuaternionFromEuler([0, 0, 0])
+    target_position = np.array([1.9, 0, 1.03])
     steps = 100
-    base_height = 1.03
-    test_path = build_circular_path(
-        target_position, 0.3, 0, 2*np.pi, steps, base_height)
+    test_path = pi.build_box_path(
+        target_position, [0.5, 0.6], 0.1, [0, 0, 0, 1], steps)
     for i in range(20):
-        extruder.set_tool_pose(test_path[:, 0], target_orientation)
+        extruder.set_tool_pose(test_path.positions[:, 0], [0, 0, 0, 1])
         for _ in range(50):
             p.stepSimulation()
 
     while True:
-        test_path = build_circular_path(
-            target_position, 0.3, 0, 2*np.pi, steps, base_height)
-        pi.draw_path(test_path)
-        base_height = base_height+0.03
-        for i in range(steps):
-            extruder.set_tool_pose(test_path[:, i], target_orientation)
+        test_path.draw()
+        for positions, orientations, _ in test_path:
+            extruder.set_tool_pose(
+                positions, p.getQuaternionFromEuler([0, 0, 0]))
             position, orientation = extruder.get_tool_pose()
             particle = extruder.extrude()
 
             for _ in range(30):
                 p.stepSimulation()
+        test_path.translate([0, 0, 0.03])

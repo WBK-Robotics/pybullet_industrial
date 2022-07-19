@@ -44,44 +44,14 @@ if __name__ == "__main__":
     p.changeVisualShape(remover.urdf, -1, rgbaColor=[0, 0, 1, 1])
 
     # Defining a roundet rectangular path
-    center_position = np.array([1.9, 0.0, 1.03])
+    target_position = np.array([1.9, 0.0, 1.03])
     target_orientation = p.getQuaternionFromEuler([0, 0, 0])
-    steps = 20
-    corner_point_00 = center_position+np.array([-0.2, -0.2, 0])
-    corner_point_01 = center_position+np.array([-0.2, 0.2, 0])
-    corner_point_10 = center_position+np.array([-0.1, 0.3, 0])
-    corner_point_11 = center_position+np.array([0.1, 0.3, 0])
-    corner_point_20 = center_position+np.array([0.2, 0.2, 0])
-    corner_point_21 = center_position+np.array([0.2, -0.2, 0])
-    corner_point_30 = center_position+np.array([0.1, -0.3, 0])
-    corner_point_31 = center_position+np.array([-0.1, -0.3, 0])
-
-    test_path = pi.linear_interpolation(corner_point_00, corner_point_01, 10)
-    side_1 = pi.linear_interpolation(corner_point_10, corner_point_11, 10)
-    side_2 = pi.linear_interpolation(corner_point_20, corner_point_21, 10)
-    side_3 = pi.linear_interpolation(corner_point_30, corner_point_31, 10)
-
-    corner_0 = pi.circular_interpolation(
-        corner_point_01, corner_point_10, 0.1, 5)
-    corner_1 = pi.circular_interpolation(
-        corner_point_11, corner_point_20, 0.1, 5)
-    corner_2 = pi.circular_interpolation(
-        corner_point_21, corner_point_30, 0.1, 5)
-    corner_3 = pi.circular_interpolation(
-        corner_point_31, corner_point_00, 0.1, 5)
-
-    test_path.append(corner_0)
-    test_path.append(side_1)
-    test_path.append(corner_1)
-    test_path.append(side_2)
-    test_path.append(corner_2)
-    test_path.append(side_3)
-    test_path.append(corner_3)
+    test_path = pi.build_box_path(
+        target_position, [0.5, 0.6], 0.1, [0, 0, 0, 1], 50)
 
     test_path.draw()
 
     extruding = 1
-    current_particles = []
     while True:
         for _ in range(20):
             extruder.set_tool_pose(
@@ -89,10 +59,9 @@ if __name__ == "__main__":
             for _ in range(50):
                 p.stepSimulation()
         if extruding:
-            for positions, orientations, _ in test_path:
+            for positions, orientations, tool_path in test_path:
                 extruder.set_tool_pose(positions, orientations)
                 particle = extruder.extrude()
-                current_particles.append(particle[0].particle_id)
 
                 for _ in range(30):
                     p.stepSimulation()
@@ -101,16 +70,12 @@ if __name__ == "__main__":
             extruding = 0
             continue
         if not extruding:
-            for positions, orientations, _ in test_path:
+            for positions, orientations, tool_path in test_path:
                 for _ in range(3):
                     removed_particles = remover.remove()
-                    for elements in removed_particles:
-                        current_particles.remove(elements)
                 remover.set_tool_pose(positions, orientations)
                 for _ in range(3):
                     removed_particles = remover.remove()
-                    for elements in removed_particles:
-                        current_particles.remove(elements)
 
                 for _ in range(30):
                     p.stepSimulation()

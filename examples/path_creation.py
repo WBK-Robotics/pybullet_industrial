@@ -14,8 +14,11 @@ class ToolPath:
         else:
             # TODO check if array has correct dimensions.
             self.orientations = orientations
-
-        self.tool_activations = tool_acivations
+        if tool_acivations == None:
+            self.tool_activations = np.zeros(len(self.positions[0]))
+        else:
+            # TODO check if array has correct dimensions.
+            self.tool_activations = tool_acivations
 
     def translate(self, vector):
         self.positions[0] += vector[0]
@@ -28,7 +31,7 @@ class ToolPath:
 
         rot_matrix = p.getMatrixFromQuaternion(quaternion)
         rot_matrix = np.array(rot_matrix).reshape(3, 3)
-        for i in range(len(self.positions[0])):
+        for i in range(len(self)):
             path_positions[i] = rot_matrix@path_positions[i]
             path_orientations[i] = pi.quaternion_multiply(
                 path_orientations[i], quaternion)
@@ -42,9 +45,23 @@ class ToolPath:
         else:
             path_positions = np.transpose(self.positions)
             path_orientations = np.transpose(self.orientations)
-            for i in range(len(self.positions[0])):
+            for i in range(len(self)):
                 pi.draw_coordinate_system(
                     path_positions[i], path_orientations[i])
+
+    def append(self, tool_path):
+        self.positions = np.append(self.positions, tool_path.positions, axis=1)
+        self.orientations = np.append(
+            self.orientations, tool_path.orientations, axis=1)
+        self.tool_activations = np.append(
+            self.tool_activations, tool_path.tool_activations)
+
+    def prepend(self, tool_path):
+        self.positions = np.append(tool_path.positions, self.positions, axis=1)
+        self.orientations = np.append(
+            tool_path.orientations, self.orientations, axis=1)
+        self.tool_activations = np.append(
+            tool_path.tool_activations, self.tool_activations)
 
     def __len__(self):
         return len(self.positions[0])
@@ -164,9 +181,9 @@ if __name__ == "__main__":
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
 
     # ++ quadrant
-    test_path = linear_interpolation(
+    org_test_path = linear_interpolation(
         [0, 0, 0], [1/np.sqrt(2), 1/np.sqrt(2), 0], 10)
-    test_path.draw(color=[1, 0, 0])
+    org_test_path.draw(color=[1, 0, 0])
 
     test_path = circular_interpolation(
         np.array([0, 1, 0]), np.array([1, 0, 0]), 1, 50)
@@ -205,6 +222,9 @@ if __name__ == "__main__":
 
     test_path.translate([0, 0, 1])
     test_path.draw(orientation=True)
+
+    test_path.append(org_test_path)
+    test_path.prepend(org_test_path)
 
     test_path.rotate(p.getQuaternionFromEuler([np.pi/2, 0, 0]))
     test_path.draw(orientation=True)

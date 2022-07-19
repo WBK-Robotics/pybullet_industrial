@@ -8,3 +8,4 @@ from pybullet_industrial.raycaster import *
 from pybullet_industrial.remover import *
 from pybullet_industrial.toolpath import *
 from pybullet_industrial.interpolation import circular_interpolation, linear_interpolation, spline_interpolation
+from pybullet_industrial.path_builders import *

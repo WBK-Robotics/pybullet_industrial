@@ -68,22 +68,22 @@ class TestRemover(unittest.TestCase):
         remover = pi.Remover(
             urdf_file2, [1.9, 1, 1.2], start_orientation, remover_properties)
 
-        target_position = np.array([1.9, 0.0])
+        target_position = np.array([1.9, 0.0, 1.03])
         target_orientation = p.getQuaternionFromEuler([0, 0, 0])
         steps = 20
-        base_height = 1.03
-        test_path = build_circular_path(
-            target_position, 0.2, 0, 2*np.pi, steps, base_height)
+        test_path = pi.build_box_path(
+            target_position, [0.4, 0.4], 0.2, [0, 0, 0, 1], steps)
 
         current_particles = []
 
         for i in range(20):
-            extruder.set_tool_pose(test_path[:, 0], target_orientation)
+            extruder.set_tool_pose(
+                test_path.positions[:, 0], test_path.orientations[:, 0])
             for _ in range(50):
                 p.stepSimulation()
 
-        for i in range(steps):
-            extruder.set_tool_pose(test_path[:, i], target_orientation)
+        for target_position, target_orientation, _ in test_path:
+            extruder.set_tool_pose(target_position, target_orientation)
             particle = extruder.extrude()
             current_particles.append(particle[0].particle_id)
 
@@ -93,16 +93,17 @@ class TestRemover(unittest.TestCase):
         remover.couple(robot, 'link6')
 
         for i in range(20):
-            extruder.set_tool_pose(test_path[:, 0], target_orientation)
+            extruder.set_tool_pose(
+                test_path.positions[:, 0], test_path.orientations[:, 0])
             for _ in range(50):
                 p.stepSimulation()
 
-        for i in range(steps):
+        for target_position, target_orientation, _ in test_path:
             for _ in range(3):
                 removed_particles = remover.remove()
                 for elements in removed_particles:
                     current_particles.remove(elements)
-            remover.set_tool_pose(test_path[:, i], target_orientation)
+            remover.set_tool_pose(target_position, target_orientation)
             for _ in range(3):
                 removed_particles = remover.remove()
                 for elements in removed_particles:

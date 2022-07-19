@@ -12,6 +12,11 @@ urdf_file1 = os.path.join(parentDir, 'examples',
 urdf_file2 = os.path.join(parentDir, 'examples',
                           'robot_descriptions', 'milling_head.urdf')
 
+steps = 20
+center_position = [2.5, 0, 1.2]
+test_path = pi.build_box_path(
+    center_position, [1.2, 0.8], 0.01, [0, 0, 0, 1], steps)
+
 
 class TestEndeffectorTool(unittest.TestCase):
     def test_coupling(self):
@@ -79,16 +84,10 @@ class TestEndeffectorTool(unittest.TestCase):
         milling_head = pi.EndeffectorTool(
             urdf_file2, [1.9, 0, 1.2], start_orientation)
 
-        steps = 20
-        target_position = [2.5, 0, 1.2]
-        test_path = build_lemniscate_path(target_position, steps, 1.2, 0.8)
-        target_orientation = p.getQuaternionFromEuler([0, 0, 0])
-
         pos_precision = 0.02
         ori_precision = 0.004
         within_precision = True
-        for i in range(steps):
-            target_position = test_path[:, i]
+        for target_position, target_orientation, _ in test_path:
             milling_head.set_tool_pose(target_position, target_orientation)
 
             for _ in range(300):
@@ -99,11 +98,8 @@ class TestEndeffectorTool(unittest.TestCase):
             position_error = np.linalg.norm(current_position-target_position)
             orientation_error = np.linalg.norm(
                 current_orientation-target_orientation)
-
-            # discard first values where robot converges with path
-            if i > 2:
-                within_precision = within_precision and (
-                    position_error <= pos_precision) and (orientation_error <= ori_precision)
+            within_precision = within_precision and (
+                position_error <= pos_precision) and (orientation_error <= ori_precision)
         p.disconnect()
         self.assertTrue(within_precision)
 
@@ -117,16 +113,16 @@ class TestEndeffectorTool(unittest.TestCase):
             urdf_file2, [1.9, 0, 1.2], start_orientation)
         milling_head.couple(robot, 'link6')
 
-        steps = 20
-        target_position = [2.5, 0, 1.2]
-        test_path = build_lemniscate_path(target_position, steps, 1.2, 0.8)
-        target_orientation = p.getQuaternionFromEuler([0, 0, 0])
-
         pos_precision = 0.02
-        ori_precision = 0.004
+        ori_precision = 0.006
         within_precision = True
-        for i in range(steps):
-            target_position = test_path[:, i]
+
+        for _ in range(20):
+            milling_head.set_tool_pose(*test_path.get_start_pose())
+            for _ in range(50):
+                p.stepSimulation()
+
+        for target_position, target_orientation, _ in test_path:
             milling_head.set_tool_pose(target_position, target_orientation)
 
             for _ in range(150):
@@ -139,34 +135,10 @@ class TestEndeffectorTool(unittest.TestCase):
                 current_orientation-target_orientation)
 
             # discard first values where robot converges with path
-            if i > 2:
-                within_precision = within_precision and (
-                    position_error <= pos_precision) and (orientation_error <= ori_precision)
+            within_precision = within_precision and (
+                position_error <= pos_precision) and (orientation_error <= ori_precision)
         p.disconnect()
         self.assertTrue(within_precision)
-
-
-def build_lemniscate_path(midpoint, steps, height, length):
-    """Function which builds a figure 8 path
-
-    Args:
-        midpoint ([type]): [description]
-        steps ([type]): [description]
-        height ([type]): [description]
-        length ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """
-    path = np.zeros((3, steps))
-    path[2, :] = height
-    for i in range(steps):
-        path_state = 1/steps*i*2*np.pi
-        path[0, i] = length * np.cos(path_state) / \
-            (1+np.sin(path_state)**2)+midpoint[0]
-        path[1, i] = length * np.sin(path_state) * np.cos(path_state) / \
-            (1+np.sin(path_state)**2)+midpoint[1]
-    return path
 
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ class ToolPath:
 
     def __init__(self, positions, orientations=None, tool_acivations=None):
         self.positions = positions
-        if orientations != None:
+        if orientations == None:
             self.orientations = np.zeros((4, len(self.positions[0])))
             self.orientations[3] = 1
         else:
@@ -31,10 +31,20 @@ class ToolPath:
         for i in range(len(self.positions[0])):
             path_positions[i] = rot_matrix@path_positions[i]
             path_orientations[i] = pi.quaternion_multiply(
-                path_orientations, quaternion)
+                path_orientations[i], quaternion)
 
         self.positions = np.transpose(path_positions)
         self.orientations = np.transpose(path_orientations)
+
+    def draw(self, orientation=False, color=[0, 0, 1]):
+        if orientation == False:
+            pi.draw_path(self.positions, color)
+        else:
+            path_positions = np.transpose(self.positions)
+            path_orientations = np.transpose(self.orientations)
+            for i in range(len(self.positions[0])):
+                pi.draw_coordinate_system(
+                    path_positions[i], path_orientations[i])
 
     def __len__(self):
         return len(self.positions[0])
@@ -77,7 +87,7 @@ def build_circular_path(center, radius, min_angle, max_angle, step_num, clockwis
 
 def linear_interpolation(start_point, end_point, samples):
     final_path = np.linspace(start_point, end_point, num=samples)
-    return final_path.transpose()
+    return ToolPath(final_path.transpose())
 
 
 def planar_circular_interpolation(start_point, end_point, radius, samples, clockwise=True):
@@ -124,7 +134,7 @@ def circular_interpolation(start_point, end_point, radius, samples, axis=2, cloc
     for i in range(2):
         path[all_axis[i]] = planar_path[i]
     path[axis] = np.linspace(start_point[axis], end_point[axis], samples)
-    return path
+    return ToolPath(path)
 
 
 def spline_interpolation(points, samples):
@@ -141,7 +151,7 @@ def spline_interpolation(points, samples):
     path[1] = cs_y(cs_s)
     path[2] = cs_z(cs_s)
 
-    return path
+    return ToolPath(path)
 
 
 if __name__ == "__main__":
@@ -153,41 +163,48 @@ if __name__ == "__main__":
     # ++ quadrant
     test_path = linear_interpolation(
         [0, 0, 0], [1/np.sqrt(2), 1/np.sqrt(2), 0], 10)
-    pi.draw_path(test_path, color=[1, 0, 0])
+    test_path.draw(color=[1, 0, 0])
 
     test_path = circular_interpolation(
         np.array([0, 1, 0]), np.array([1, 0, 0]), 1, 50)
-    pi.draw_path(test_path, color=[1, 0, 0])
+    test_path.draw(color=[1, 0, 0])
 
     # +- quadrant
     test_path = linear_interpolation(
         [1, -1, 0], [1-1/np.sqrt(2), -1+1/np.sqrt(2), 0], 10)
-    pi.draw_path(test_path, color=[0, 1, 0])
+    test_path.draw(color=[0, 1, 0])
 
     test_path = circular_interpolation(
         np.array([0, -1, 0]), np.array([1, 0, 0]), 1, 50)
-    pi.draw_path(test_path, color=[0, 1, 0])
+    test_path.draw(color=[0, 1, 0])
 
     # -- quadrant
     test_path = circular_interpolation(
         np.array([0, -1, 0]), np.array([-1, 0, 0.5]), 1, 50)
-    pi.draw_path(test_path, color=[0, 0, 1])
+    test_path.draw(color=[0, 0, 1])
 
     # -+ quadrant
     test_path = circular_interpolation(
         np.array([0, 1, 0.5]), np.array([-1, 0, 0.5]), 1, 50, clockwise=False)
-    pi.draw_path(test_path, color=[0, 1, 1])
+    test_path.draw(color=[0, 1, 1])
 
     test_path = circular_interpolation(
         np.array([0, 0, 0]), np.array([0, 1, 1]), 1, 50, axis=0)
-    pi.draw_path(test_path, color=[1, 1, 0])
+    test_path.draw(color=[1, 1, 0])
+
     test_path = circular_interpolation(
         np.array([0, 0, 0]), np.array([1, 0, 1]), 1, 50, axis=1)
-    pi.draw_path(test_path, color=[1, 1, 0])
+    test_path.draw(color=[1, 1, 0])
 
     test_path = spline_interpolation(
         [[0, 1, 0], [0, 0, 1], [0, 1, 1]], samples=50)
-    pi.draw_path(test_path, color=[1, 0.5, 0.5])
+    test_path.draw(color=[1, 0.5, 0.5])
+
+    test_path.translate([0, 0, 1])
+    test_path.draw(orientation=True)
+
+    test_path.rotate(p.getQuaternionFromEuler([np.pi/2, 0, 0]))
+    test_path.draw(orientation=True)
 
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 

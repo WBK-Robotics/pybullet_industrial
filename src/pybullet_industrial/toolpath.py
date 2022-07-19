@@ -24,7 +24,7 @@ class ToolPath:
             ValueError: If all given input arrays are different lengths.
         """
         self.positions = positions
-        if orientations == None:
+        if orientations is None:
             self.orientations = np.zeros((4, len(self.positions[0])))
             self.orientations[3] = 1
         else:
@@ -32,7 +32,7 @@ class ToolPath:
                 raise ValueError(
                     "The position and orientation paths need to have the same length")
             self.orientations = orientations
-        if tool_acivations == None:
+        if tool_acivations is None:
             self.tool_activations = np.zeros(len(self.positions[0]))
         else:
             if len(tool_acivations[0]) != len(positions[0]):
@@ -90,7 +90,7 @@ class ToolPath:
             color (list, optional): The color of the line used for position only drawing.
                                     Defaults to [0, 0, 1].
         """
-        if pose == False:
+        if pose is False:
             pi.draw_path(self.positions, color)
         else:
             path_positions = np.transpose(self.positions)

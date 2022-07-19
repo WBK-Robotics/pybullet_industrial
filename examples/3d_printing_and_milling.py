@@ -54,8 +54,7 @@ if __name__ == "__main__":
     extruding = 1
     while True:
         for _ in range(20):
-            extruder.set_tool_pose(
-                test_path.positions[:, 0], target_orientation)
+            extruder.set_tool_pose(*test_path.get_start_pose())
             for _ in range(50):
                 p.stepSimulation()
         if extruding:

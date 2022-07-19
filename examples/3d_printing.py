@@ -65,7 +65,7 @@ if __name__ == "__main__":
     test_path = pi.build_box_path(
         target_position, [0.5, 0.6], 0.1, [0, 0, 0, 1], steps)
     for i in range(20):
-        extruder.set_tool_pose(test_path.positions[:, 0], [0, 0, 0, 1])
+        extruder.set_tool_pose(*test_path.get_start_pose())
         for _ in range(50):
             p.stepSimulation()
 

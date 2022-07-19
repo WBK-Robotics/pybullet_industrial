@@ -50,6 +50,15 @@ class ToolPath:
         self.positions[1] += vector[1]
         self.positions[2] += vector[2]
 
+    def get_start_pose(self):
+        """Returns the start pose of the trajectory for initial positioning
+
+        Returns:
+            numpy.array: a 3D position vector
+            numpy.array: a 4D quaternion describing the orientation
+        """
+        return self.positions[:, 0], self.orientations[:, 0]
+
     def rotate(self, quaternion):
         """Rotates the vector by a given quaternion.
            Can be combined with pybullet.getQuaternionFromEuler() for easier usage.

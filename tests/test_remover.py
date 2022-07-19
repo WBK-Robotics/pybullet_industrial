@@ -7,29 +7,6 @@ import pybullet_industrial as pi
 import unittest
 
 
-def build_circular_path(center, radius, min_angle, max_angle, step_num, height):
-    """Function which builds a circular path
-
-    Args:
-        center (array): the center of the circle
-        radius (float): the radius of the circle
-        min_angle (float): minimum angle of the circle path
-        max_angle (float): maximum angle of the circle path
-        steps (int): the number of steps between min_angle and max_angle
-
-    Returns:
-        array: array of 3 dimensional path points
-    """
-    circular_path = np.zeros((3, step_num))
-    circular_path[2, :] = height
-    for j in range(step_num):
-        path_angle = min_angle+j*(max_angle-min_angle)/step_num
-        new_position = center + radius * \
-            np.array([np.sin(path_angle), np.cos(path_angle)])
-        circular_path[:2, j] = new_position
-    return circular_path
-
-
 dirname = os.path.dirname(__file__)
 parentDir = os.path.dirname(dirname)
 urdf_file1 = os.path.join(parentDir, 'examples',
@@ -76,9 +53,8 @@ class TestRemover(unittest.TestCase):
 
         current_particles = []
 
-        for i in range(20):
-            extruder.set_tool_pose(
-                test_path.positions[:, 0], test_path.orientations[:, 0])
+        for _ in range(20):
+            extruder.set_tool_pose(*test_path.get_start_pose())
             for _ in range(50):
                 p.stepSimulation()
 
@@ -92,9 +68,8 @@ class TestRemover(unittest.TestCase):
         extruder.decouple()
         remover.couple(robot, 'link6')
 
-        for i in range(20):
-            extruder.set_tool_pose(
-                test_path.positions[:, 0], test_path.orientations[:, 0])
+        for _ in range(20):
+            extruder.set_tool_pose(*test_path.get_start_pose())
             for _ in range(50):
                 p.stepSimulation()
 

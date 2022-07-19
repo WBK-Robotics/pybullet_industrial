@@ -118,8 +118,7 @@ class TestEndeffectorTool(unittest.TestCase):
         within_precision = True
 
         for _ in range(20):
-            milling_head.set_tool_pose(
-                test_path.positions[:, 0], test_path.orientations[:, 0])
+            milling_head.set_tool_pose(*test_path.get_start_pose())
             for _ in range(50):
                 p.stepSimulation()
 

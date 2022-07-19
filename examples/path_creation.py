@@ -12,13 +12,17 @@ class ToolPath:
             self.orientations = np.zeros((4, len(self.positions[0])))
             self.orientations[3] = 1
         else:
-            # TODO check if array has correct dimensions.
+            if len(orientations[0]) != len(positions[0]):
+                raise ValueError("The position and orientation paths need to have the same length")
             self.orientations = orientations
         if tool_acivations == None:
             self.tool_activations = np.zeros(len(self.positions[0]))
         else:
-            # TODO check if array has correct dimensions.
+            if len(tool_acivations[0]) != len(positions[0]):
+                raise ValueError("The position and tool activation paths need to have the same length")
             self.tool_activations = tool_acivations
+
+
 
     def translate(self, vector):
         self.positions[0] += vector[0]
@@ -74,7 +78,7 @@ class ToolPath:
         if self.current_index <= len(self)-1:
             i = self.current_index
             self.current_index += 1
-            return self.positions[:, i], self.orientations[:, i]
+            return self.positions[:, i], self.orientations[:, i],self.tool_activations[i]
         else:
             raise StopIteration
 
@@ -90,7 +94,7 @@ def build_circular_path(center, radius, min_angle, max_angle, step_num, clockwis
         steps (int): the number of steps between min_angle and max_angle
 
     Returns:
-        array: array of 3 dimensional path points
+        array: array of 2 dimensional path points
     """
 
     circular_path = np.zeros((2, step_num))

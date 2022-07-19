@@ -4,7 +4,6 @@ import numpy as np
 import pybullet as p
 import pybullet_data
 import pybullet_industrial as pi
-from path_creation import *
 
 
 if __name__ == "__main__":
@@ -57,15 +56,19 @@ if __name__ == "__main__":
     corner_point_30 = center_position+np.array([0.1, -0.3, 0])
     corner_point_31 = center_position+np.array([-0.1, -0.3, 0])
 
-    test_path = linear_interpolation(corner_point_00, corner_point_01, 10)
-    side_1 = linear_interpolation(corner_point_10, corner_point_11, 10)
-    side_2 = linear_interpolation(corner_point_20, corner_point_21, 10)
-    side_3 = linear_interpolation(corner_point_30, corner_point_31, 10)
+    test_path = pi.linear_interpolation(corner_point_00, corner_point_01, 10)
+    side_1 = pi.linear_interpolation(corner_point_10, corner_point_11, 10)
+    side_2 = pi.linear_interpolation(corner_point_20, corner_point_21, 10)
+    side_3 = pi.linear_interpolation(corner_point_30, corner_point_31, 10)
 
-    corner_0 = circular_interpolation(corner_point_01, corner_point_10, 0.1, 5)
-    corner_1 = circular_interpolation(corner_point_11, corner_point_20, 0.1, 5)
-    corner_2 = circular_interpolation(corner_point_21, corner_point_30, 0.1, 5)
-    corner_3 = circular_interpolation(corner_point_31, corner_point_00, 0.1, 5)
+    corner_0 = pi.circular_interpolation(
+        corner_point_01, corner_point_10, 0.1, 5)
+    corner_1 = pi.circular_interpolation(
+        corner_point_11, corner_point_20, 0.1, 5)
+    corner_2 = pi.circular_interpolation(
+        corner_point_21, corner_point_30, 0.1, 5)
+    corner_3 = pi.circular_interpolation(
+        corner_point_31, corner_point_00, 0.1, 5)
 
     test_path.append(corner_0)
     test_path.append(side_1)

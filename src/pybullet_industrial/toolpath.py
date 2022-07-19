@@ -64,8 +64,8 @@ class ToolPath:
         rot_matrix = np.array(rot_matrix).reshape(3, 3)
         for i in range(len(self)):
             path_positions[i] = rot_matrix@path_positions[i]
-            path_orientations[i] = pi.quaternion_multiply(
-                path_orientations[i], quaternion)
+            _, path_orientations[i] = p.multiplyTransforms([0, 0, 0],
+                                                           path_orientations[i], [0, 0, 0], quaternion)
 
         self.positions = np.transpose(path_positions)
         self.orientations = np.transpose(path_orientations)

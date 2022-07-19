@@ -54,9 +54,12 @@ class ToolPath:
         return self
 
     def __next__(self):
-        i = self.current_index
-        self.current_index += 1
-        return self.positions[:, i], self.orientations[:, i]
+        if self.current_index <= len(self)-1:
+            i = self.current_index
+            self.current_index += 1
+            return self.positions[:, i], self.orientations[:, i]
+        else:
+            raise StopIteration
 
 
 def build_circular_path(center, radius, min_angle, max_angle, step_num, clockwise=True):
@@ -210,3 +213,5 @@ if __name__ == "__main__":
 
     while (1):
         p.stepSimulation()
+        for position, orientation in test_path:
+            print(position)

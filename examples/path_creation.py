@@ -158,6 +158,16 @@ def build_circular_path(center, radius, min_angle, max_angle, step_num, clockwis
 
 
 def linear_interpolation(start_point, end_point, samples):
+    """Performs a linear interpolation betwenn two points in 3D space
+
+    Args:
+        start_point (numpy.array): The start point of the interpolation
+        end_point (numpy.array): The end point of the interpolation
+        samples (int): The number of samples used to interpolate
+
+    Returns:
+        ToolPath: A ToolPath object of the interpolated path
+    """
     final_path = np.linspace(start_point, end_point, num=samples)
     return ToolPath(final_path.transpose())
 
@@ -192,6 +202,21 @@ def planar_circular_interpolation(start_point, end_point, radius, samples, clock
 
 
 def circular_interpolation(start_point, end_point, radius, samples, axis=2, clockwise=True):
+    """AI is creating summary for circular_interpolation
+
+    Args:
+        start_point (numpy.array): The start point of the interpolation
+        end_point (numpy.array): The end point of the interpolation
+        radius ([type]): The radius of the circle used for the interpolation
+        samples (int): The number of samples used to interpolate
+        axis (int, optional): The axis around which the circle is interpolated.
+                              Defaults to 2 which corresponds to the z-axis (0=x,1=y).
+        clockwise (bool, optional): The direction of circular travel. Defaults to True.
+
+    Returns:
+        ToolPath: A ToolPath object of the interpolated path
+    """
+
     all_axis = [0, 1, 2]
     all_axis.remove(axis)
     planar_start_point = np.array(
@@ -210,6 +235,16 @@ def circular_interpolation(start_point, end_point, radius, samples, axis=2, cloc
 
 
 def spline_interpolation(points, samples):
+    """Interpolates between a number of points in cartesian space.
+
+    Args:
+        points (numpy.array(3,n)): A 3 dimensional array whith each dimension containing
+                                   subsequent positions.
+        samples (int): The number of samples used to interpolate
+
+    Returns:
+        ToolPath: A ToolPath object of the interpolated path
+    """
     s = np.linspace(0, 1, len(points[0]))
 
     path = np.zeros((3, samples))

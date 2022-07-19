@@ -21,19 +21,35 @@ def build_box_path(center_position, dimensions, radius, orientation, samples):
     corner_point_31 = np.array(
         [-0.5*dimensions[0]+radius, -0.5*dimensions[1], 0])
 
-    test_path = pi.linear_interpolation(corner_point_00, corner_point_01, 10)
-    side_1 = pi.linear_interpolation(corner_point_10, corner_point_11, 10)
-    side_2 = pi.linear_interpolation(corner_point_20, corner_point_21, 10)
-    side_3 = pi.linear_interpolation(corner_point_30, corner_point_31, 10)
+    linear_length = (np.linalg.norm(corner_point_00-corner_point_01) +
+                     np.linalg.norm(corner_point_10-corner_point_11) +
+                     np.linalg.norm(corner_point_20-corner_point_21) +
+                     np.linalg.norm(corner_point_30-corner_point_31))
+
+    circle_length = 2*np.pi*radius
+
+    linear_samples = int(0.25*linear_length /
+                         (linear_length+circle_length)*samples)
+    circle_samples = int(0.25*circle_length /
+                         (linear_length+circle_length)*samples)
+
+    test_path = pi.linear_interpolation(
+        corner_point_00, corner_point_01, linear_samples)
+    side_1 = pi.linear_interpolation(
+        corner_point_10, corner_point_11, linear_samples)
+    side_2 = pi.linear_interpolation(
+        corner_point_20, corner_point_21, linear_samples)
+    side_3 = pi.linear_interpolation(
+        corner_point_30, corner_point_31, linear_samples)
 
     corner_0 = pi.circular_interpolation(
-        corner_point_01, corner_point_10, radius, 5)
+        corner_point_01, corner_point_10, radius, circle_samples)
     corner_1 = pi.circular_interpolation(
-        corner_point_11, corner_point_20, radius, 5)
+        corner_point_11, corner_point_20, radius, circle_samples)
     corner_2 = pi.circular_interpolation(
-        corner_point_21, corner_point_30, radius, 5)
+        corner_point_21, corner_point_30, radius, circle_samples)
     corner_3 = pi.circular_interpolation(
-        corner_point_31, corner_point_00, radius, 5)
+        corner_point_31, corner_point_00, radius, circle_samples)
 
     test_path.append(corner_0)
     test_path.append(side_1)
@@ -56,7 +72,11 @@ if __name__ == "__main__":
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
 
     test_path = build_box_path(
-        [0, 0, 3], [0.4, 0.2], 0.1, p.getQuaternionFromEuler([np.pi/2, 0, 0]), 20)
+        [0, 3, 0], [4, 2], 0.7, p.getQuaternionFromEuler([np.pi/2, 0, 0]), 100)
+    test_path.draw()
+
+    test_path = build_box_path(
+        [0, 3, 0], [2, 2], 1, p.getQuaternionFromEuler([np.pi/2, 0, 0]), 100)
     test_path.draw()
 
     # ++ quadrant

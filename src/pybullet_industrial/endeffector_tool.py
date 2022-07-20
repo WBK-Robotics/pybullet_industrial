@@ -194,7 +194,7 @@ class EndeffectorTool:
                                                            target_position,
                                                            target_orientation)
 
-    def apply_tcp_force(self, force, world_coordinates=False):
+    def apply_tcp_force(self, force, world_coordinates=True):
         if not world_coordinates:
             p.applyExternalForce(self.urdf, self._tcp_id,
                                  force, [0, 0, 0], p.LINK_FRAME)

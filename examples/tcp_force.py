@@ -29,7 +29,7 @@ if __name__ == "__main__":
     p.setTimeStep(1)
     pi.draw_robot_frames(pendulum, life_time=0)
     while True:
-        #pendulum.apply_tcp_force([-10, 0, 10])
-        pendulum.apply_tcp_torque([00, 10, 00])
+        pendulum.apply_tcp_force([-10, 0, 0],world_coordinates=True)
+        #pendulum.apply_tcp_torque([00, 10, 00])
         position, orientation = pendulum.get_tool_pose()
         p.stepSimulation()

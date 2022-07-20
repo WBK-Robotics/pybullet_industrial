@@ -214,35 +214,3 @@ class EndeffectorTool:
         else:
             raise TypeError(
                 "The Link name must be a String describing a URDF link")
-
-
-def quaternion_inverse(quaternion):
-    """Calculates the inverse of a given quaternion
-
-    Args:
-        quaternion (np.array): a quaternion
-
-    Returns:
-        np.array: The inverse quaternion
-    """
-    q = np.array(quaternion, copy=True)
-    np.negative(q[1:], q[1:])
-    return q / np.dot(q, q)
-
-
-def quaternion_multiply(quaternion1, quaternion0):
-    """Multiplies two quaternions. Note that this operation is not commutative
-
-    Args:
-        quaternion1 (np.array): the first quaternion
-        quaternion0 (np.array): the second quaternion
-
-    Returns:
-        np.array: the resulting quaternion
-    """
-    w0, x0, y0, z0 = quaternion0
-    w1, x1, y1, z1 = quaternion1
-    return np.array([
-        -x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0, x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
-        -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0, x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0
-    ])

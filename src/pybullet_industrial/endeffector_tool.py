@@ -195,7 +195,8 @@ class EndeffectorTool:
                                                            target_orientation)
 
     def apply_tcp_force(self, force, torque=None):
-        p.applyExternalForce(self.urdf, self._tcp_id, force)
+        p.applyExternalForce(self.urdf, self._tcp_id,
+                             force, [0, 0, 0], p.WORLD_FRAME)
         if torque is not None:
             p.applyExternalTorque(self.urdf, self._tcp_id, torque)
 

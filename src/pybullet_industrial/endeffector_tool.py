@@ -194,12 +194,14 @@ class EndeffectorTool:
                                                            target_position,
                                                            target_orientation)
 
-    def apply_tcp_force(self, force, torque=None):
-        position, orientation = self.get_tool_pose()
-        p.applyExternalForce(self.urdf, self._tcp_id,
-                             force, position, p.WORLD_FRAME)
-        if torque is not None:
-            p.applyExternalTorque(self.urdf, self._tcp_id, torque)
+    def apply_tcp_force(self, force, local_coordinates=True):
+        if local_coordinates:
+            p.applyExternalForce(self.urdf, self._tcp_id,
+                                 force, [0,0,0], p.WORLD_FRAME)
+        else:
+            position, _ = self.get_tool_pose()
+            p.applyExternalForce(self.urdf, self._tcp_id,
+                                 force, position, p.WORLD_FRAME)
 
     def _convert_link_to_id(self, tcp):
         """Internal function that converts between link names and pybullet specific indexes

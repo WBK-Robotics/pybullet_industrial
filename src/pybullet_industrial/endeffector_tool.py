@@ -82,7 +82,7 @@ class EndeffectorTool:
         if self._coupled_robot is not None:
             raise ValueError("The Tool is already coupled with a robot")
         else:
-            if endeffector_name == None:
+            if endeffector_name is None:
                 endeffector_index = robot._default_endeffector_id
             else:
                 endeffector_index = robot._convert_endeffector(
@@ -194,6 +194,11 @@ class EndeffectorTool:
                                                            target_position,
                                                            target_orientation)
 
+    def apply_tcp_force(self, force, torque=None):
+        p.applyExternalForce(self.urdf, self._tcp_id, force)
+        if torque is not None:
+            p.applyExternalTorque(self.urdf, self._tcp_id, torque)
+
     def _convert_link_to_id(self, tcp):
         """Internal function that converts between link names and pybullet specific indexes
 
@@ -241,8 +246,8 @@ def quaternion_multiply(quaternion1, quaternion0):
     Returns:
         np.array: the resulting quaternion
     """
-    w0, x0, y0, z0 = quaternion0
-    w1, x1, y1, z1 = quaternion1
+    x0, y0, z0, w0 = quaternion0
+    x1, y1, z1, w1 = quaternion1
     return np.array([
         -x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0, x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
         -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0, x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0

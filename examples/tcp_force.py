@@ -21,37 +21,26 @@ if __name__ == "__main__":
     p.setPhysicsEngineParameter(numSolverIterations=15000)
 
     pendulum1 = spawn_pendulum([0, 0, 0])
+    pendulum2 = spawn_pendulum([0, 0.6, 0])
+    pendulum3 = spawn_pendulum([0, 1.2, 0])
+    pendulum4 = spawn_pendulum([0, 1.8, 0])
 
     p.setTimeStep(0.5)
     steps = 10000
     while True:
         for _ in range(steps):
             pendulum1.apply_tcp_force([-10, 0, 20.0], world_coordinates=True)
-            p.stepSimulation()
-            position, orientation = pendulum1.get_tool_pose()
-        print(position)
-
-        for _ in range(steps):
-            pendulum1.apply_tcp_force([0, 1, 0])
-            p.stepSimulation()
-        print(position)
-
-        for _ in range(steps):
-            pendulum1.apply_tcp_force(
+            pendulum2.apply_tcp_force([0, 1, 0])
+            pendulum3.apply_tcp_force(
                 [-1, 0, 0.0], world_coordinates=False)
-            p.stepSimulation()
-            pendulum_state = p.getLinkState(
-                pendulum1.urdf, 0, computeLinkVelocity=1)
-        print(pendulum_state[7])
+            pendulum4.apply_tcp_torque([00, 1, 00])
 
-        for _ in range(steps):
-            pendulum1.apply_tcp_torque([00, 1, 00])
             p.stepSimulation()
-            pendulum_state = p.getLinkState(
-                pendulum1.urdf, 0, computeLinkVelocity=1)
-        print(pendulum_state[7])
 
-        # print(pendulum_state[0])
-        #position, orientation = pendulum1.get_tool_pose()
-        # print(position)
-        # p.stepSimulation()
+            position1, _ = pendulum1.get_tool_pose()
+            position2, _ = pendulum2.get_tool_pose()
+            pendulum_state3 = p.getLinkState(
+                pendulum3.urdf, 0, computeLinkVelocity=1)
+            pendulum_state4 = p.getLinkState(
+                pendulum4.urdf, 0, computeLinkVelocity=1)
+        print(position1, position2, pendulum_state3[7], pendulum_state4[7])

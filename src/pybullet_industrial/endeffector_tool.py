@@ -205,13 +205,13 @@ class EndeffectorTool:
                                                 in the world coordinates or the relative link frame.
                                                 Defaults to True.
         """
-        if not world_coordinates:
-            p.applyExternalForce(self.urdf, self._tcp_id,
-                                 force, [0, 0, 0], p.LINK_FRAME)
-        else:
+        if world_coordinates:
             position, _ = self.get_tool_pose()
             p.applyExternalForce(self.urdf, self._tcp_id,
                                  force, position, p.WORLD_FRAME)
+        else:
+            p.applyExternalForce(self.urdf, self._tcp_id,
+                                 force, [0, 0, 0], p.LINK_FRAME)
 
     def apply_tcp_torque(self, torque):
         """Function which can apply a external Torque at a the next simulation step.

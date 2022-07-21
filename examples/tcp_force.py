@@ -26,22 +26,30 @@ if __name__ == "__main__":
     steps = 10000
     while True:
         for _ in range(steps):
-            pendulum1.apply_tcp_force([0, 0, 20.0], world_coordinates=True)
+            pendulum1.apply_tcp_force([-10, 0, 20.0], world_coordinates=True)
             p.stepSimulation()
             position, orientation = pendulum1.get_tool_pose()
         print(position)
 
         for _ in range(steps):
+            pendulum1.apply_tcp_force([0, 1, 0])
+            p.stepSimulation()
+        print(position)
+
+        for _ in range(steps):
             pendulum1.apply_tcp_force(
-                [0, 0, 0.0], world_coordinates=False)
+                [-1, 0, 0.0], world_coordinates=False)
             p.stepSimulation()
             pendulum_state = p.getLinkState(
                 pendulum1.urdf, 0, computeLinkVelocity=1)
         print(pendulum_state[7])
 
-        # for _ in range(steps):
-        #    pendulum1.apply_tcp_force([0, 1, 0])
-        #pendulum4.apply_tcp_torque([00, 2.1, 00])
+        for _ in range(steps):
+            pendulum1.apply_tcp_torque([00, 1, 00])
+            p.stepSimulation()
+            pendulum_state = p.getLinkState(
+                pendulum1.urdf, 0, computeLinkVelocity=1)
+        print(pendulum_state[7])
 
         # print(pendulum_state[0])
         #position, orientation = pendulum1.get_tool_pose()

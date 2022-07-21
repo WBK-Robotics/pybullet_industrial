@@ -18,6 +18,16 @@ test_path = pi.build_box_path(
     center_position, [1.2, 0.8], 0.01, [0, 0, 0, 1], steps)
 
 
+def spawn_pendulum(start_position):
+    urdf_path = os.path.join(parentDir, 'examples',
+                             'robot_descriptions', 'pendulum.urdf')
+    pendulum = pi.EndeffectorTool(
+        urdf_path, start_position, [0, 0, 0, 1])
+
+    p.resetJointState(pendulum.urdf, 0, targetValue=0.5)
+    return pendulum
+
+
 class TestEndeffectorTool(unittest.TestCase):
     def test_coupling(self):
         p.connect(p.DIRECT)
@@ -139,6 +149,46 @@ class TestEndeffectorTool(unittest.TestCase):
                 position_error <= pos_precision) and (orientation_error <= ori_precision)
         p.disconnect()
         self.assertTrue(within_precision)
+
+    def test_external_force_setting(self):
+        physics_client = p.connect(p.DIRECT)
+        p.setPhysicsEngineParameter(numSolverIterations=15000)
+
+        pendulum1 = spawn_pendulum([0, 0, 0])
+        pendulum2 = spawn_pendulum([0, 0.6, 0])
+        pendulum3 = spawn_pendulum([0, 1.2, 0])
+        pendulum4 = spawn_pendulum([0, 1.8, 0])
+
+        p.setTimeStep(0.5)
+        steps = 10
+        for _ in range(steps):
+            pendulum1.apply_tcp_force([-10, 0, 20.0], world_coordinates=True)
+            pendulum2.apply_tcp_force([0, 1, 0])
+            pendulum3.apply_tcp_force(
+                [-1, 0, 0.0], world_coordinates=False)
+            pendulum4.apply_tcp_torque([00, 1, 00])
+
+            p.stepSimulation()
+
+            position1, _ = pendulum1.get_tool_pose()
+            position2, _ = pendulum2.get_tool_pose()
+            pendulum_state3 = p.getLinkState(
+                pendulum3.urdf, 0, computeLinkVelocity=1)
+            pendulum_state4 = p.getLinkState(
+                pendulum4.urdf, 0, computeLinkVelocity=1)
+
+        pendulum1_upgright = position1[2]-0.5 <= 0.001
+
+        init_pendulum_position = np.array([0.23971271, 0.60000369, 0.43879131])
+        pendulum2_unmoved = np.linalg.norm(
+            position2-init_pendulum_position) <= 0.001
+
+        pendulum3_rotating_anti_clockwise = pendulum_state3[7][1] < 0
+        pendulum4_rotating_clockwise = pendulum_state4[7][1] > 0
+
+        p.disconnect()
+        self.assertTrue(pendulum1_upgright and pendulum2_unmoved and
+                        pendulum3_rotating_anti_clockwise and pendulum4_rotating_clockwise)
 
 
 if __name__ == '__main__':

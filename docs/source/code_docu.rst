@@ -5,43 +5,43 @@ Code Documentation
    :hidden:
    
 
-.. automodule:: pybullet_jndustrial.robot_base
+.. automodule:: pybullet_industrial.robot_base
    :members:
    :undoc-members:
 
-.. automodule:: pybullet_jndustrial.endeffector_tool
+.. automodule:: pybullet_industrial.endeffector_tool
    :members:
    :undoc-members:
 
-.. automodule:: pybullet_jndustrial.raycaster
+.. automodule:: pybullet_industrial.raycaster
    :members:
    :undoc-members:
 
-.. automodule:: pybullet_jndustrial.extruder
+.. automodule:: pybullet_industrial.extruder
    :members:
    :undoc-members:
 
-.. automodule:: pybullet_jndustrial.material
+.. automodule:: pybullet_industrial.material
    :members:
    :undoc-members:
 
-.. automodule:: pybullet_jndustrial.remover
+.. automodule:: pybullet_industrial.remover
    :members:
    :undoc-members:
 
-.. automodule:: pybullet_jndustrial.sensors
+.. automodule:: pybullet_industrial.sensors
    :members:
    :undoc-members:
 
-.. automodule:: pybullet_jndustrial.toolpath
+.. automodule:: pybullet_industrial.toolpath
    :members:
    :undoc-members:
 
-.. automodule:: pybullet_jndustrial.path_builders
+.. automodule:: pybullet_industrial.path_builders
    :members:
    :undoc-members:
 
-.. automodule:: pybullet_jndustrial.utility
+.. automodule:: pybullet_industrial.utility
    :members:
    :undoc-members:
 

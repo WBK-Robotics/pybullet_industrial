@@ -90,7 +90,7 @@ class EndeffectorTool:
         if self._coupled_robot is not None:
             raise ValueError("The Tool is already coupled with a robot")
         else:
-            if endeffector_name == None:
+            if endeffector_name is None:
                 endeffector_index = robot._default_endeffector_id
             else:
                 endeffector_index = robot._convert_endeffector(
@@ -192,6 +192,37 @@ class EndeffectorTool:
                                                            target_position,
                                                            None,
                                                            target_orientation)
+
+    def apply_tcp_force(self, force, world_coordinates=True):
+        """Function which can apply a external Force at a the next simulation step.
+
+            Carefull, this does not behave as expected for setRealTimeSimulation(1)!
+
+        Args:
+            force ([type]): A 3 dimensional force vector in Newton.
+            world_coordinates (bool, optional): Specify wheter the force is defined
+                                                in the world coordinates or the relative link frame.
+                                                Defaults to True.
+        """
+        if world_coordinates:
+            position, _ = self.get_tool_pose()
+            p.applyExternalForce(self.urdf, self._tcp_id,
+                                 force, position, p.WORLD_FRAME)
+        else:
+            p.applyExternalForce(self.urdf, self._tcp_id,
+                                 force, [0, 0, 0], p.LINK_FRAME)
+
+    def apply_tcp_torque(self, torque):
+        """Function which can apply a external Torque at a the next simulation step.
+           The local tcp_link frames are used as the main torque axis.
+
+            Carefull, this does not behave as expected for setRealTimeSimulation(1)!
+
+        Args:
+            torque ([type]): A 3 dimensional torque vector in Newtonmeter.
+        """
+        p.applyExternalTorque(self.urdf, self._tcp_id,
+                              torque, p.LINK_FRAME)
 
     def _convert_link_to_id(self, tcp):
         """Internal function that converts between link names and pybullet specific indexes

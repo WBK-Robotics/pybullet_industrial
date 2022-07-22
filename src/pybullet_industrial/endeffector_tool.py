@@ -53,16 +53,24 @@ class EndeffectorTool:
 
         self._coupled_robot = None
         self._coupling_link = None
-        self._coupling_constraint = p.createConstraint(
-            self.urdf, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0], start_position, start_orientation)
+
+        self._coupling_constraint = p.createConstraint(self.urdf,
+                                                       -1, -1, -1,
+                                                       p.JOINT_FIXED,
+                                                       [0, 0, 0],
+                                                       [0, 0, 0],
+                                                       start_position,
+                                                       None,
+                                                       start_orientation)
 
         if not coupled_robots is None:
             self.couple(coupled_robots)
 
         tcp_pos, tcp_ori = self.get_tool_pose(tcp_frame)
-        self._tcp_translation = tcp_pos-base_pos
-        self._tcp_rotation = quaternion_multiply(
-            tcp_ori, quaternion_inverse(base_ori))
+
+        base_pos_inv, base_ori_inv = p.invertTransform(base_pos, base_ori)
+        self._tcp_translation, self._tcp_rotation = p.multiplyTransforms(
+            base_pos_inv, base_ori_inv, tcp_pos, tcp_ori)
 
     def couple(self, robot, endeffector_name=None):
         """Dynamically Couples the Tool with the Endeffector of a given robot.
@@ -95,7 +103,6 @@ class EndeffectorTool:
                                                            p.JOINT_FIXED,
                                                            [0, 0, 0],
                                                            [0, 0, 0],
-                                                           [0, 0, 0],
                                                            [0, 0, 0])
 
     def is_coupled(self):
@@ -123,6 +130,7 @@ class EndeffectorTool:
                                                        [0, 0, 0],
                                                        [0, 0, 0],
                                                        position,
+                                                       None,
                                                        orientation)
         pass
 
@@ -163,21 +171,11 @@ class EndeffectorTool:
         """
 
         if self.is_coupled():
-            if self._connector_id == -1:
-                _, base_ori = p.getBasePositionAndOrientation(self.urdf)
-            else:
-                link_state = p.getLinkState(self.urdf, self._connector_id)
-                base_ori = link_state[1]
-            rot_matrix = p.getMatrixFromQuaternion(base_ori)
-            rot_matrix = np.array(rot_matrix).reshape(3, 3)
-            translation = rot_matrix@np.array(self._tcp_translation)
-            adj_target_position = target_position-translation
 
-            if target_orientation is None:
-                adj_target_orientation = None
-            else:
-                adj_target_orientation = quaternion_multiply(
-                    quaternion_inverse(self._tcp_rotation), target_orientation)
+            tcp_translation_inv, tcp_rotation_inv = p.invertTransform(
+                self._tcp_translation, self._tcp_rotation)
+            adj_target_position, adj_target_orientation = p.multiplyTransforms(
+                target_position, target_orientation, tcp_translation_inv, tcp_rotation_inv)
 
             self._coupled_robot.set_endeffector_pose(
                 adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
@@ -192,6 +190,7 @@ class EndeffectorTool:
                                                            [0, 0, 0],
                                                            [0, 0, 0],
                                                            target_position,
+                                                           None,
                                                            target_orientation)
 
     def apply_tcp_force(self, force, world_coordinates=True):
@@ -246,35 +245,3 @@ class EndeffectorTool:
         else:
             raise TypeError(
                 "The Link name must be a String describing a URDF link")
-
-
-def quaternion_inverse(quaternion):
-    """Calculates the inverse of a given quaternion
-
-    Args:
-        quaternion (np.array): a quaternion
-
-    Returns:
-        np.array: The inverse quaternion
-    """
-    q = np.array(quaternion, copy=True)
-    np.negative(q[1:], q[1:])
-    return q / np.dot(q, q)
-
-
-def quaternion_multiply(quaternion1, quaternion0):
-    """Multiplies two quaternions. Note that this operation is not commutative
-
-    Args:
-        quaternion1 (np.array): the first quaternion
-        quaternion0 (np.array): the second quaternion
-
-    Returns:
-        np.array: the resulting quaternion
-    """
-    x0, y0, z0, w0 = quaternion0
-    x1, y1, z1, w1 = quaternion1
-    return np.array([
-        -x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0, x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
-        -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0, x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0
-    ])

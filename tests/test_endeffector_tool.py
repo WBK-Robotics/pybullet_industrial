@@ -17,6 +17,15 @@ center_position = [2.5, 0, 1.2]
 test_path = pi.build_box_path(
     center_position, [1.2, 0.8], 0.01, [0, 0, 0, 1], steps)
 
+orientation_setup = pi.build_box_path([0, 0, 0], [0.3, 0.3], 0.15, [
+                                      0, 0, 0, 1], len(test_path))
+orientation_path = np.zeros((4, len(test_path)))
+for i in range(len(test_path)):
+    test_path.orientations[:, i] = p.getQuaternionFromEuler(
+        orientation_setup.positions[:, i])
+
+
+
 
 def spawn_pendulum(start_position):
     urdf_path = os.path.join(parentDir, 'examples',

@@ -50,7 +50,7 @@ class Camera(EndeffectorTool):
         for key in camera_parameters:
             if not key in self.camera_parameters:
                 raise KeyError("The specified property keys are not valid" +
-                               " Valid keys are: "+str(self.properties.keys()))
+                               " Valid keys are: "+str(self.camera_parameters()))
             self.camera_parameters[key] = camera_parameters[key]
 
         self.projection_matrix = self.__get_projection_matrix()

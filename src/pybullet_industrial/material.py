@@ -46,8 +46,7 @@ class Particle():
             if not key in self.properties:
                 raise KeyError("The specified property keys are not valid" +
                                " Valid keys are: "+str(self.properties.keys()))
-            else:
-                self.properties[key] = new_properties[key]
+            self.properties[key] = new_properties[key]
 
 
 class Plastic(Particle):
@@ -110,7 +109,7 @@ class MetalVoxel(Particle):
                                                          hit position,
                                                          hit normal]
             material_properties (Dict): A dictionary containing the properties of the material.
-                                        The default properties for Plastic are:
+                                        The default properties for a Metal Voxel are:
                                         'particle size': 0.3, 'color': [1, 0, 0, 1]
         """
         self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}

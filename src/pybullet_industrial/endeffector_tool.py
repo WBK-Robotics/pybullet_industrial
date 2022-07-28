@@ -1,27 +1,29 @@
-import pybullet as p
-import numpy as np
 from typing import List
+
+import numpy as np
+import pybullet as p
+
 from pybullet_industrial import RobotBase
 
 
 class EndeffectorTool:
     def __init__(self, urdf_model: str, start_position, start_orientation,
-                 coupled_robots: List[RobotBase] = None, tcp_frame=None, connector_frames=None):
+                 coupled_robot: RobotBase = None, tcp_frame=None, connector_frame=None):
         """The base class for all Tools and Sensors connected to a Robot
 
         Args:
             urdf_model (str): A valid path to a urdf file describint the tool geometry
             start_position ([type]): the position at which the tool should be spawned
             start_orientation ([type]): the orientation at which the tool should be spawned
-            coupled_robot ([type], optional): A wbk_sim.Robot object if
+            coupled_robot (pi.RobotBase, optional): A pybullet_omdistrial.RobotBase object if
                                               the robot is coupled from the start.
                                               Defaults to None.
-            tcp_frame ([type], optional): The name of the urdf_link
+            tcp_frame (str, optional): The name of the urdf_link
                                           describing the tool center point.
                                           Defaults to None in which case the last link is used.
-            connector_frame ([type], optional): The name of the urdf_link
-                                                at which a robot connects.
-                                                Defaults to None in which case the base link is used.
+            connector_frame (str, optional): The name of the urdf_link at which a robot connects.
+                                                Defaults to None in which case
+                                                the base link is used.
         """
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,
@@ -42,14 +44,17 @@ class EndeffectorTool:
         else:
             self._tcp_id = self._convert_link_to_id(tcp_frame)
 
-        if connector_frames is None:
+        if connector_frame is None:
             self._connector_id = -1
             base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf)
         else:
-            self._connector_id = self._convert_link_to_id(connector_frames)
+            self._connector_id = self._convert_link_to_id(connector_frame)
             link_state = p.getLinkState(self.urdf, self._connector_id)
             base_pos = link_state[0]
             base_ori = link_state[1]
+
+        self._tcp_translation, self._tcp_rotation = p.multiplyTransforms(
+            *p.invertTransform(base_pos, base_ori), *self.get_tool_pose(tcp_frame))
 
         self._coupled_robot = None
         self._coupling_link = None
@@ -63,14 +68,8 @@ class EndeffectorTool:
                                                        None,
                                                        start_orientation)
 
-        if not coupled_robots is None:
-            self.couple(coupled_robots)
-
-        tcp_pos, tcp_ori = self.get_tool_pose(tcp_frame)
-
-        base_pos_inv, base_ori_inv = p.invertTransform(base_pos, base_ori)
-        self._tcp_translation, self._tcp_rotation = p.multiplyTransforms(
-            base_pos_inv, base_ori_inv, tcp_pos, tcp_ori)
+        if coupled_robot is not None:
+            self.couple(coupled_robot)
 
     def couple(self, robot, endeffector_name=None):
         """Dynamically Couples the Tool with the Endeffector of a given robot.
@@ -84,26 +83,29 @@ class EndeffectorTool:
                                               Defaults to None.
 
         Raises:
-            Error: [description]
+            ValueError: If the tool is already coupled.
+            TypeError: if the object to couple is nof of class RobotBase.
         """
-        # creates a fixed constrained between the choosen robot and the tool
         if self._coupled_robot is not None:
-            raise ValueError("The Tool is already coupled with a robot")
+            raise ValueError("The tool is already coupled with a robot")
+        if not isinstance(robot, RobotBase):
+            raise TypeError(
+                "A EndeffectorTool can only couple with a RobotBase object")
+
+        if endeffector_name is None:
+            endeffector_index = robot._default_endeffector_id
         else:
-            if endeffector_name is None:
-                endeffector_index = robot._default_endeffector_id
-            else:
-                endeffector_index = robot._convert_endeffector(
-                    endeffector_name)
-            self._coupled_robot = robot
-            self._coupling_link = endeffector_name
-            p.removeConstraint(self._coupling_constraint)
-            self._coupling_constraint = p.createConstraint(self._coupled_robot.urdf, endeffector_index,
-                                                           self.urdf, self._connector_id,
-                                                           p.JOINT_FIXED,
-                                                           [0, 0, 0],
-                                                           [0, 0, 0],
-                                                           [0, 0, 0])
+            endeffector_index = robot._convert_endeffector(
+                endeffector_name)
+        self._coupled_robot = robot
+        self._coupling_link = endeffector_name
+        p.removeConstraint(self._coupling_constraint)
+        self._coupling_constraint = p.createConstraint(self._coupled_robot.urdf, endeffector_index,
+                                                       self.urdf, self._connector_id,
+                                                       p.JOINT_FIXED,
+                                                       [0, 0, 0],
+                                                       [0, 0, 0],
+                                                       [0, 0, 0])
 
     def is_coupled(self):
         """Function which returns true if the Tool is currently coupled to a robot
@@ -236,12 +238,11 @@ class EndeffectorTool:
         Returns:
             int: the pybullet specific index of the link
         """
-        if isinstance(tcp, str):
-            if tcp in self._link_name_to_index.keys():
-                return self._link_name_to_index[tcp]
-            else:
-                ValueError("Invalid Link name! valid names are: " +
-                           str(self._link_name_to_index.keys()))
-        else:
+        if not isinstance(tcp, str):
             raise TypeError(
                 "The Link name must be a String describing a URDF link")
+        if not tcp in self._link_name_to_index.keys():
+            raise ValueError("Invalid Link name! valid names are: " +
+                             str(self._link_name_to_index.keys()))
+
+        return self._link_name_to_index[tcp]

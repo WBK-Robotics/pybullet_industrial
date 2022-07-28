@@ -75,12 +75,12 @@ class RobotBase:
             if joint_info[2] != 4:  # checks if the joint is not fixed
                 # convert byte string to string
                 joint_name = joint_info[1].decode("utf-8")
-                py_joint_state = p.getJointState(self.urdf, joint_number)
+                joint_state_list = p.getJointState(self.urdf, joint_number)
 
-                single_joint_state = {'position': py_joint_state[0],
-                                      'velocity': py_joint_state[1],
-                                      'reaction force': py_joint_state[2],
-                                      'torque': py_joint_state[3]}
+                single_joint_state = {'position': joint_state_list[0],
+                                      'velocity': joint_state_list[1],
+                                      'reaction force': joint_state_list[2],
+                                      'torque': joint_state_list[3]}
                 joint_state[joint_name] = single_joint_state
         return joint_state
 

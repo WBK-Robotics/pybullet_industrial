@@ -174,8 +174,6 @@ class Paint(Particle):
         target_position, target_orientation = self.get_target_pose(
                 self.target_id, self.target_link_id)
         
-        particle_size=self.properties['particle size']
-        
         rot_matrix = p.getMatrixFromQuaternion(target_orientation)
         rot_matrix = np.array(rot_matrix).reshape(3, 3)
         

@@ -13,8 +13,8 @@ class ToolPath:
                                           subsequent positions.
             orientations (numpy.array(4,n), optional): A 4 dimensional array where each dimension
                                                        describes a subsequent quaternion.
-                                                       Defaults to None in which case the orientation
-                                                       of the world coordinate system is assumed.
+                                                       Defaults to None in which case
+                                                       the orientation [0,0,0,1] is assumed.
             tool_acivations ([type], optional): A 1 dimensional array with boolean values describing
                                                 wheter a tool is active at a given path pose.
                                                 Defaults to None in which case the tool is always
@@ -32,6 +32,7 @@ class ToolPath:
                 raise ValueError(
                     "The position and orientation paths need to have the same length")
             self.orientations = orientations
+
         if tool_acivations is None:
             self.tool_activations = np.zeros(len(self.positions[0]))
         else:
@@ -74,15 +75,17 @@ class ToolPath:
         for i in range(len(self)):
             path_positions[i] = rot_matrix@path_positions[i]
             _, path_orientations[i] = p.multiplyTransforms([0, 0, 0],
-                                                           path_orientations[i], [0, 0, 0], quaternion)
+                                                           path_orientations[i],
+                                                           [0, 0, 0],
+                                                           quaternion)
 
         self.positions = np.transpose(path_positions)
         self.orientations = np.transpose(path_orientations)
 
     def draw(self, pose=False, color=[0, 0, 1]):
         """Function which draws the path into the Debugin GUI.
-           The path can either be a line representing the positions or a series of coordinate systems
-           representing the whole pose
+           The path can either be a line representing the positions 
+           or a series of coordinate systems representing the whole pose.
 
         Args:
             orientation (bool, optional): Flag which determins if only the path position is shown

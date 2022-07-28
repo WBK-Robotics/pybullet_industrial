@@ -41,7 +41,7 @@ def draw_path(path, color=[0.0, 1.0, 0.0], width=2.0):
                            lineColorRGB=color, lineWidth=width, lifeTime=0)
 
 
-def draw_coordinate_system(position, orientation, length=0.1, width=2.0, life_time=0,parent_id=-1,parent_index=-1):
+def draw_coordinate_system(position, orientation, length=0.1, width=2.0, life_time=0, parent_id=-1, parent_index=-1):
     """This function draws a coordinate system at a given position
 
     Args:
@@ -68,15 +68,30 @@ def draw_coordinate_system(position, orientation, length=0.1, width=2.0, life_ti
                                np.cos(pitch)*np.sin(roll)])
     z_direction = np.cross(x_direction, y_direction)
 
-    p.addUserDebugLine(position, position+length*x_direction,
-                       lineColorRGB=[1, 0, 0], lineWidth=width, lifeTime=life_time,parentObjectUniqueId=parent_id,parentLinkIndex=parent_index)
-    p.addUserDebugLine(position, position+length*y_direction,
-                       lineColorRGB=[0, 1, 0], lineWidth=width, lifeTime=life_time,parentObjectUniqueId=parent_id,parentLinkIndex=parent_index)
-    p.addUserDebugLine(position, position+length*z_direction,
-                       lineColorRGB=[0, 0, 1], lineWidth=width, lifeTime=life_time,parentObjectUniqueId=parent_id,parentLinkIndex=parent_index)
+    p.addUserDebugLine(position,
+                       position+length*x_direction,
+                       lineColorRGB=[1, 0, 0],
+                       lineWidth=width,
+                       lifeTime=life_time,
+                       parentObjectUniqueId=parent_id,
+                       parentLinkIndex=parent_index)
+    p.addUserDebugLine(position,
+                       position+length*y_direction,
+                       lineColorRGB=[0, 1, 0],
+                       lineWidth=width,
+                       lifeTime=life_time,
+                       parentObjectUniqueId=parent_id,
+                       parentLinkIndex=parent_index)
+    p.addUserDebugLine(position,
+                       position+length*z_direction,
+                       lineColorRGB=[0, 0, 1],
+                       lineWidth=width,
+                       lifeTime=life_time,
+                       parentObjectUniqueId=parent_id,
+                       parentLinkIndex=parent_index)
 
 
-def draw_robot_frames(robot, text_size = 1, length=0.1, width=2.0, life_time=0):
+def draw_robot_frames(robot, text_size=1, length=0.1, width=2.0, life_time=0):
     """Visualizes the coordinate Frames of each link of a robot
 
     Args:
@@ -88,40 +103,47 @@ def draw_robot_frames(robot, text_size = 1, length=0.1, width=2.0, life_time=0):
                                      Defaults to 0 in wich case it remains forever.
     """
     for link_name, link_id in robot._link_name_to_index.items():
-        orientation =p.getQuaternionFromEuler([0, 0, 0])
-        draw_coordinate_system([0,0,0],orientation,length,width,life_time,robot.urdf,link_id)
-        p.addUserDebugText(link_name,[0,0,0],textSize=text_size,lifeTime=life_time,parentObjectUniqueId=robot.urdf,parentLinkIndex=link_id)
+        orientation = p.getQuaternionFromEuler([0, 0, 0])
+        draw_coordinate_system([0, 0, 0], orientation,
+                               length, width, life_time, robot.urdf, link_id)
+        p.addUserDebugText(link_name, [0, 0, 0], textSize=text_size, lifeTime=life_time,
+                           parentObjectUniqueId=robot.urdf, parentLinkIndex=link_id)
 
 
 def get_object_id_from_mouse():
     """Returns the object ID and Link ID of an object when clicking on it
 
     Returns:
-        [type]: The Id of the object
-        [type]: The Id of its link
+        int: The Id of the object
+        int: The Id of its link
     """
     mouseEvents = p.getMouseEvents()
     for e in mouseEvents:
         if ((e[0] == 2) and (e[3] == 0) and (e[4] & p.KEY_WAS_TRIGGERED)):
             mouseX = e[1]
             mouseY = e[2]
-            width, height, _, _, _, camera_forward, horizontal, vertical, _, _, dist, camera_target = p.getDebugVisualizerCamera()
-            horizontal = np.array(horizontal)
-            vertical = np.array(vertical)
-            camera_target = np.array(camera_target)
-            camera_forward = np.array(camera_forward)
 
-            camera_position = camera_target-dist*camera_forward #current position of the debug camera
+            debug_camera = p.getDebugVisualizerCamera()
+            width = debug_camera[0]
+            height = debug_camera[1]
+            camera_forward = np.array(debug_camera[5])
+            horizontal = np.array(debug_camera[6])
+            vertical = np.array(debug_camera[7])
+            dist = debug_camera[10]
+            camera_target = np.array(debug_camera[11])
+
+            camera_position = camera_target-dist*camera_forward
             ray_start_pos = camera_position
             far_plane = 10000
             ray_forward = camera_target-camera_position
-            ray_forward = far_plane*ray_forward/ np.linalg.norm(ray_forward)
+            ray_forward = far_plane*ray_forward / np.linalg.norm(ray_forward)
 
             dHor = horizontal/width
             dVer = vertical/height
 
-            ray_end_pos = ray_start_pos+ ray_forward - 0.5*horizontal+0.5*vertical+float(mouseX)* dHor - float(mouseY)*dVer
-            rayInfo = p.rayTest(ray_start_pos, ray_end_pos )
+            ray_end_pos = ray_start_pos + ray_forward - 0.5*horizontal + \
+                0.5*vertical+float(mouseX) * dHor - float(mouseY)*dVer
+            rayInfo = p.rayTest(ray_start_pos, ray_end_pos)
             hit = rayInfo[0]
             return hit[0], hit[1]
-    return -1,-1
+    return -1, -1

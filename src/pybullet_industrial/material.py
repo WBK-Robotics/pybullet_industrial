@@ -1,6 +1,7 @@
 from typing import Dict
 
 import pybullet as p
+import numpy as np
 
 
 class Particle():

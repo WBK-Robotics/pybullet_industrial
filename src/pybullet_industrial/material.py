@@ -95,6 +95,100 @@ class Plastic(Particle):
     def remove(self):
         p.removeBody(self.particle_id)
 
+class Paint(Particle):
+
+    def __init__(self, ray_cast_result, material_properties: Dict):
+        """A class for simply Paint particles which stick to objects and move with them.
+           The Paint particles are purely visible and have neither mass nor a collision mesh
+
+        Args:
+            ray_cast_result ([type]): The result of a pybullet ray_cast as performed by the extruder
+            material_properties (Dict): A dictionary containing the properties of the material.
+                                        The default properties for Paint are:
+                                        'particle size': 0.3, 'color': [1, 0, 0, 1]
+        """
+        self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
+        self.set_material_properties(material_properties)
+        particle_size = self.properties['particle size']
+        color = self.properties['color']
+
+        self.particle_ids = []
+        self.target_id = ray_cast_result[0]
+        self.target_link_id = ray_cast_result[1]
+        self.hit_position=ray_cast_result[3]
+        self.initial_target_position=self.get_target_pose(self.target_id, self.target_link_id)[0]
+
+        if self.target_id != -1:
+            target_position, target_orientation = self.get_target_pose(
+                self.target_id, self.target_link_id)
+
+            rot_matrix = p.getMatrixFromQuaternion(target_orientation)
+            rot_matrix = np.array(rot_matrix).reshape(3, 3)
+
+            self.adj_target_position = np.linalg.inv(
+                rot_matrix)@(np.array(ray_cast_result[3])-target_position)
+
+            steps = 3
+            width = particle_size*500
+            theta2 = np.linspace(-np.pi,  0, steps)
+            phi2 = np.linspace(0,  5 * 2*np.pi, steps)
+
+            x_coord = particle_size * \
+                np.sin(theta2) * np.cos(phi2) + self.adj_target_position[0]
+            y_coord = particle_size * \
+                np.sin(theta2) * np.sin(phi2) + self.adj_target_position[1]
+            z_coord = particle_size * \
+                np.cos(theta2) + self.adj_target_position[2]
+
+            path = np.array([x_coord, y_coord, z_coord])
+            path_steps = len(path[0])
+            for i in range(1, path_steps):
+                current_point = path[:, i]
+                previous_point = path[:, i-1]
+                self.particle_ids.append(p.addUserDebugLine(current_point, previous_point,
+                                                            lineColorRGB=color[:3],
+                                                            lineWidth=width,
+                                                            lifeTime=0,
+                                                            parentObjectUniqueId=self.target_id,
+                                                            parentLinkIndex=self.target_link_id))
+
+    @staticmethod
+    def get_target_pose(target_id, target_link_id):
+        if target_link_id == -1:
+            target_position, target_orientation = p.getBasePositionAndOrientation(
+                target_id)
+        else:
+            target_link_state = p.getLinkState(target_id, target_link_id)
+            target_position = np.array(target_link_state[0])
+            target_orientation = np.array(target_link_state[1])
+        return target_position, target_orientation
+
+    def get_position(self):
+        """Returns the position of a particle in the world frame
+        """
+        hit_position=self.hit_position
+        initial_target_position=self.initial_target_position
+        diff_vector=np.array(hit_position)-np.array(initial_target_position)
+        
+        target_position, target_orientation = self.get_target_pose(
+                self.target_id, self.target_link_id)
+        
+        particle_size=self.properties['particle size']
+        
+        rot_matrix = p.getMatrixFromQuaternion(target_orientation)
+        rot_matrix = np.array(rot_matrix).reshape(3, 3)
+        
+
+        coordinates=target_position+rot_matrix@ (diff_vector)
+        
+        return coordinates
+
+    def remove(self):
+        """Function to actively remove the particle from the simulation.
+           This function is deliberatly kept seperate from the __del__ method to prevent having
+           to manually save particles if there is no intention of removing them.
+        """
+        [p.removeUserDebugItem(id) for id in self.particle_ids]
 
 class MetalVoxel(Particle):
     def __init__(self, ray_cast_result,  material_properties: Dict):

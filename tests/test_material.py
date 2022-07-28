@@ -34,6 +34,38 @@ def material_spawn_test(material):
 
     p.disconnect()
     return expected_positions == spawned_positions
+def paint_position_test(material):
+    """Helper function to test wether a position request for a paint particle is correct.
+    This test depends on the get_position function in the Paint Class.
+    
+    """
+    physics_client = p.connect(p.DIRECT)
+    p.setPhysicsEngineParameter(numSolverIterations=5000)
+    start_orientation = p.getQuaternionFromEuler([0, 0, 0])
+
+    p.setAdditionalSearchPath(pybullet_data.getDataPath())
+
+    
+    cube=p.loadURDF("cube.urdf", [2, 0, 0.5], useFixedBase=False)
+
+    ray_cast_result=p.rayTest([1.75, 0, 1.2], [1.75, 0, 0])
+    
+    material_properties={'particle size': 0.3,
+                         'color': [1, 0, 0, 1]}
+
+    paint_particle=pi.Paint(ray_cast_result[0], material_properties)
+
+    new_pos=[5,0,0.5]
+    new_orn=p.getQuaternionFromEuler([0,0,np.pi/2])
+    
+    p.resetBasePositionAndOrientation(cube, new_pos, new_orn)
+   
+    painted_position=paint_particle.get_position()
+    expected_position=[5, -0.25, 1]
+    
+    p.disconnect()
+
+    return np.allclose(painted_position, expected_position)
 
 
 class TestMaterials(unittest.TestCase):
@@ -43,6 +75,9 @@ class TestMaterials(unittest.TestCase):
 
     def test_plastic(self):
         self.assertTrue(material_spawn_test(pi.Plastic))
+
+    def test_paint(self):
+        self.assertTrue(paint_position_test(pi.Paint))
 
 
 if __name__ == '__main__':

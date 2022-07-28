@@ -50,6 +50,5 @@ class Remover(RayCaster):
         for ray_intersection in ray_cast_results:
             if ray_intersection[0] != -1:
                 p.removeBody(ray_intersection[0])
-
                 removed_objects.append(ray_intersection[0])
         return removed_objects

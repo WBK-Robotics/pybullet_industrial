@@ -49,14 +49,13 @@ class RayCaster(EndeffectorTool):
                                    should be changed
 
         Raises:
-            KeyError: If a key is not a valid extruder property
+            KeyError: If a key is not a valid property
         """
         for key in new_properties:
             if not key in self.properties:
                 raise KeyError("The specified property keys are not valid" +
                                " Valid keys are: "+str(self.properties.keys()))
-            else:
-                self.properties[key] = new_properties[key]
+            self.properties[key] = new_properties[key]
 
     def cast_rays(self, position, orientation):
         """Randomly casts rays withn a given range from a specified position and orientation

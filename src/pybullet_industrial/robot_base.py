@@ -22,27 +22,27 @@ class RobotBase:
                                flags=urdf_flags,
                                useFixedBase=True)
 
+        self.number_of_joints = p.getNumJoints(self.urdf)
         self._joint_state_shape = self.get_joint_state()
         self._joint_name_to_index = {}
         self._link_name_to_index = {}
         kinematic_solver_map = []
-        self._lower_joint_limit = np.zeros(p.getNumJoints(self.urdf))
-        self._upper_joint_limit = np.zeros(p.getNumJoints(self.urdf))
+        self._lower_joint_limit = np.zeros(self.number_of_joints)
+        self._upper_joint_limit = np.zeros(self.number_of_joints)
 
-        for joint_number in range(p.getNumJoints(self.urdf)):
-            link_name = p.getJointInfo(self.urdf, joint_number)[
-                12].decode("utf-8")
+        for joint_number in range(self.number_of_joints):
+            joint_info = p.getJointInfo(self.urdf, joint_number)
+            link_name = joint_info[12].decode("utf-8")
             self._link_name_to_index[link_name] = joint_number
 
-            if p.getJointInfo(self.urdf, joint_number)[2] != 4:
-                joint_name = p.getJointInfo(self.urdf, joint_number)[
-                    1].decode("utf-8")
+            if joint_info[2] != 4:  # checks if the joint is not fixed
+                joint_name = joint_info[1].decode("utf-8")
                 self._joint_name_to_index[joint_name] = joint_number
 
                 kinematic_solver_map.append(joint_number)
 
-                lower_limit = p.getJointInfo(self.urdf, joint_number)[8]
-                upper_limit = p.getJointInfo(self.urdf, joint_number)[9]
+                lower_limit = joint_info[8]
+                upper_limit = joint_info[9]
                 if upper_limit < lower_limit:
                     lower_limit = -np.inf
                     upper_limit = np.inf
@@ -58,17 +58,9 @@ class RobotBase:
             self._default_endeffector_id = self._convert_endeffector(
                 default_endeffector)
 
-        self.max_joint_force = 1000*np.ones(p.getNumJoints(self.urdf))
-        for joint_number in range(p.getNumJoints(self.urdf)):
+        self.max_joint_force = 1000*np.ones(self.number_of_joints)
+        for joint_number in range(self.number_of_joints):
             p.resetJointState(self.urdf, joint_number, targetValue=0)
-
-        self._rooting_constraint = p.createConstraint(self.urdf,
-                                                      -1, -1, -1,
-                                                      p.JOINT_FIXED,
-                                                      [0, 0, 0],
-                                                      [0, 0, 0],
-                                                      start_position,
-                                                      start_orientation)
 
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name
@@ -78,25 +70,21 @@ class RobotBase:
 
         """
         joint_state = {}
-        for joint_number in range(p.getNumJoints(self.urdf)):
-            if p.getJointInfo(self.urdf, joint_number)[2] != 4:
-                joint = p.getJointInfo(self.urdf, joint_number)[1].decode(
-                    "utf-8")  # convert byte string to string
-                joint_position = p.getJointState(self.urdf, joint_number)[0]
-                joint_velocity = p.getJointState(self.urdf, joint_number)[1]
-                joint_torque = p.getJointState(self.urdf, joint_number)[3]
-                joint_reaction_force = p.getJointState(
-                    self.urdf, joint_number)[2]
+        for joint_number in range(self.number_of_joints):
+            joint_info = p.getJointInfo(self.urdf, joint_number)
+            if joint_info[2] != 4:  # checks if the joint is not fixed
+                # convert byte string to string
+                joint_name = joint_info[1].decode("utf-8")
+                joint_state_list = p.getJointState(self.urdf, joint_number)
 
-                single_joint_state = {'position': joint_position,
-                                      'velocity': joint_velocity,
-                                      'torque': joint_torque,
-                                      'reaction force': joint_reaction_force}
-                joint_state[joint] = single_joint_state
+                single_joint_state = {'position': joint_state_list[0],
+                                      'velocity': joint_state_list[1],
+                                      'reaction force': joint_state_list[2],
+                                      'torque': joint_state_list[3]}
+                joint_state[joint_name] = single_joint_state
         return joint_state
 
-
-    def set_joint_position(self,target: Dict[str,  float],ignore_limits=False):
+    def set_joint_position(self, target: Dict[str,  float], ignore_limits=False):
         """Sets the target position for a number of joints.
            The maximum force of each joint is set according to the max_joint_force class attribute.
 
@@ -106,26 +94,24 @@ class RobotBase:
         Raises:
             KeyError: If the specified joint state is not part of the Robot
         """
-        if all(key in self._joint_state_shape.keys() for key in target.keys()):
-            for joint, joint_position in target.items():
-                joint_number = self._joint_name_to_index[joint]
-
-
-                if ignore_limits == False:
-                    lower_joint_limit = self._lower_joint_limit[joint_number]
-                    upper_joint_limit = self._upper_joint_limit[joint_number]
-                    if joint_position > upper_joint_limit or joint_position < lower_joint_limit:
-                        raise ValueError('The joint position '+str(joint_position)+
-                                        ' is aut of limit for joint '+joint+'. Its limits are:\n'+
-                                        str(lower_joint_limit)+' and '+str(upper_joint_limit))
-
-
-                p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
-                                        force=self.max_joint_force[joint_number],
-                                        targetPosition=joint_position)
-        else:
+        if not all(key in self._joint_state_shape for key in target):
             raise KeyError('One or more joints are not part of the robot. ' +
                            'correct keys are: '+str(self._joint_state_shape.keys()))
+
+        for joint, joint_position in target.items():
+            joint_number = self._joint_name_to_index[joint]
+
+            if ignore_limits is False:
+                lower_joint_limit = self._lower_joint_limit[joint_number]
+                upper_joint_limit = self._upper_joint_limit[joint_number]
+                if joint_position > upper_joint_limit or joint_position < lower_joint_limit:
+                    raise ValueError('The joint position '+str(joint_position) +
+                                     ' is out of limit for joint '+joint+'. Its limits are:\n' +
+                                     str(lower_joint_limit)+' and '+str(upper_joint_limit))
+
+            p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
+                                    force=self.max_joint_force[joint_number],
+                                    targetPosition=joint_position)
 
     def get_endeffector_pose(self, endeffector_name: str = None):
         """Returns the position of the endeffector in world coordinates
@@ -153,8 +139,10 @@ class RobotBase:
 
         Args:
             target_position ([type]): The desired 3D position
-            target_orientation ([type], optional): The desired orientation as a quaternion. Defaults to None.
-            endeffector_name ([type], optional): The name of a different endeffector. Defaults to None.
+            target_orientation ([type], optional): The desired orientation as a quaternion.
+                                                   Defaults to None.
+            endeffector_name ([type], optional): The name of a different endeffector.
+                                                 Defaults to None.
         """
         if endeffector_name is None:
             endeffector_id = self._default_endeffector_id
@@ -192,8 +180,8 @@ class RobotBase:
         self.set_world_state(start_position, start_orientation)
 
         if joint_values is None:
-            joint_values = np.zeros(p.getNumJoints(self.urdf))
-        for joint in range(p.getNumJoints(self.urdf)):
+            joint_values = np.zeros(self.number_of_joints)
+        for joint in range(self.number_of_joints):
             p.resetJointState(self.urdf, joint,
                               targetValue=joint_values[joint])
 
@@ -205,8 +193,6 @@ class RobotBase:
             start_orientation ([type]): a 4 dimensional quaternion representing
                                        the desired orientation
         """
-        p.changeConstraint(self._rooting_constraint,
-                           start_position, start_orientation)
         p.resetBasePositionAndOrientation(
             self.urdf, start_position, start_orientation)
 
@@ -220,12 +206,23 @@ class RobotBase:
         return p.getBasePositionAndOrientation(self.urdf)
 
     def _convert_endeffector(self, endeffector):
-        if isinstance(endeffector, str):
-            if endeffector in self._link_name_to_index.keys():
-                return self._link_name_to_index[endeffector]
-            else:
-                ValueError("Invalid Endeffecot name! valid names are: " +
-                           str(self._link_name_to_index.keys()))
-        else:
+        """Internal Function which converts an endeffector name to an id
+
+        Args:
+            endeffector (str): The name of the endeffector link
+
+        Raises:
+            TypeError: if the name is not a string.
+            ValueError: if the endeffector name is not valid
+
+        Returns:
+            int: The corresponding link index to the endeffector id.
+        """
+        if not isinstance(endeffector, str):
             raise TypeError(
                 "The Endeffector must be a String describing a URDF link")
+        if not endeffector in self._link_name_to_index:
+            raise ValueError("Invalid Endeffecot name! valid names are: " +
+                             str(self._link_name_to_index.keys()))
+
+        return self._link_name_to_index[endeffector]

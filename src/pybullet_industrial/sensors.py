@@ -78,6 +78,7 @@ class Camera(EndeffectorTool):
 
         width = self.camera_parameters['width']
         height = self.camera_parameters['height']
-        _, _, img, _, _ = p.getCameraImage(
+        images = p.getCameraImage(
             width, height, view_matrix, self.projection_matrix)
+        img = np.reshape(images[2], (height, width, 4))
         return img

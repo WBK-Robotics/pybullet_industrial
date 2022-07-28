@@ -19,7 +19,14 @@ class Camera(EndeffectorTool):
         """
         super().__init__(urdf_model, start_position, start_orientation, coupled_robot)
 
-        self.camera_parameters = camera_parameters
+        self.camera_parameters = {'width': 480,
+                                  'height': 240,
+                                  'fov': 60,
+                                  'aspect ratio': 1,
+                                  'near plane distance': 0.01,
+                                  'far plane distance': 100}
+        self.set_camera_parameters(camera_parameters)
+
         self.projection_matrix = self.__get_projection_matrix()
 
     def __get_projection_matrix(self):
@@ -36,8 +43,15 @@ class Camera(EndeffectorTool):
 
         Args:
             camera_parameters (Dict[str,float]): A dictionary containing the camera parameters
+        Raises:
+            KeyError: If a key is not a valid parameter
         """
-        self.camera_parameters = camera_parameters
+        for key in camera_parameters:
+            if not key in self.camera_parameters:
+                raise KeyError("The specified property keys are not valid" +
+                               " Valid keys are: "+str(self.properties.keys()))
+            self.camera_parameters[key] = camera_parameters[key]
+
         self.projection_matrix = self.__get_projection_matrix()
 
     def get_image(self):

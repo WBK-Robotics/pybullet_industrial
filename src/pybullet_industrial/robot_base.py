@@ -94,7 +94,7 @@ class RobotBase:
         Raises:
             KeyError: If the specified joint state is not part of the Robot
         """
-        if not all(key in self._joint_state_shape.keys() for key in target):
+        if not all(key in self._joint_state_shape for key in target):
             raise KeyError('One or more joints are not part of the robot. ' +
                            'correct keys are: '+str(self._joint_state_shape.keys()))
 

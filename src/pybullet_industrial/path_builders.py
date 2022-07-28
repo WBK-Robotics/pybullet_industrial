@@ -1,5 +1,6 @@
-import pybullet_industrial as pi
 import numpy as np
+
+import pybullet_industrial as pi
 
 
 def build_box_path(center_position, dimensions, radius, orientation, samples):
@@ -44,7 +45,7 @@ def build_box_path(center_position, dimensions, radius, orientation, samples):
     circle_samples = int(0.25*circle_length /
                          (linear_length+circle_length)*samples)
 
-    test_path = pi.linear_interpolation(
+    box_path = pi.linear_interpolation(
         corner_point_00, corner_point_01, linear_samples)
     side_1 = pi.linear_interpolation(
         corner_point_10, corner_point_11, linear_samples)
@@ -62,15 +63,15 @@ def build_box_path(center_position, dimensions, radius, orientation, samples):
     corner_3 = pi.circular_interpolation(
         corner_point_31, corner_point_00, radius, circle_samples)
 
-    test_path.append(corner_0)
-    test_path.append(side_1)
-    test_path.append(corner_1)
-    test_path.append(side_2)
-    test_path.append(corner_2)
-    test_path.append(side_3)
-    test_path.append(corner_3)
+    box_path.append(corner_0)
+    box_path.append(side_1)
+    box_path.append(corner_1)
+    box_path.append(side_2)
+    box_path.append(corner_2)
+    box_path.append(side_3)
+    box_path.append(corner_3)
 
-    test_path.rotate(orientation)
-    test_path.translate(center_position)
+    box_path.rotate(orientation)
+    box_path.translate(center_position)
 
-    return test_path
+    return box_path

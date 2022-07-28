@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.interpolate as sci
-from pybullet_industrial.toolpath import ToolPath
 
+from pybullet_industrial.toolpath import ToolPath
 
 
 def build_circular_path(center, radius, min_angle, max_angle, step_num, clockwise=True):

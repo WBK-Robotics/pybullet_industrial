@@ -1,5 +1,5 @@
-import pybullet as p
 import numpy as np
+import pybullet as p
 
 
 def draw_point(point, color=[0.0, 1.0, 0.0], length=0.05, width=2.0):

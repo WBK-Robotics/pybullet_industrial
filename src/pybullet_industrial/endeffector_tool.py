@@ -239,7 +239,7 @@ class EndeffectorTool:
         if not isinstance(tcp, str):
             raise TypeError(
                 "The Link name must be a String describing a URDF link")
-        if not tcp in self._link_name_to_index.keys():
+        if not tcp in self._link_name_to_index:
             raise ValueError("Invalid Link name! valid names are: " +
                              str(self._link_name_to_index.keys()))
 

@@ -94,7 +94,7 @@ class RobotBase:
         Raises:
             KeyError: If the specified joint state is not part of the Robot
         """
-        if not all(key in self._joint_state_shape.keys() for key in target.keys()):
+        if not all(key in self._joint_state_shape.keys() for key in target):
             raise KeyError('One or more joints are not part of the robot. ' +
                            'correct keys are: '+str(self._joint_state_shape.keys()))
 
@@ -221,7 +221,7 @@ class RobotBase:
         if not isinstance(endeffector, str):
             raise TypeError(
                 "The Endeffector must be a String describing a URDF link")
-        if not endeffector in self._link_name_to_index.keys():
+        if not endeffector in self._link_name_to_index:
             raise ValueError("Invalid Endeffecot name! valid names are: " +
                              str(self._link_name_to_index.keys()))
 

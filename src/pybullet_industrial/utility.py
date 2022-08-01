@@ -1,12 +1,15 @@
 import numpy as np
 import pybullet as p
 
+from pybullet_industrial import RobotBase
 
-def draw_point(point, color=[0.0, 1.0, 0.0], length=0.05, width=2.0):
+
+def draw_point(point: np.array, color: list = [0.0, 1.0, 0.0],
+               length: float = 0.05, width: float = 2.0):
     """Draws a point in the worldspace as a cross of 3 lines
 
     Args:
-        pnt (array): 3 dimensional point
+        pnt (np.array): 3 dimensional point
         color (list, optional): RGB color. Defaults to [0.0,1.0,0.0].
         length (float, optional): The length of the lines.  Defaults to 0.5.
         width (float, optional): The width of the lines. Defaults to 2.0.
@@ -25,11 +28,11 @@ def draw_point(point, color=[0.0, 1.0, 0.0], length=0.05, width=2.0):
                        lineColorRGB=color, lineWidth=width, lifeTime=0)
 
 
-def draw_path(path, color=[0.0, 1.0, 0.0], width=2.0):
+def draw_path(path: np.array, color: list = [0.0, 1.0, 0.0], width: float = 2.0):
     """Draws a path in the workspace
 
     Args:
-        path (array(3,n)): Array containing the points in the path
+        path (np.array(3,n)): Array containing the points in the path
         color (list, optional): RGB color. Defaults to [0.0,1.0,0.0].
         width (float, optional): The width of the lines. Defaults to 2.0.
     """
@@ -41,12 +44,14 @@ def draw_path(path, color=[0.0, 1.0, 0.0], width=2.0):
                            lineColorRGB=color, lineWidth=width, lifeTime=0)
 
 
-def draw_coordinate_system(position, orientation, length=0.1, width=2.0, life_time=0, parent_id=-1, parent_index=-1):
+def draw_coordinate_system(position: np.array, orientation: np.array, length: float = 0.1,
+                           width: float = 2.0, life_time: float = 0, parent_id: int = -1,
+                           parent_index: int = -1):
     """This function draws a coordinate system at a given position
 
     Args:
-        position ([type]): The 3D position of the coordinate system
-        orientation ([type]): The quaternion representing the orientation
+        position (np.array): The 3D position of the coordinate system
+        orientation (np.array): The quaternion representing the orientation
                               of the coordinate system
         length (float, optional): The length of the lines.  Defaults to 0.5.
         width (float, optional): The width of the lines. Defaults to 2.0.
@@ -91,11 +96,12 @@ def draw_coordinate_system(position, orientation, length=0.1, width=2.0, life_ti
                        parentLinkIndex=parent_index)
 
 
-def draw_robot_frames(robot, text_size=1, length=0.1, width=2.0, life_time=0):
+def draw_robot_frames(robot: RobotBase, text_size: int = 1, length: float = 0.1,
+                      width: float = 2.0, life_time: float = 0):
     """Visualizes the coordinate Frames of each link of a robot
 
     Args:
-        robot ([type]): a Robot object
+        robot (RobotBase): a Robot object
         text_size (int, optional): The size at which the text is rendered. Defaults to 1.
         length (float, optional): The length of the lines.  Defaults to 0.1.
         width (float, optional): The width of the lines. Defaults to 2.0.

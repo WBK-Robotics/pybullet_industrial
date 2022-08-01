@@ -4,18 +4,21 @@ import scipy.interpolate as sci
 from pybullet_industrial.toolpath import ToolPath
 
 
-def build_circular_path(center, radius, min_angle, max_angle, step_num, clockwise=True):
+def build_circular_path(center: np.array, radius: float,
+                        min_angle: float, max_angle: float, step_num: int, clockwise: bool = True):
     """Function which builds a circular path
 
     Args:
-        center (array): the center of the circle
+        center (np.array): the center of the circle
         radius (float): the radius of the circle
         min_angle (float): minimum angle of the circle path
         max_angle (float): maximum angle of the circle path
-        steps (int): the number of steps between min_angle and max_angle
+        step_num (int): the number of steps between min_angle and max_angle
+        clockwise (bool): boolean value indicating if the interpolation is performed clockwise
+                          or anticlockwise
 
     Returns:
-        array: array of 2 dimensional path points
+        np.array: array of 2 dimensional path points
     """
 
     circular_path = np.zeros((2, step_num))
@@ -30,12 +33,12 @@ def build_circular_path(center, radius, min_angle, max_angle, step_num, clockwis
     return circular_path
 
 
-def linear_interpolation(start_point, end_point, samples):
+def linear_interpolation(start_point: np.array, end_point: np.array, samples: int):
     """Performs a linear interpolation betwenn two points in 3D space
 
     Args:
-        start_point (numpy.array): The start point of the interpolation
-        end_point (numpy.array): The end point of the interpolation
+        start_point (np.array): The start point of the interpolation
+        end_point (np.array): The end point of the interpolation
         samples (int): The number of samples used to interpolate
 
     Returns:
@@ -45,7 +48,8 @@ def linear_interpolation(start_point, end_point, samples):
     return ToolPath(final_path.transpose())
 
 
-def planar_circular_interpolation(start_point, end_point, radius, samples, clockwise=True):
+def planar_circular_interpolation(start_point: np.array, end_point: np.array,
+                                  radius: float, samples: int, clockwise: bool = True):
     connecting_line = end_point-start_point
     distance_between_points = np.linalg.norm(connecting_line)
     if radius <= distance_between_points/2:
@@ -74,13 +78,14 @@ def planar_circular_interpolation(start_point, end_point, radius, samples, clock
     return planar_path
 
 
-def circular_interpolation(start_point, end_point, radius, samples, axis=2, clockwise=True):
+def circular_interpolation(start_point: np.array, end_point: np.array,
+                           radius: float, samples: int, axis: int = 2, clockwise: bool = True):
     """AI is creating summary for circular_interpolation
 
     Args:
-        start_point (numpy.array): The start point of the interpolation
-        end_point (numpy.array): The end point of the interpolation
-        radius ([type]): The radius of the circle used for the interpolation
+        start_point (np.array): The start point of the interpolation
+        end_point (np.array): The end point of the interpolation
+        radius (float): The radius of the circle used for the interpolation
         samples (int): The number of samples used to interpolate
         axis (int, optional): The axis around which the circle is interpolated.
                               Defaults to 2 which corresponds to the z-axis (0=x,1=y).
@@ -107,11 +112,11 @@ def circular_interpolation(start_point, end_point, radius, samples, axis=2, cloc
     return ToolPath(path)
 
 
-def spline_interpolation(points, samples):
+def spline_interpolation(points: np.array, samples: int):
     """Interpolates between a number of points in cartesian space.
 
     Args:
-        points (numpy.array(3,n)): A 3 dimensional array whith each dimension containing
+        points (np.array(3,n)): A 3 dimensional array whith each dimension containing
                                    subsequent positions.
         samples (int): The number of samples used to interpolate
 
@@ -121,7 +126,6 @@ def spline_interpolation(points, samples):
     s = np.linspace(0, 1, len(points[0]))
 
     path = np.zeros((3, samples))
-    print(points[0], s)
     cs_x = sci.CubicSpline(s, points[0])
     cs_y = sci.CubicSpline(s, points[1])
     cs_z = sci.CubicSpline(s, points[2])

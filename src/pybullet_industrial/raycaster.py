@@ -4,35 +4,37 @@ import numpy as np
 import pybullet as p
 
 from pybullet_industrial.endeffector_tool import EndeffectorTool
+from pybullet_industrial.robot_base import RobotBase
 
 
 class RayCaster(EndeffectorTool):
 
-    def __init__(self, urdf_model: str, start_position, start_orientation,
-                 raycast_properties: Dict = None, coupled_robots=None, tcp_frame=None, connector_frames=None):
+    def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
+                 raycast_properties: Dict, coupled_robot: RobotBase = None,
+                 tcp_frame: str = None, connector_frame: str = None):
         """Special Endeffector Tool which can cast rays. Base for Extruder and Remover classes.
 
         Args:
             urdf_model (str): A valid path to a urdf file describint the tool geometry
-            start_position ([type]): the position at which the tool should be spawned
-            start_orientation ([type]): the orientation at which the tool should be spawned
+            start_position (np.array): the position at which the tool should be spawned
+            start_orientation (np.array): the orientation at which the tool should be spawned
             raycast_properties(Dict): A dictionary containing the properties of the extrusion head.
-                                       During initialization only 'material' has to be set.
-                                       Default Values are:
-                                       'opening angle':0,'number of rays':1,
-                                       'maximum distance':1
-            coupled_robot ([type], optional): A wbk_sim.Robot object if
-                                              the robot is coupled from the start.
-                                              Defaults to None.
-            tcp_frame ([type], optional): The name of the urdf_link
-                                          describing the tool center point.
-                                          Defaults to None in which case the last link is used.
-            connector_frame ([type], optional): The name of the urdf_link
-                                                at which a robot connects.
-                                                Defaults to None in which case the base link is used.
+                                      During initialization only 'material' has to be set.
+                                      Default Values are:
+                                      'opening angle':0,'number of rays':1,
+                                      'maximum distance':1
+            coupled_robot (RobotBase, optional): A pybullet_industrial.RobotBase object if
+                                                 the robot is coupled from the start.
+                                                 Defaults to None.
+            tcp_frame (str, optional): The name of the urdf_link
+                                       describing the tool center point.
+                                       Defaults to None in which case the last link is used.
+            connector_frame (str, optional): The name of the urdf_link
+                                             at which a robot connects.
+                                             Defaults to None in which case the base link is used.
         """
         super().__init__(urdf_model, start_position, start_orientation,
-                         coupled_robots, tcp_frame, connector_frames)
+                         coupled_robot, tcp_frame, connector_frame)
 
         self.properties = {'opening angle': 0,
                            'number of rays': 1,
@@ -57,15 +59,15 @@ class RayCaster(EndeffectorTool):
                                " Valid keys are: "+str(self.properties.keys()))
             self.properties[key] = new_properties[key]
 
-    def cast_rays(self, position, orientation):
+    def cast_rays(self, position: np.array, orientation: np.array):
         """Randomly casts rays withn a given range from a specified position and orientation
 
         Args:
-            position ([type]): start position of the raycast
-            orientation ([type]): start orientation of the raycast
+            position (np.array): start position of the raycast
+            orientation (np.array): start orientation of the raycast
 
         Returns:
-            [type]: [description]
+            List: The result of a raycast
         """
         opening_angle = self.properties['opening angle']
         number_of_rays = self.properties['number of rays']

@@ -6,20 +6,22 @@ import pybullet_industrial as pi
 
 class ToolPath:
 
-    def __init__(self, positions, orientations=None, tool_acivations=None):
+    def __init__(self, positions: np.array, orientations: np.array = None,
+                 tool_acivations: np.array = None):
         """A Base object for representing an manipulating toolpaths.
 
         Args:
-            positions (numpy.array(3,n)): A 3 dimensional array whith each dimension containing
+            positions (np.array(3,n)): A 3 dimensional array whith each dimension containing
                                           subsequent positions.
-            orientations (numpy.array(4,n), optional): A 4 dimensional array where each dimension
+            orientations (np.array(4,n), optional): A 4 dimensional array where each dimension
                                                        describes a subsequent quaternion.
                                                        Defaults to None in which case
                                                        the orientation [0,0,0,1] is assumed.
-            tool_acivations ([type], optional): A 1 dimensional array with boolean values describing
-                                                wheter a tool is active at a given path pose.
-                                                Defaults to None in which case the tool is always
-                                                inactive.
+            tool_acivations (np.array(n), optional): A 1 dimensional array with boolean values
+                                                     describing wheter a tool is active
+                                                     at a given path pose.
+                                                     Defaults to None in which case 
+                                                     the tool is always inactive.
 
         Raises:
             ValueError: If all given input arrays are different lengths.
@@ -42,11 +44,11 @@ class ToolPath:
                     "The position and tool activation paths need to have the same length")
             self.tool_activations = tool_acivations
 
-    def translate(self, vector):
+    def translate(self, vector: np.array):
         """Translates the whole path by a given vector
 
         Args:
-            vector ([type]): A 3D vector describing the path translation
+            vector (np.array): A 3D vector describing the path translation
         """
         self.positions[0] += vector[0]
         self.positions[1] += vector[1]
@@ -56,17 +58,17 @@ class ToolPath:
         """Returns the start pose of the trajectory for initial positioning
 
         Returns:
-            numpy.array: a 3D position vector
-            numpy.array: a 4D quaternion describing the orientation
+            np.array: a 3D position vector
+            np.array: a 4D quaternion describing the orientation
         """
         return self.positions[:, 0], self.orientations[:, 0]
 
-    def rotate(self, quaternion):
+    def rotate(self, quaternion: np.array):
         """Rotates the vector by a given quaternion.
            Can be combined with pybullet.getQuaternionFromEuler() for easier usage.
 
         Args:
-            quaternion ([type]): A 4 dimensional quaternion as a list or numpy array
+            quaternion (np.array): A 4 dimensional quaternion as a list or numpy array
         """
         path_positions = np.transpose(self.positions)
         path_orientations = np.transpose(self.orientations)
@@ -83,7 +85,7 @@ class ToolPath:
         self.positions = np.transpose(path_positions)
         self.orientations = np.transpose(path_orientations)
 
-    def draw(self, pose=False, color=[0, 0, 1]):
+    def draw(self, pose: bool = False, color: list = [0, 0, 1]):
         """Function which draws the path into the Debugin GUI.
            The path can either be a line representing the positions 
            or a series of coordinate systems representing the whole pose.

@@ -1,24 +1,42 @@
+from typing import Dict
+
 import numpy as np
 import pybullet as p
 
 from pybullet_industrial.endeffector_tool import EndeffectorTool
+from pybullet_industrial.robot_base import RobotBase
 
 
 class Camera(EndeffectorTool):
-    def __init__(self, urdf_model: str, start_position, start_orientation, camera_parameters, coupled_robot=None):
-        """AI is creating summary for __init__
+    def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
+                 camera_parameters: Dict, coupled_robot: RobotBase = None,
+                 camera_frame: str = None, connector_frame: str = None):
+        """Special Endeffector Tool which can cast rays. Base for Extruder and Remover classes.
 
         Args:
             urdf_model (str): A valid path to a urdf file describint the tool geometry
-            start_position ([type]): the position at which the tool should be spawned
-            start_orientation ([type]): the orientation at which the tool should be spawned
+            start_position (np.array): the position at which the tool should be spawned
+            start_orientation (np.array): the orientation at which the tool should be spawned
             camera_parameters (Dict[str,float]): A dictionary containing the camera parameters.
-                                                 The parameters are: width, height, fov, aspect ratio, 
-                                                 near plane distance and far plane distance.
-            default_endeffector (str, optional): The default endeffector used 
-                                                 when controlling the robots position
+                                                 Default Values are:
+                                                 'width': 480,
+                                                 'height': 240,
+                                                 'fov': 60,
+                                                 'aspect ratio': 1,
+                                                 'near plane distance': 0.01,
+                                                 'far plane distance': 100
+            coupled_robot (RobotBase, optional): A pybullet_industrial.RobotBase object if
+                                                 the robot is coupled from the start.
+                                                 Defaults to None.
+            camera_frame (str, optional): The name of the urdf_link
+                                       at which the camera is located.
+                                       Defaults to None in which case the last link is used.
+            connector_frame (str, optional): The name of the urdf_link
+                                             at which a robot connects.
+                                             Defaults to None in which case the base link is used.
         """
-        super().__init__(urdf_model, start_position, start_orientation, coupled_robot)
+        super().__init__(urdf_model, start_position, start_orientation,
+                         coupled_robot, camera_frame, connector_frame)
 
         self.camera_parameters = {'width': 480,
                                   'height': 240,
@@ -39,7 +57,7 @@ class Camera(EndeffectorTool):
             fov, aspect_ratio, near_plane, far_plane)
         return projection_matrix
 
-    def set_camera_parameters(self, camera_parameters):
+    def set_camera_parameters(self, camera_parameters: Dict):
         """Sets the camera parameters
 
         Args:
@@ -59,7 +77,7 @@ class Camera(EndeffectorTool):
         """Captures a camera image of the current simulation
 
         Returns:
-            [type]: A list of pixel colors in rgb format in 255 color format
+            np.array: A array of pixel colors in rgba format in 255 color format
         """
         link_state = p.getLinkState(
             self.urdf, self._tcp_id, computeForwardKinematics=True)

@@ -5,17 +5,17 @@ import numpy as np
 
 
 class Particle():
-    def __init__(self, ray_cast_result, material_properties: Dict):
+    def __init__(self, ray_cast_result: list, material_properties: Dict):
         """A template class for material particles extruded by a extruder endeffector tool
 
         Args:
-            ray_cast_result ([type]): The result of a pybullet ray_cast 
-                                      as performed by the Extruder class. 
-                                      It is made up of: [objectUniqueId, 
-                                                         linkIndex,
-                                                         hit fraction,
-                                                         hit position,
-                                                         hit normal]
+            ray_cast_result (list): The result of a pybullet ray_cast 
+                                    as performed by the Extruder class. 
+                                    It is made up of: [objectUniqueId, 
+                                                       linkIndex,
+                                                       hit fraction,
+                                                       hit position,
+                                                       hit normal]
             material_properties (Dict): A dictionary containing the properties of the material
         """
         self.properties = {}
@@ -52,18 +52,18 @@ class Particle():
 
 class Plastic(Particle):
 
-    def __init__(self, ray_cast_result,  material_properties: Dict):
+    def __init__(self, ray_cast_result: list,  material_properties: Dict):
         """A class for simply Plastic particles which can be used for 3d Printing.
            The particles are infinitely rigid and stick to each other.
 
         Args:
-            ray_cast_result ([type]): The result of a pybullet ray_cast
-                                      as performed by the Extruder class.
-                                      It is made up of: [objectUniqueId, 
-                                                         linkIndex,
-                                                         hit fraction,
-                                                         hit position,
-                                                         hit normal]
+            ray_cast_result (list): The result of a pybullet ray_cast
+                                    as performed by the Extruder class.
+                                    It is made up of: [objectUniqueId, 
+                                                       linkIndex,
+                                                       hit fraction,
+                                                       hit position,
+                                                       hit normal]
             material_properties (Dict): A dictionary containing the properties of the material.
                                         The default properties for Plastic are:
                                         'particle size': 0.3, 'color': [1, 0, 0, 1]
@@ -96,14 +96,15 @@ class Plastic(Particle):
     def remove(self):
         p.removeBody(self.particle_id)
 
+
 class Paint(Particle):
 
-    def __init__(self, ray_cast_result, material_properties: Dict):
+    def __init__(self, ray_cast_result: list, material_properties: Dict):
         """A class for simply Paint particles which stick to objects and move with them.
            The Paint particles are purely visible and have neither mass nor a collision mesh
 
         Args:
-            ray_cast_result ([type]): The result of a pybullet ray_cast as performed by the extruder
+            ray_cast_result (list): The result of a pybullet ray_cast as performed by the extruder
             material_properties (Dict): A dictionary containing the properties of the material.
                                         The default properties for Paint are:
                                         'particle size': 0.3, 'color': [1, 0, 0, 1]
@@ -116,8 +117,9 @@ class Paint(Particle):
         self.particle_ids = []
         self.target_id = ray_cast_result[0]
         self.target_link_id = ray_cast_result[1]
-        self.hit_position=ray_cast_result[3]
-        self.initial_target_position=self.get_target_pose(self.target_id, self.target_link_id)[0]
+        self.hit_position = ray_cast_result[3]
+        self.initial_target_position = self.get_target_pose(
+            self.target_id, self.target_link_id)[0]
 
         if self.target_id != -1:
             target_position, target_orientation = self.get_target_pose(
@@ -154,7 +156,7 @@ class Paint(Particle):
                                                             parentLinkIndex=self.target_link_id))
 
     @staticmethod
-    def get_target_pose(target_id, target_link_id):
+    def get_target_pose(target_id: int, target_link_id: int):
         if target_link_id == -1:
             target_position, target_orientation = p.getBasePositionAndOrientation(
                 target_id)
@@ -166,20 +168,23 @@ class Paint(Particle):
 
     def get_position(self):
         """Returns the position of a particle in the world frame
+
+        Returns:
+            [float,float,float]: The three dimensional position of the particle 
+                                 in the world coordinate system 
         """
-        hit_position=self.hit_position
-        initial_target_position=self.initial_target_position
-        diff_vector=np.array(hit_position)-np.array(initial_target_position)
-        
+        hit_position = self.hit_position
+        initial_target_position = self.initial_target_position
+        diff_vector = np.array(hit_position)-np.array(initial_target_position)
+
         target_position, target_orientation = self.get_target_pose(
-                self.target_id, self.target_link_id)
-        
+            self.target_id, self.target_link_id)
+
         rot_matrix = p.getMatrixFromQuaternion(target_orientation)
         rot_matrix = np.array(rot_matrix).reshape(3, 3)
-        
 
-        coordinates=target_position+rot_matrix@ (diff_vector)
-        
+        coordinates = target_position+rot_matrix @ (diff_vector)
+
         return coordinates
 
     def remove(self):
@@ -189,18 +194,14 @@ class Paint(Particle):
         """
         [p.removeUserDebugItem(id) for id in self.particle_ids]
 
+
 class MetalVoxel(Particle):
-    def __init__(self, ray_cast_result,  material_properties: Dict):
+    def __init__(self, ray_cast_result: list,  material_properties: Dict):
         """A simple voxel class for cutting and milling simulations
 
         Args:
-            ray_cast_result ([type]): The result of a pybullet ray_cast
-                                      as performed by the Extruder class.
-                                      It is made up of: [objectUniqueId, 
-                                                         linkIndex,
-                                                         hit fraction,
-                                                         hit position,
-                                                         hit normal]
+            ray_cast_result (list): The result of a pybullet ray_cast 
+                                    as performed by the Extruder class.
             material_properties (Dict): A dictionary containing the properties of the material.
                                         The default properties for a Metal Voxel are:
                                         'particle size': 0.3, 'color': [1, 0, 0, 1]
@@ -228,6 +229,10 @@ class MetalVoxel(Particle):
 
     def get_position(self):
         """Returns the position of a particle in the world frame
+
+        Returns:
+            [float,float,float]: The three dimensional position of the particle 
+                                 in the world coordinate system 
         """
         position, _ = p.getBasePositionAndOrientation(self.particle_id)
         return position
@@ -236,7 +241,8 @@ class MetalVoxel(Particle):
         p.removeBody(self.particle_id)
 
 
-def spawn_material_block(base_position, dimensions, material, material_properties):
+def spawn_material_block(base_position: list, dimensions: list,
+                         material: Particle, material_properties: Dict):
     """Spawns a block of a give material.
 
     Args:

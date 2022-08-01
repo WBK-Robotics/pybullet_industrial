@@ -5,14 +5,14 @@ from pybullet_industrial import RobotBase
 
 
 class EndeffectorTool:
-    def __init__(self, urdf_model: str, start_position, start_orientation,
-                 coupled_robot: RobotBase = None, tcp_frame=None, connector_frame=None):
+    def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
+                 coupled_robot: RobotBase = None, tcp_frame: str = None, connector_frame: str = None):
         """The base class for all Tools and Sensors connected to a Robot
 
         Args:
             urdf_model (str): A valid path to a urdf file describint the tool geometry
-            start_position ([type]): the position at which the tool should be spawned
-            start_orientation ([type]): the orientation at which the tool should be spawned
+            start_position (np.array): the position at which the tool should be spawned
+            start_orientation (np.array): the orientation at which the tool should be spawned
             coupled_robot (pi.RobotBase, optional): A pybullet_omdistrial.RobotBase object if
                                               the robot is coupled from the start.
                                               Defaults to None.
@@ -69,13 +69,13 @@ class EndeffectorTool:
         if coupled_robot is not None:
             self.couple(coupled_robot)
 
-    def couple(self, robot, endeffector_name=None):
+    def couple(self, robot: RobotBase, endeffector_name: str = None):
         """Dynamically Couples the Tool with the Endeffector of a given robot.
         Note that this endeffector can also be a virtual link to connect a sensor.
         A Tool can only be coupled with one robot
 
         Args:
-            robot (wbk_sim.robot): The robot whith which the tool should couple.
+            robot (pybullet_industrial.RobotBase): The robot whith which the tool should couple.
             endeffector_name (str, optional): The endeffector of the robot
                                               where the tool should couple to.
                                               Defaults to None.
@@ -157,14 +157,14 @@ class EndeffectorTool:
         orientation = np.array(link_state[1])
         return position, orientation
 
-    def set_tool_pose(self, target_position, target_orientation=None):
+    def set_tool_pose(self, target_position: np.array, target_orientation: np.array = None):
         """Allows the control of the tool.
            If the tool is coupled the inverse kinematic control of a coupled robot is used.
            If not the tool is moved directly.
 
         Args:
-            target_position (_type_): the desired position of the tool center point (tcp)
-            target_orientation (_type_, optional): the desired position of
+            target_position (np.array): the desired position of the tool center point (tcp)
+            target_orientation (np.array, optional): the desired position of
                                                    the tool center point (tcp).
                                                    If none is provided only
                                                    the position of the robot is controlled.
@@ -193,13 +193,13 @@ class EndeffectorTool:
                                                            None,
                                                            target_orientation)
 
-    def apply_tcp_force(self, force, world_coordinates=True):
+    def apply_tcp_force(self, force: np.array, world_coordinates: bool = True):
         """Function which can apply a external Force at a the next simulation step.
 
             Carefull, this does not behave as expected for setRealTimeSimulation(1)!
 
         Args:
-            force ([type]): A 3 dimensional force vector in Newton.
+            force (np.array): A 3 dimensional force vector in Newton.
             world_coordinates (bool, optional): Specify wheter the force is defined
                                                 in the world coordinates or the relative link frame.
                                                 Defaults to True.
@@ -212,19 +212,19 @@ class EndeffectorTool:
             p.applyExternalForce(self.urdf, self._tcp_id,
                                  force, [0, 0, 0], p.LINK_FRAME)
 
-    def apply_tcp_torque(self, torque):
+    def apply_tcp_torque(self, torque: np.array):
         """Function which can apply a external Torque at a the next simulation step.
            The local tcp_link frames are used as the main torque axis.
 
             Carefull, this does not behave as expected for setRealTimeSimulation(1)!
 
         Args:
-            torque ([type]): A 3 dimensional torque vector in Newtonmeter.
+            torque (np.array): A 3 dimensional torque vector in Newtonmeter.
         """
         p.applyExternalTorque(self.urdf, self._tcp_id,
                               torque, p.LINK_FRAME)
 
-    def _convert_link_to_id(self, tcp):
+    def _convert_link_to_id(self, tcp: str):
         """Internal function that converts between link names and pybullet specific indexes
 
         Args:

@@ -14,14 +14,14 @@ class EndeffectorTool:
             start_position (np.array): the position at which the tool should be spawned
             start_orientation (np.array): the orientation at which the tool should be spawned
             coupled_robot (pi.RobotBase, optional): A pybullet_omdistrial.RobotBase object if
-                                              the robot is coupled from the start.
-                                              Defaults to None.
+                                                    the robot is coupled from the start.
+                                                    Defaults to None.
             tcp_frame (str, optional): The name of the urdf_link
-                                          describing the tool center point.
-                                          Defaults to None in which case the last link is used.
+                                       describing the tool center point.
+                                       Defaults to None in which case the last link is used.
             connector_frame (str, optional): The name of the urdf_link at which a robot connects.
-                                                Defaults to None in which case
-                                                the base link is used.
+                                             Defaults to None in which case
+                                             the base link is used.
         """
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,

@@ -26,14 +26,14 @@ class Extruder(RayCaster):
                                                                'color' : [1, 0, 0, 1]},
                                        'maximum distance':1,'material':Particle,
             coupled_robot (RobotBase, optional): A pybullet_industrial.RobotBase object if
-                                              the robot is coupled from the start.
-                                              Defaults to None.
+                                                 the robot is coupled from the start.
+                                                 Defaults to None.
             tcp_frame (str, optional): The name of the urdf_link
-                                          describing the tool center point.
-                                          Defaults to None in which case the last link is used.
+                                       describing the tool center point.
+                                       Defaults to None in which case the last link is used.
             connector_frame (str, optional): The name of the urdf_link
-                                                at which a robot connects.
-                                                Defaults to None in which case the base link is used.
+                                             at which a robot connects.
+                                             Defaults to None in which case the base link is used.
 
         Raises:
             ValueError: If no material is provided during initialization.

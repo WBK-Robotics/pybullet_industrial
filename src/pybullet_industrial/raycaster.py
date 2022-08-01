@@ -27,11 +27,11 @@ class RayCaster(EndeffectorTool):
                                               the robot is coupled from the start.
                                               Defaults to None.
             tcp_frame (str, optional): The name of the urdf_link
-                                          describing the tool center point.
-                                          Defaults to None in which case the last link is used.
+                                       describing the tool center point.
+                                       Defaults to None in which case the last link is used.
             connector_frame (str, optional): The name of the urdf_link
-                                                at which a robot connects.
-                                                Defaults to None in which case the base link is used.
+                                             at which a robot connects.
+                                             Defaults to None in which case the base link is used.
         """
         super().__init__(urdf_model, start_position, start_orientation,
                          coupled_robot, tcp_frame, connector_frame)
@@ -67,7 +67,7 @@ class RayCaster(EndeffectorTool):
             orientation (np.array): start orientation of the raycast
 
         Returns:
-            [type]: The result of a raycast
+            List: The result of a raycast
         """
         opening_angle = self.properties['opening angle']
         number_of_rays = self.properties['number of rays']

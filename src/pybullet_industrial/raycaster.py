@@ -19,13 +19,13 @@ class RayCaster(EndeffectorTool):
             start_position (np.array): the position at which the tool should be spawned
             start_orientation (np.array): the orientation at which the tool should be spawned
             raycast_properties(Dict): A dictionary containing the properties of the extrusion head.
-                                       During initialization only 'material' has to be set.
-                                       Default Values are:
-                                       'opening angle':0,'number of rays':1,
-                                       'maximum distance':1
+                                      During initialization only 'material' has to be set.
+                                      Default Values are:
+                                      'opening angle':0,'number of rays':1,
+                                      'maximum distance':1
             coupled_robot (RobotBase, optional): A pybullet_industrial.RobotBase object if
-                                              the robot is coupled from the start.
-                                              Defaults to None.
+                                                 the robot is coupled from the start.
+                                                 Defaults to None.
             tcp_frame (str, optional): The name of the urdf_link
                                        describing the tool center point.
                                        Defaults to None in which case the last link is used.

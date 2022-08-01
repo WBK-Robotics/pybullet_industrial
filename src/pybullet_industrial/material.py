@@ -253,7 +253,7 @@ def spawn_material_block(base_position: list, dimensions: list,
                                     It needs to contain a key 'particle size'.
 
     Returns:
-        _type_: _description_
+        list[Particle]: A list of the spawned particles
     """
     if 'particle size' not in material_properties.keys():
         raise KeyError(

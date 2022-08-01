@@ -49,31 +49,24 @@ class TestMaterials(unittest.TestCase):
     def test_paint(self):
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=5000)
-        
-
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
-        
         cube=p.loadURDF("cube.urdf", [2, 0, 0.5], useFixedBase=False)
 
         ray_cast_result=p.rayTest([1.75, 0, 1.2], [1.75, 0, 0])
-        
         material_properties={'particle size': 0.3,
                             'color': [1, 0, 0, 1]}
-
         paint_particle=pi.Paint(ray_cast_result[0], material_properties)
 
         new_pos=[5,0,0.5]
         new_orn=p.getQuaternionFromEuler([0,0,np.pi/2])
         
         p.resetBasePositionAndOrientation(cube, new_pos, new_orn)
-    
         painted_position=paint_particle.get_position()
         expected_position=[5, -0.25, 1]
         
         output=np.allclose(painted_position, expected_position)
         p.disconnect()
-
         self.assertTrue(output)
        
 

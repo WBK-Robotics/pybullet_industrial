@@ -37,6 +37,7 @@ def material_spawn_test(material):
 
     p.disconnect()
     return expected_positions == spawned_positions
+
 class TestMaterials(unittest.TestCase):
 
     def test_metal_voxel(self):
@@ -48,7 +49,7 @@ class TestMaterials(unittest.TestCase):
     def test_paint(self):
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=5000)
-        start_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        
 
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
@@ -74,7 +75,7 @@ class TestMaterials(unittest.TestCase):
         p.disconnect()
 
         self.assertTrue(output)
-        self.assertTrue(material_spawn_test(pi.Paint))
+       
 
 if __name__ == '__main__':
     unittest.main()

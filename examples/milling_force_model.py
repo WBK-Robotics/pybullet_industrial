@@ -43,6 +43,9 @@ if __name__ == "__main__":
     p.setPhysicsEngineParameter(numSolverIterations=4,
                                 minimumSolverIslandSize=1024)
 
+    for _ in range(100):
+        p.stepSimulation()
+
     p.setPhysicsEngineParameter(contactBreakingThreshold=0.04)
     # disable rendering during creation
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
@@ -55,13 +58,20 @@ if __name__ == "__main__":
                             {'particle size': size/10})
 
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
-
+    corner_average = 0
+    edge_average = 0
+    full_average = 0
+    n = 1
     while (1):
-        print("Corner: {}".format(calculate_hit_percentage(corner_remover)))
-        print("Edge: {}".format(calculate_hit_percentage(edge_remover)))
-        print("Full: {}".format(calculate_hit_percentage(full_remover)))
+        corner_average = corner_average + \
+            (calculate_hit_percentage(corner_remover)-corner_average)/n
+        edge_average = edge_average + \
+            (calculate_hit_percentage(edge_remover)-edge_average)/n
+        full_average = full_average + \
+            (calculate_hit_percentage(full_remover)-full_average)/n
+        print("Corner: {}".format(corner_average))
+        print("Edge: {}".format(edge_average))
+        print("Full: {}".format(full_average))
 
         p.stepSimulation()
-        objectUid, object_index = pi.get_object_id_from_mouse()
-        if (objectUid >= 0):
-            p.removeBody(objectUid)
+        n += 1

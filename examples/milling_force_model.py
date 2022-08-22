@@ -22,7 +22,7 @@ class MillingTool(pi.EndeffectorTool):
         if raycast_properties is not None:
             self.change_properties(raycast_properties)
 
-    def apply_force_model(self, ray_cast_result, tcp_frame=None):
+    def get_cutting_state(self, ray_cast_result, tcp_frame=None):
         if tcp_frame is None:
             tcp_id = self._tcp_id
         else:
@@ -35,22 +35,14 @@ class MillingTool(pi.EndeffectorTool):
                               for i in range(0, len(ray_cast_result),
                                              self.properties['number of rays'])]
 
-        # check if any teeth is currently cutting based on if its rays are hitting a body
-        cutting_teeth = [any([ray_cast[0] != -1 for ray_cast in ray_cast_per_teeth[i]])
-                         for i in range(self.properties['number of teeth'])]
-
         # calculate the cutting depth based on the amount of rays that are hitting a body
+        # if the cutting depth is zero, the tool is not cutting
         cutting_depth = [sum([ray_cast[0] != -1 for ray_cast in ray_cast_per_teeth[i]])
                          for i in range(self.properties['number of teeth'])]
         cutting_depth = np.array(
             cutting_depth)*self.properties['height']/self.properties['number of rays']
 
-        cutting_force = np.zeros(3)
-        # ------------------------------------------------------------------------------------------
-        # calculate the force that is applied to the tool here
-        # ------------------------------------------------------------------------------------------
-
-        self.apply_tcp_force(cutting_force, tcp_frame)
+        return cutting_speed, cutting_depth
 
     def mill(self, tcp_frame=None):
 
@@ -81,7 +73,14 @@ class MillingTool(pi.EndeffectorTool):
                 ray_end_pos.append(end_position)
 
         ray_cast_results = p.rayTestBatch(ray_start_pos, ray_end_pos)
-        self.apply_force_model(ray_cast_results, tcp_frame)
+
+        cutting_speed, cutting_depth = self.get_cutting_state(
+            ray_cast_results, tcp_frame)
+        cutting_force = self.force_model(cutting_speed,
+                                         cutting_depth,
+                                         self.properties['diameter'],
+                                         self.properties['rotation speed'])
+        self.apply_tcp_force(cutting_force, tcp_frame)
 
         self.current_angle = self.current_angle + \
             self.properties['rotation speed']
@@ -92,6 +91,11 @@ class MillingTool(pi.EndeffectorTool):
                 p.removeBody(ray_intersection[0])
                 removed_objects.append(ray_intersection[0])
         return removed_objects
+
+    @staticmethod
+    def force_model(cutting_speed, cutting_depth, diameter, rotation_speed):
+        force = np.zeros(3)
+        return force
 
     def change_properties(self, new_properties: Dict):
         """Allows retroactive changes to the ray casting properties.

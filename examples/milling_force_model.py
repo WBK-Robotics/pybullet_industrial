@@ -5,16 +5,6 @@ import numpy as np
 from typing import Dict
 
 
-def calculate_hit_percentage(remover):
-    position, orientation = remover.get_tool_pose()
-    raycast_results = remover.cast_rays(position, orientation)
-    hit_positions = sum(
-        [raycast_result[0] != -1 for raycast_result in raycast_results])
-    nonhit_positions = sum(
-        [raycast_result[0] == -1 for raycast_result in raycast_results])
-    return hit_positions/(hit_positions+nonhit_positions)
-
-
 class MillingTool(pi.EndeffectorTool):
 
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
@@ -23,7 +13,7 @@ class MillingTool(pi.EndeffectorTool):
         super().__init__(urdf_model, start_position, start_orientation,
                          coupled_robot, tcp_frame, connector_frame)
 
-        self.properties = {'diameter': 0.1,
+        self.properties = {'diameter': 0.05,
                            'rotation speed': 1,
                            'number of teeth': 5,
                            'height': 0.1,
@@ -32,9 +22,29 @@ class MillingTool(pi.EndeffectorTool):
         if raycast_properties is not None:
             self.change_properties(raycast_properties)
 
-    def mill(self, tcp_frame=None):
+    def apply_force_model(self, ray_cast_result, tcp_frame=None):
         if tcp_frame is None:
-            tcp_frame = self.tcp_frame
+            tcp_id = self._tcp_id
+        else:
+            tcp_id = self._convert_link_to_id(tcp_frame)
+
+        link_state = p.getLinkState(self.urdf, tcp_id, computeLinkVelocity=1)
+        cutting_speed = np.linalg.norm(link_state[7])
+
+        ray_cast_per_teeth = [ray_cast_result[i:i+self.properties['number of rays']]
+                              for i in range(0, len(ray_cast_result), self.properties['number of rays'])]
+
+        cutting_teeth = [any([ray_cast[0] != -1 for ray_cast in ray_cast_per_teeth[i]])
+                         for i in range(self.properties['number of teeth'])]
+
+        cutting_depth = [self.properties['height']*sum([ray_cast[0] != -1 for ray_cast in ray_cast_per_teeth[i]])
+                         for i in range(self.properties['number of teeth'])]
+
+        cutting_force = np.zeros(3)
+
+        self.apply_tcp_force(cutting_force, tcp_frame)
+
+    def mill(self, tcp_frame=None):
 
         ray_start_pos = []
         ray_end_pos = []
@@ -46,7 +56,9 @@ class MillingTool(pi.EndeffectorTool):
 
         for i in range(self.properties['number of teeth']):
             end_point = self.properties['diameter']*np.array(
-                [np.sin(i*angle_between_teeth), np.cos(i*angle_between_teeth), 0])
+                [np.sin(i*angle_between_teeth+self.current_angle),
+                 np.cos(i*angle_between_teeth+self.current_angle),
+                 0])
             for j in range(self.properties['number of rays']):
                 height_adjustment = np.array(
                     [0, 0, j*self.properties['height']/self.properties['number of rays']])
@@ -54,11 +66,24 @@ class MillingTool(pi.EndeffectorTool):
                 start_position = position+rot_matrix@height_adjustment
                 end_position = position + \
                     rot_matrix@(end_point+height_adjustment)
+
+                p.addUserDebugLine(start_position, end_position,
+                                   [1, 0, 0], 1, lifeTime=1)
                 ray_start_pos.append(start_position)
                 ray_end_pos.append(end_position)
 
-        results = p.rayTestBatch(ray_start_pos, ray_end_pos)
-        return results
+        ray_cast_results = p.rayTestBatch(ray_start_pos, ray_end_pos)
+        self.apply_force_model(ray_cast_results, tcp_frame)
+
+        self.current_angle = self.current_angle + \
+            self.properties['rotation speed']
+
+        removed_objects = []
+        for ray_intersection in ray_cast_results:
+            if ray_intersection[0] != -1:
+                p.removeBody(ray_intersection[0])
+                removed_objects.append(ray_intersection[0])
+        return removed_objects
 
     def change_properties(self, new_properties: Dict):
         """Allows retroactive changes to the ray casting properties.
@@ -78,33 +103,22 @@ class MillingTool(pi.EndeffectorTool):
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
-    urdf_file2 = os.path.join(dirname,
-                              'robot_descriptions', 'milling_head.urdf')
+    urdf_file = os.path.join(dirname,
+                             'robot_descriptions', 'milling_head.urdf')
 
-    cid = p.connect(p.DIRECT)
+    cid = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=5000)
 
-    remover_properties = {'maximum distance': 2.0,
-                          'opening angle': 0.4,
-                          'number of rays': 200}
+    remover_properties = {'diameter': 0.1,
+                          'rotation speed': 1,
+                          'number of teeth': 5,
+                          'height': 0.1,
+                          'number of rays': 10}
 
     position = [0.00, 0.0, 0.6]
-    corner_remover = pi.Remover(
-        urdf_file2, position, [0, 0, 0, 1], remover_properties)
+    corner_remover = MillingTool(
+        urdf_file, position, [0, 0, 0, 1], remover_properties)
     corner_remover.set_tool_pose(position, [0, 0, 0, 1])
-
-    position = [0.00, 0.25, 0.6]
-    edge_remover = pi.Remover(
-        urdf_file2, position, [0, 0, 0, 1], remover_properties)
-    edge_remover.set_tool_pose(position, [0, 0, 0, 1])
-
-    position = [0.25, 0.25, 0.6]
-    full_remover = pi.Remover(
-        urdf_file2, position, [0, 0, 0, 1], remover_properties)
-    full_remover.set_tool_pose(position, [0, 0, 0, 1])
-
-    p.setPhysicsEngineParameter(numSolverIterations=4,
-                                minimumSolverIslandSize=1024)
 
     for _ in range(100):
         p.stepSimulation()
@@ -115,26 +129,8 @@ if __name__ == "__main__":
     # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 
     size = 0.5
-    pi.spawn_material_block([0, 0, 0],
-                            [size, size, size],
-                            pi.MetalVoxel,
-                            {'particle size': size/4})
 
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
-    corner_average = 0
-    edge_average = 0
-    full_average = 0
-    n = 1
     while (1):
-        corner_average = corner_average + \
-            (calculate_hit_percentage(corner_remover)-corner_average)/n
-        edge_average = edge_average + \
-            (calculate_hit_percentage(edge_remover)-edge_average)/n
-        full_average = full_average + \
-            (calculate_hit_percentage(full_remover)-full_average)/n
-        print("Corner: {}".format(corner_average))
-        print("Edge: {}".format(edge_average))
-        print("Full: {}".format(full_average))
-
+        results = corner_remover.mill()
         p.stepSimulation()
-        n += 1

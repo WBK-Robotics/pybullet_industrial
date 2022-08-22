@@ -10,6 +10,27 @@ class MillingTool(pi.EndeffectorTool):
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
                  raycast_properties: Dict, coupled_robot: pi.RobotBase = None,
                  tcp_frame: str = None, connector_frame: str = None):
+        """Initializes the milling tool.
+
+        Args:
+            urdf_model (str): The path to the urdf model of the milling tool
+            start_position (np.array): The position of the tool center point
+            start_orientation (np.array): The orientation of the tool center point
+            raycast_properties (Dict): A dictionary containing the properties of the milling tool.
+                                       Default values are:
+                                       'diameter':0.05, 'height':0.01,
+                                       'number of rays':10,'rotation speed':0.1, 'number of teeth':5
+            coupled_robot (RobotBase, optional): A pybullet_industrial.RobotBase object if
+                                                 the robot is coupled from the start.
+                                                 Defaults to None.
+            tcp_frame (str, optional): The name of the urdf_link
+                                       describing the tool center point.
+                                       Defaults to None in which case the last link is used.
+            connector_frame (str, optional): The name of the urdf_link
+                                             at which a robot connects.
+                                             Defaults to None in which case the base link is used
+
+        """
         super().__init__(urdf_model, start_position, start_orientation,
                          coupled_robot, tcp_frame, connector_frame)
 
@@ -23,6 +44,17 @@ class MillingTool(pi.EndeffectorTool):
             self.change_properties(raycast_properties)
 
     def get_cutting_state(self, ray_cast_result, tcp_frame=None):
+        """A helpfer function calculating the cutting depth and speed of the tool.
+
+        Args:
+            ray_cast_result (list): The result of a batch ray cast as performed
+                                      by the mill function
+            tcp_frame (str, optional): The tool center point frame name. Defaults to None.
+
+        Returns:
+            float: the speed at which the cutting tool is moved into the material
+            (np.array): an array of the depth of the cutting tool at each tooth
+        """
         if tcp_frame is None:
             tcp_id = self._tcp_id
         else:
@@ -45,6 +77,14 @@ class MillingTool(pi.EndeffectorTool):
         return cutting_speed, cutting_depth
 
     def mill(self, tcp_frame=None):
+        """Function that performs a milling operation.
+
+        Args:
+            tcp_frame (str, optional): The name of the tool center point frame. Defaults to None.
+
+        Returns:
+            list: A list containing the ids of the bodies that were removed
+        """
 
         ray_start_pos = []
         ray_end_pos = []
@@ -94,6 +134,17 @@ class MillingTool(pi.EndeffectorTool):
 
     @staticmethod
     def force_model(cutting_speed, cutting_depth, diameter, rotation_speed):
+        """A force model that is used to calculate the force that is applied to the tool.
+
+        Args:
+            cutting_speed (float): the speed at which the cutting tool is moved into the material
+            cutting_depth (np.array): an array of the depth of the cutting tool at each tooth
+            diameter (float): the diameter of the cutting tool
+            rotation_speed (float): the speed at which the cutting tool rotates
+
+        Returns:
+            np.array: an array of the force that is applied to the cutting tool
+        """
         force = np.zeros(3)
         return force
 

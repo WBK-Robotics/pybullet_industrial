@@ -1,6 +1,8 @@
 import pybullet as p
 import pybullet_industrial as pi
 import os
+import numpy as np
+from typing import Dict
 
 
 def calculate_hit_percentage(remover):
@@ -11,6 +13,67 @@ def calculate_hit_percentage(remover):
     nonhit_positions = sum(
         [raycast_result[0] == -1 for raycast_result in raycast_results])
     return hit_positions/(hit_positions+nonhit_positions)
+
+
+class MillingTool(pi.EndeffectorTool):
+
+    def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
+                 raycast_properties: Dict, coupled_robot: pi.RobotBase = None,
+                 tcp_frame: str = None, connector_frame: str = None):
+        super().__init__(urdf_model, start_position, start_orientation,
+                         coupled_robot, tcp_frame, connector_frame)
+
+        self.properties = {'diameter': 0.1,
+                           'rotation speed': 1,
+                           'number of teeth': 5,
+                           'height': 0.1,
+                           'number of rays': 10}
+        self.current_angle = 0
+        if raycast_properties is not None:
+            self.change_properties(raycast_properties)
+
+    def mill(self, tcp_frame=None):
+        if tcp_frame is None:
+            tcp_frame = self.tcp_frame
+
+        ray_start_pos = []
+        ray_end_pos = []
+        angle_between_teeth = 2*np.pi/self.properties['number of teeth']
+
+        position, orientation = self.get_tool_pose(tcp_frame)
+        rot_matrix = p.getMatrixFromQuaternion(orientation)
+        rot_matrix = np.array(rot_matrix).reshape(3, 3)
+
+        for i in range(self.properties['number of teeth']):
+            end_point = self.properties['diameter']*np.array(
+                [np.sin(i*angle_between_teeth), np.cos(i*angle_between_teeth), 0])
+            for j in range(self.properties['number of rays']):
+                height_adjustment = np.array(
+                    [0, 0, j*self.properties['height']/self.properties['number of rays']])
+
+                start_position = position+rot_matrix@height_adjustment
+                end_position = position + \
+                    rot_matrix@(end_point+height_adjustment)
+                ray_start_pos.append(start_position)
+                ray_end_pos.append(end_position)
+
+        results = p.rayTestBatch(ray_start_pos, ray_end_pos)
+        return results
+
+    def change_properties(self, new_properties: Dict):
+        """Allows retroactive changes to the ray casting properties.
+
+        Args:
+            new_properties (Dict): A dictionary containing values and keys that
+                                   should be changed
+        Raises:
+            KeyError: If a key is not a valid property
+        """
+        for key in new_properties:
+            if not key in self.properties:
+                raise KeyError("The specified property keys are not valid" +
+                               " Valid keys are: "+str(self.properties.keys()))
+            self.properties[key] = new_properties[key]
 
 
 if __name__ == "__main__":
@@ -55,7 +118,7 @@ if __name__ == "__main__":
     pi.spawn_material_block([0, 0, 0],
                             [size, size, size],
                             pi.MetalVoxel,
-                            {'particle size': size/10})
+                            {'particle size': size/4})
 
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     corner_average = 0

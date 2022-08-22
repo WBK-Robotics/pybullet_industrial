@@ -32,15 +32,23 @@ class MillingTool(pi.EndeffectorTool):
         cutting_speed = np.linalg.norm(link_state[7])
 
         ray_cast_per_teeth = [ray_cast_result[i:i+self.properties['number of rays']]
-                              for i in range(0, len(ray_cast_result), self.properties['number of rays'])]
+                              for i in range(0, len(ray_cast_result),
+                                             self.properties['number of rays'])]
 
+        # check if any teeth is currently cutting based on if its rays are hitting a body
         cutting_teeth = [any([ray_cast[0] != -1 for ray_cast in ray_cast_per_teeth[i]])
                          for i in range(self.properties['number of teeth'])]
 
-        cutting_depth = [self.properties['height']*sum([ray_cast[0] != -1 for ray_cast in ray_cast_per_teeth[i]])
+        # calculate the cutting depth based on the amount of rays that are hitting a body
+        cutting_depth = [sum([ray_cast[0] != -1 for ray_cast in ray_cast_per_teeth[i]])
                          for i in range(self.properties['number of teeth'])]
+        cutting_depth = np.array(
+            cutting_depth)*self.properties['height']/self.properties['number of rays']
 
         cutting_force = np.zeros(3)
+        # ------------------------------------------------------------------------------------------
+        # calculate the force that is applied to the tool here
+        # ------------------------------------------------------------------------------------------
 
         self.apply_tcp_force(cutting_force, tcp_frame)
 
@@ -110,27 +118,19 @@ if __name__ == "__main__":
     p.setPhysicsEngineParameter(numSolverIterations=5000)
 
     remover_properties = {'diameter': 0.1,
-                          'rotation speed': 1,
+                          'rotation speed': 2*np.pi/5,
                           'number of teeth': 5,
                           'height': 0.1,
                           'number of rays': 10}
 
     position = [0.00, 0.0, 0.6]
-    corner_remover = MillingTool(
+    milling_tool = MillingTool(
         urdf_file, position, [0, 0, 0, 1], remover_properties)
-    corner_remover.set_tool_pose(position, [0, 0, 0, 1])
-
-    for _ in range(100):
-        p.stepSimulation()
-
-    p.setPhysicsEngineParameter(contactBreakingThreshold=0.04)
-    # disable rendering during creation
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
-    # p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-
-    size = 0.5
+    milling_tool.set_tool_pose(position, [0, 0, 0, 1])
 
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     while (1):
-        results = corner_remover.mill()
+        pi.Plastic([0, 0, 0, position+np.array([0., 0.05, 0])],
+                   {'particle size': 0.02, 'color': [1, 0, 0, 1]})
+        results = milling_tool.mill()
         p.stepSimulation()

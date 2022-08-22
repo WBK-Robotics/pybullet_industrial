@@ -76,21 +76,20 @@ class MillingTool(pi.EndeffectorTool):
 
         return cutting_speed, cutting_depth
 
-    def mill(self, tcp_frame=None):
-        """Function that performs a milling operation.
+    def cast_rays(self, position: np.array, orientation: np.array):
+        """Randomly casts rays withn a given range from a specified position and orientation
 
         Args:
-            tcp_frame (str, optional): The name of the tool center point frame. Defaults to None.
+            position (np.array): start position of the raycast
+            orientation (np.array): start orientation of the raycast
 
         Returns:
-            list: A list containing the ids of the bodies that were removed
+            List: The result of a raycast
         """
-
         ray_start_pos = []
         ray_end_pos = []
         angle_between_teeth = 2*np.pi/self.properties['number of teeth']
 
-        position, orientation = self.get_tool_pose(tcp_frame)
         rot_matrix = p.getMatrixFromQuaternion(orientation)
         rot_matrix = np.array(rot_matrix).reshape(3, 3)
 
@@ -113,6 +112,21 @@ class MillingTool(pi.EndeffectorTool):
                 ray_end_pos.append(end_position)
 
         ray_cast_results = p.rayTestBatch(ray_start_pos, ray_end_pos)
+
+        return ray_cast_results
+
+    def mill(self, tcp_frame=None):
+        """Function that performs a milling operation.
+
+        Args:
+            tcp_frame (str, optional): The name of the tool center point frame. Defaults to None.
+
+        Returns:
+            list: A list containing the ids of the bodies that were removed
+        """
+
+        position, orientation = self.get_tool_pose(tcp_frame)
+        ray_cast_results = self.cast_rays(position, orientation)
 
         cutting_speed, cutting_depth = self.get_cutting_state(
             ray_cast_results, tcp_frame)

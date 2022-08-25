@@ -10,7 +10,7 @@
 				<color rgba="0.2 0.2 0.2 1"/>
 			</material>
             <geometry>
-                <mesh filename="mesh/base_m.stl"/>
+                <mesh filename="comau_meshes/base_m.stl"/>
             </geometry>
 		</visual>
 		<collision>
@@ -19,7 +19,7 @@
 				<color rgba="0.2 0.2 0.2 1"/>
 			</material>
             <geometry>
-                <mesh filename="mesh/base_m.stl"/>
+                <mesh filename="comau_meshes/base_m.stl"/>
             </geometry>
 		</collision>
 	</link>
@@ -44,7 +44,7 @@
 				<color rgba="0.4 0.4 0.4 1"/>
 			</material>
             <geometry>
-                <mesh filename="mesh/q1_m.stl"/>
+                <mesh filename="comau_meshes/q1_m.stl"/>
             </geometry>
 		</visual>
 		<collision>
@@ -53,7 +53,7 @@
 				<color rgba="0.4 0.4 0.4 1"/>
 			</material>
             <geometry>
-                <mesh filename="mesh/q1_m.stl"/>
+                <mesh filename="comau_meshes/q1_m.stl"/>
             </geometry>
 		</collision>
 	</link>
@@ -76,14 +76,14 @@
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<material name="gray2"/>
             <geometry>
-                <mesh filename="mesh/q2_m.stl"/>
+                <mesh filename="comau_meshes/q2_m.stl"/>
             </geometry>
 		</visual>
 		<collision>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<material name="gray2"/>
             <geometry>
-                <mesh filename="mesh/q2_m.stl"/>
+                <mesh filename="comau_meshes/q2_m.stl"/>
             </geometry>
 		</collision>
 	</link>
@@ -104,14 +104,14 @@
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<material name="gray2"/>
             <geometry>
-                <mesh filename="mesh/q3_m.stl"/>
+                <mesh filename="comau_meshes/q3_m.stl"/>
             </geometry>
 		</visual>
 		<collision>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<material name="gray2"/>
             <geometry>
-                <mesh filename="mesh/q3_m.stl"/>
+                <mesh filename="comau_meshes/q3_m.stl"/>
             </geometry>
 		</collision>
 	</link>
@@ -132,14 +132,14 @@
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<material name="gray2"/>
             <geometry>
-                <mesh filename="mesh/q4_m.stl"/>
+                <mesh filename="comau_meshes/q4_m.stl"/>
             </geometry>
 		</visual>
 		<collision>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<material name="gray2"/>
             <geometry>
-                <mesh filename="mesh/q4_m.stl"/>
+                <mesh filename="comau_meshes/q4_m.stl"/>
             </geometry>
 		</collision>
 	</link>
@@ -160,14 +160,14 @@
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<material name="gray2"/>
             <geometry>
-                <mesh filename="mesh/q5_m.stl"/>
+                <mesh filename="comau_meshes/q5_m.stl"/>
             </geometry>
 		</visual>
 		<collision>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<material name="gray2"/>
             <geometry>
-                <mesh filename="mesh/q5_m.stl"/>
+                <mesh filename="comau_meshes/q5_m.stl"/>
             </geometry>
 		</collision>
 	</link>
@@ -188,14 +188,14 @@
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<material name="gray1"/>
             <geometry>
-                <mesh filename="mesh/q6_m.stl"/>
+                <mesh filename="comau_meshes/q6_m.stl"/>
             </geometry>
 		</visual>
 		<collision>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<material name="gray1"/>
             <geometry>
-                <mesh filename="mesh/q6_m.stl"/>
+                <mesh filename="comau_meshes/q6_m.stl"/>
             </geometry>
 		</collision>
 	</link>

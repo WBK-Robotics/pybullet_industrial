@@ -26,11 +26,13 @@
   </material>
   
   <link name="world"/>	
+
 	<joint name="world_robot_joint" type="fixed">
 		<origin rpy="1.5707963 -1.5707963 3.1415926" xyz="0 0 0"/>
 		<parent link="world"/>
 		<child link="link0"/>
 	</joint>
+  
   <link name="link0">
     <visual>
       <origin rpy="1.5707963 0 1.5707963" xyz="0 0 0"/>
@@ -188,7 +190,7 @@
       <geometry>
         <mesh filename="kuka_meshes/kr180_r2500_extra_lnk6.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-    <collision>
+    </collision>
   </link>
   
 </robot>	

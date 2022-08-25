@@ -22,7 +22,6 @@ if __name__ == "__main__":
                                         flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
     orn = p.getQuaternionFromEuler([1.5707963, 0, 0])
     p.createMultiBody(0, monastryId, baseOrientation=orn)
-    p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=True)
 
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
@@ -47,6 +46,12 @@ if __name__ == "__main__":
     target_orientation = p.getQuaternionFromEuler([0, 0, 0])
     test_path = pi.build_box_path(
         target_position, [0.5, 0.6], 0.1, [0, 0, 0, 1], 50)
+
+    for _ in range(20):
+        extruder.set_tool_pose(*test_path.get_start_pose())
+        for _ in range(50):
+            p.stepSimulation()
+    p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=True)
 
     test_path.draw()
 

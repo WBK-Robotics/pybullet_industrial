@@ -10,17 +10,7 @@
        <mass value="0.001"/>
        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
     </inertial>
-  </link>
-
-  <joint name="Extruder" type="fixed">
-		<parent link="baseLink"/>
-		<child link="MDPH2"/>
-		<origin xyz="-0.222558 0.1736378 0" rpy="0 0 0"/>
-	</joint>
-
-  <link name="MDPH2">
     <visual>
-      <origin rpy="0 0 0" xyz="0.222558 -0.1736378 0"/>
       <geometry>
         <mesh filename="kuka_meshes/MDPH2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
@@ -28,14 +18,23 @@
     </visual>
   </link>
 
-  <joint name="z_rotation" type="fixed">
-    <parent link="MDPH2"/>
-    <child link="tcp"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-  </joint>
+  <joint name="milling_trafo" type="fixed">
+		<parent link="baseLink"/>
+		<child link="tcp"/>
+		<origin xyz="-0.222558 0.1736378 0.0" rpy="0 1.57075 0"/>
+	</joint> 
 
-  <link name="tcp">
-    <origin xyz="0 0 0.0" rpy="1.5707963 1.5707963 0"/>
-  </link>
+    <link name="tcp">
+    <visual>
+			<origin xyz="0 0 0.25" rpy="0 0 0"/>
+			<material name="almost_black">
+            <color rgba="1 0 0 1.0"/>
+            </material>
+			<geometry>
+				<cylinder length="0.01" radius="0.001"/>
+			</geometry>
+		</visual>
+	</link>
+
 
 </robot>

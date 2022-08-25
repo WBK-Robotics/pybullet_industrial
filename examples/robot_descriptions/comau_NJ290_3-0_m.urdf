@@ -209,7 +209,7 @@
 			</geometry>
 		</visual>
 	</link>
-	<link name="link6_y_axis">
+	<link name="printing_coupling_frame">
 		<visual>
 			<origin xyz="0 0 0.1" rpy="0 0 0"/>
 	     	<material name="red"/>
@@ -333,7 +333,7 @@
 	</joint>
 	<joint name="q6_y" type="fixed">
 		<parent link="link6_passive"/>
-		<child link="link6_y_axis"/>
-		<origin xyz="0 0 0" rpy="0 1.571 0"/>
+		<child link="printing_coupling_frame"/>
+		<origin xyz="0 0 0" rpy="1.571 0 0"/>
 	</joint>
 </robot>

@@ -34,7 +34,7 @@ if __name__ == "__main__":
     urdf_file1 = os.path.join(dirname,
                               'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
     urdf_file2 = os.path.join(dirname,
-                              'robot_descriptions', 'milling_head.urdf')
+                              'robot_descriptions', '3d_printing_head.urdf')
 
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=5000)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
                            'number of rays': 1}
     extruder = pi.Extruder(
         urdf_file2, [1.9, 0, 1.2], start_orientation, extruder_properties)
-    extruder.couple(robot, 'link6')
+    extruder.couple(robot, 'printing_coupling_frame')
 
     target_position = np.array([1.9, 0, 1.03])
     steps = 100

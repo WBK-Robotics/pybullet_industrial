@@ -32,6 +32,7 @@ if __name__ == "__main__":
                            'number of rays': 1}
     extruder = pi.Extruder(
         urdf_file2, [1.9, 0, 1.2], start_orientation, extruder_properties)
+    p.changeVisualShape(extruder.urdf, -1, rgbaColor=[1, 0, 0, 1])
     extruder.couple(robot, 'link6')
 
     remover_properties = {'maximum distance': 0.02,
@@ -39,10 +40,10 @@ if __name__ == "__main__":
                           'number of rays': 1}
     remover = pi.Remover(
         urdf_file2, [1.9, 1, 1.2], start_orientation, remover_properties)
-    p.changeVisualShape(remover.urdf, 0, rgbaColor=[0, 0, 1, 1])
+    p.changeVisualShape(remover.urdf, -1, rgbaColor=[0, 0, 1, 1])
 
     # Defining a roundet rectangular path
-    target_position = np.array([1.9, 0.0, 1.03])
+    target_position = np.array([1.9, 0.0, 0.53])
     target_orientation = p.getQuaternionFromEuler([0, 0, 0])
     test_path = pi.build_box_path(
         target_position, [0.5, 0.6], 0.1, [0, 0, 0, 1], 50)
@@ -51,7 +52,7 @@ if __name__ == "__main__":
         extruder.set_tool_pose(*test_path.get_start_pose())
         for _ in range(50):
             p.stepSimulation()
-    p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=True)
+    p.loadURDF("cube.urdf", [1.9, 0, 0], useFixedBase=True)
 
     test_path.draw()
 

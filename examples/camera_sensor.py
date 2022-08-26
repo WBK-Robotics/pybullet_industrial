@@ -19,6 +19,9 @@ if __name__ == "__main__":
     p.setPhysicsEngineParameter(numSolverIterations=5000)
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+    for i in range(7):
+        p.changeVisualShape(
+            robot.urdf, -1+i, rgbaColor=[20/255, 68/255, 102/255, 1])
 
     start_orientation = p.getQuaternionFromEuler([np.pi/2, 0, -0.2*np.pi])
     camera_parameters = {'width': 2272, 'height': 1704, 'fov': 60,
@@ -27,6 +30,8 @@ if __name__ == "__main__":
                        start_orientation, camera_parameters)
 
     tool = pi.EndeffectorTool(urdf_file3, [0, 0, 0], start_orientation)
+    p.changeVisualShape(
+        tool.urdf, -1, rgbaColor=[238/255, 183/255, 13/255, 1])
     tool.couple(robot)
 
     target_position = [1.0, 0, 0.7]

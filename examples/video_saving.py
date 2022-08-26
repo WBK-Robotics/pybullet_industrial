@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(
-        dirname, 'robot_descriptions', 'igus_4DOF_SV.urdf')
+        dirname, 'robot_descriptions', 'igus_4dof_robot.urdf')
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], [0, 0, 0, 1])
 
     # color the robot

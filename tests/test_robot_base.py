@@ -49,7 +49,7 @@ class TestRobotBase(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         parentDir = os.path.dirname(dirname)
         urdf_file1 = os.path.join(
-            parentDir, 'examples', 'robot_descriptions', 'igus_4DOF_SV.urdf')
+            parentDir, 'examples', 'robot_descriptions', 'igus_4dof_robot.urdf')
 
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)

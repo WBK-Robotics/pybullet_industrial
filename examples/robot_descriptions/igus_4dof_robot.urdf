@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://ros.org/wiki/xacro" name="igus_4DOF_SV">
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="igus_4dof_robot">
 
 <!-- URDF file for the Commonplace Robotics Mover4 robot arm -->
 <!-- Version 1.1 from Oct. 04th, 2016. -->
@@ -8,13 +8,13 @@
     <visual>
 	  <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-          <mesh filename="igus_4DOF_SV/Joint0.dae"  scale="0.001 0.001 0.001"/>
+          <mesh filename="igus_4dof_robot_meshes/Joint0.dae"  scale="0.001 0.001 0.001"/>
         </geometry>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-          <mesh filename="igus_4DOF_SV/Joint0Coll.dae" scale="0.001 0.001 0.001"/>
+          <mesh filename="igus_4dof_robot_meshes/Joint0Coll.dae" scale="0.001 0.001 0.001"/>
         </geometry>
     </collision>
   </link>
@@ -22,13 +22,13 @@
     <visual>
 	  <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-          <mesh filename="igus_4DOF_SV/Joint1.dae"  scale="0.001 0.001 0.001"/>
+          <mesh filename="igus_4dof_robot_meshes/Joint1.dae"  scale="0.001 0.001 0.001"/>
         </geometry>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-          <mesh filename="igus_4DOF_SV/Joint1Coll.dae" scale="0.001 0.001 0.001"/>
+          <mesh filename="igus_4dof_robot_meshes/Joint1Coll.dae" scale="0.001 0.001 0.001"/>
         </geometry>
     </collision>
   </link>
@@ -36,13 +36,13 @@
     <visual>
 	  <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-          <mesh filename="igus_4DOF_SV/Joint2.dae"  scale="0.001 0.001 0.001"/>
+          <mesh filename="igus_4dof_robot_meshes/Joint2.dae"  scale="0.001 0.001 0.001"/>
         </geometry>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-          <mesh filename="igus_4DOF_SV/Joint2Coll.dae" scale="0.001 0.001 0.001"/>
+          <mesh filename="igus_4dof_robot_meshes/Joint2Coll.dae" scale="0.001 0.001 0.001"/>
         </geometry>
     </collision>
   </link>
@@ -50,13 +50,13 @@
     <visual>
 	  <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-          <mesh filename="igus_4DOF_SV/Joint3.dae"  scale="0.001 0.001 0.001"/>
+          <mesh filename="igus_4dof_robot_meshes/Joint3.dae"  scale="0.001 0.001 0.001"/>
         </geometry>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-          <mesh filename="igus_4DOF_SV/Joint3Coll.dae" scale="0.001 0.001 0.001"/>
+          <mesh filename="igus_4dof_robot_meshes/Joint3Coll.dae" scale="0.001 0.001 0.001"/>
         </geometry>
     </collision>
   </link>
@@ -64,13 +64,13 @@
     <visual>
 	  <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-          <mesh filename="igus_4DOF_SV/Joint4.dae"  scale="0.001 0.001 0.001"/>
+          <mesh filename="igus_4dof_robot_meshes/Joint4.dae"  scale="0.001 0.001 0.001"/>
         </geometry>
     </visual>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-          <mesh filename="igus_4DOF_SV/Joint4.dae" scale="0.001 0.001 0.001"/>
+          <mesh filename="igus_4dof_robot_meshes/Joint4.dae" scale="0.001 0.001 0.001"/>
         </geometry>
     </collision>
   </link>

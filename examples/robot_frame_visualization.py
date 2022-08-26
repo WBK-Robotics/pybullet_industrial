@@ -10,7 +10,7 @@ if __name__ == "__main__":
         dirname, 'robot_descriptions', '3d_printing_head.urdf')
 
     urdf_file2 = os.path.join(
-        dirname, 'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+        dirname, 'robot_descriptions', 'comau_nj290_robot.urdf')
 
     physics_client = p.connect(
         p.GUI, options='--background_color_red=1.0 --background_color_green=1.0 --background_color_blue=1.0')

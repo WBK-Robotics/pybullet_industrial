@@ -3,11 +3,10 @@ import pybullet as p
 import pybullet_industrial as pi
 
 
-
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(
-        dirname, 'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+        dirname, 'robot_descriptions', 'comau_nj290_robot.urdf')
 
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=1000)
@@ -29,8 +28,8 @@ if __name__ == "__main__":
     while (1):
         objectUid, object_index = pi.get_object_id_from_mouse()
         if (objectUid >= 0):
-            p.changeVisualShape(objectUid, object_index, rgbaColor=colors[currentColor])
+            p.changeVisualShape(objectUid, object_index,
+                                rgbaColor=colors[currentColor])
             currentColor += 1
             if (currentColor >= len(colors)):
                 currentColor = 0
-

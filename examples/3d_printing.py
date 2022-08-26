@@ -32,7 +32,7 @@ def build_circular_path(center, radius, min_angle, max_angle, step_num, height):
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(dirname,
-                              'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+                              'robot_descriptions', 'comau_nj290_robot.urdf')
     urdf_file2 = os.path.join(dirname,
                               'robot_descriptions', '3d_printing_head.urdf')
 

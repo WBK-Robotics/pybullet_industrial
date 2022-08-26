@@ -11,7 +11,7 @@ class TestRobotBase(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         parentDir = os.path.dirname(dirname)
         urdf_file1 = os.path.join(
-            parentDir, 'examples', 'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+            parentDir, 'examples', 'robot_descriptions', 'comau_nj290_robot.urdf')
 
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)
@@ -75,7 +75,7 @@ class TestRobotBase(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         parentDir = os.path.dirname(dirname)
         urdf_file1 = os.path.join(
-            parentDir, 'examples', 'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+            parentDir, 'examples', 'robot_descriptions', 'comau_nj290_robot.urdf')
 
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)

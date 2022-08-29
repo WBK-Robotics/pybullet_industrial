@@ -25,11 +25,11 @@ if __name__ == "__main__":
 
     p.getCameraImage(64, 64, renderer=p.ER_BULLET_HARDWARE_OPENGL)
 
-    while (1):
+    while True:
         objectUid, object_index = pi.get_object_id_from_mouse()
         if (objectUid >= 0):
             p.changeVisualShape(objectUid, object_index,
                                 rgbaColor=colors[currentColor])
             currentColor += 1
-            if (currentColor >= len(colors)):
+            if currentColor >= len(colors):
                 currentColor = 0

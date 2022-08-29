@@ -1,9 +1,11 @@
 import os
 import time
+
+import numpy as np
 import pybullet as p
 import pybullet_industrial as pi
+
 from lemniscate import build_lemniscate_path
-import numpy as np
 
 """Example of a igus robot following a lemniscate path 
    with the current GUI view saved as a mp4 file.

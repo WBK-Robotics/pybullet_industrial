@@ -1,7 +1,9 @@
 import os
 import time
+
 import pybullet as p
 import pybullet_industrial as pi
+
 from lemniscate import build_lemniscate_path
 
 if __name__ == "__main__":

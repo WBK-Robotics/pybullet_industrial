@@ -1,8 +1,9 @@
 import os
 import time
+
+import numpy as np
 import pybullet as p
 import pybullet_industrial as pi
-import numpy as np
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)

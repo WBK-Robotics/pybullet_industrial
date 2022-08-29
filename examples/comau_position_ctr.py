@@ -1,9 +1,11 @@
 import os
 import time
+
+import numpy as np
 import pybullet as p
 import pybullet_industrial as pi
+
 from lemniscate import build_lemniscate_path
-import numpy as np
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)

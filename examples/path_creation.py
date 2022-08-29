@@ -1,6 +1,6 @@
+import numpy as np
 import pybullet as p
 import pybullet_industrial as pi
-import numpy as np
 
 """ Simple example showcasing the creation of a path
     using various interpolation and path builder functions."""

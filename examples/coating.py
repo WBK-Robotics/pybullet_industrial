@@ -5,26 +5,25 @@ import pybullet as p
 import pybullet_data
 import pybullet_industrial as pi
 
+"""Example demonstraining how the paint particle can be used to color an object.
+   Either wait for the robot to coat the upper side of the cube,
+   or move it around to color different areas.
+
+   Carefull this simulation can be compute intensive.
+"""
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(dirname,
-                              'robot_descriptions', 'comau_nj290_robot.urdf')
+                              'robot_descriptions', 'kuka_robot.urdf')
     urdf_file2 = os.path.join(dirname,
                               'robot_descriptions', 'milling_head.urdf')
 
     physics_client = p.connect(p.GUI)
-    p.setGravity(0, 0, -10)
     p.setPhysicsEngineParameter(numSolverIterations=5000)
 
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    monastryId = p.createCollisionShape(p.GEOM_MESH,
-                                        fileName="samurai_monastry.obj",
-                                        flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-    orn = p.getQuaternionFromEuler([1.5707963, 0, 0])
-    p.createMultiBody(0, monastryId, baseOrientation=orn)
-
-    p.loadURDF("cube.urdf", [1.7, 0, 0.5], p.getQuaternionFromEuler(
-        [np.pi/2, 0, np.pi/2]), useFixedBase=True)
+    p.loadURDF("cube.urdf", [1.7, 0, 0.0], p.getQuaternionFromEuler(
+        [np.pi/2, 0, np.pi/2]), useFixedBase=False)
 
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], [0, 0, 0, 1])
 
@@ -38,28 +37,27 @@ if __name__ == "__main__":
         urdf_file2, [1.9, 0, 1.2], [0, 0, 0, 1], extruder_properties)
     extruder.couple(robot, 'link6')
 
-    target_position = np.array([1.9, 0])
-    target_orientation = p.getQuaternionFromEuler([0, 0, 0])
     steps = 500
-    base_height = 1.20
-    path_x = np.linspace(target_position[0]-0.5, target_position[0]+0.5, steps)
-    path_y = np.zeros(steps)-target_position[1]-0.5
-    path_z = np.ones(steps)*base_height
-    test_path = np.array([path_x, path_y, path_z])
+    test_path_2 = pi.linear_interpolation(
+        [1.9-0.5, -0.4, 0.7], [1.9+0.5, -0.4, 0.7], steps)
 
+    start_position, start_orientation = test_path_2.get_start_pose()
     for i in range(20):
-        extruder.set_tool_pose(test_path[:, 0], [0, 0, 0, 1])
-        for _ in range(100):
+        extruder.set_tool_pose(start_position, start_orientation)
+        for _ in range(50):
             p.stepSimulation()
 
     while True:
-        for i in range(steps):
-            extruder.set_tool_pose(test_path[:, i], [0,0,0,1])
+        for positions, orientations, _ in test_path_2:
+            extruder.set_tool_pose(positions, orientations)
             position, orientation = extruder.get_tool_pose()
             extruder.extrude()
             p.stepSimulation()
 
-        test_path[1, :] += 0.25
-        extruder.set_tool_pose(test_path[:, 0], [0,0,0,1])
-        for _ in range(20):
-            p.stepSimulation()
+        test_path_2.translate([0, 0.25, 0])
+
+        start_position, start_orientation = test_path_2.get_start_pose()
+        for i in range(10):
+            extruder.set_tool_pose(start_position, start_orientation)
+            for _ in range(50):
+                p.stepSimulation()

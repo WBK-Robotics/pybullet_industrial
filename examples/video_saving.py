@@ -38,7 +38,9 @@ if __name__ == "__main__":
 
     # connect to the GUI and set the background color to white
     physics_client = p.connect(
-        p.GUI, options='--background_color_red=1.0 --background_color_green=1.0 --background_color_blue=1.0')
+        p.GUI, options='--background_color_red=1.0 ' +
+                       '--background_color_green=1.0 ' +
+                       '--background_color_blue=1.0')
     p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)  # disables gui and grid
 
     dirname = os.path.dirname(__file__)

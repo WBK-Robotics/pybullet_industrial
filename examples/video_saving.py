@@ -5,11 +5,35 @@ import numpy as np
 import pybullet as p
 import pybullet_industrial as pi
 
-from lemniscate import build_lemniscate_path
 
 """Example of a igus robot following a lemniscate path 
    with the current GUI view saved as a mp4 file.
    This functionality requires ffmpeg to be installed. Otherwise no video is saved."""
+
+
+def build_lemniscate_path(midpoint, steps, height, length):
+    """Function which builds a figure 8 path
+
+    Args:
+        midpoint ([type]): [description]
+        steps ([type]): [description]
+        height ([type]): [description]
+        length ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    path = np.zeros((3, steps))
+    path[2, :] = height
+    for i in range(steps):
+        path_state = 1/steps*i*2*np.pi
+        path[0, i] = length * np.cos(path_state) / \
+            (1+np.sin(path_state)**2)+midpoint[0]
+        path[1, i] = length * np.sin(path_state) * np.cos(path_state) / \
+            (1+np.sin(path_state)**2)+midpoint[1]
+    return path
+
+
 if __name__ == "__main__":
 
     # connect to the GUI and set the background color to white

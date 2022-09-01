@@ -82,12 +82,13 @@ class MillingTool(pi.EndeffectorTool):
 
         return cutting_speed, cutting_depth
 
-    def cast_rays(self, position: np.array, orientation: np.array):
+    def cast_rays(self, position: np.array, orientation: np.array, debug=False):
         """Randomly casts rays withn a given range from a specified position and orientation
 
         Args:
             position (np.array): start position of the raycast
             orientation (np.array): start orientation of the raycast
+            debug (bool, optional): If true, the debug lines are drawn. Defaults to False.
 
         Returns:
             List: The result of a raycast
@@ -112,8 +113,9 @@ class MillingTool(pi.EndeffectorTool):
                 end_position = position + \
                     rot_matrix@(end_point+height_adjustment)
 
-                p.addUserDebugLine(start_position, end_position,
-                                   [1, 0, 0], 1, lifeTime=1)
+                if debug:
+                    p.addUserDebugLine(start_position, end_position,
+                                       [1, 0, 0], 1, lifeTime=1)
                 ray_start_pos.append(start_position)
                 ray_end_pos.append(end_position)
 
@@ -121,18 +123,19 @@ class MillingTool(pi.EndeffectorTool):
 
         return ray_cast_results
 
-    def mill(self, tcp_frame=None):
+    def mill(self, tcp_frame=None, debug=False):
         """Function that performs a milling operation.
 
         Args:
             tcp_frame (str, optional): The name of the tool center point frame. Defaults to None.
+            debug (bool, optional): If true, the debug lines are drawn. Defaults to False.
 
         Returns:
             list: A list containing the ids of the bodies that were removed
         """
 
         position, orientation = self.get_tool_pose(tcp_frame)
-        ray_cast_results = self.cast_rays(position, orientation)
+        ray_cast_results = self.cast_rays(position, orientation, debug)
 
         cutting_speed, cutting_depth = self.get_cutting_state(
             ray_cast_results, tcp_frame)

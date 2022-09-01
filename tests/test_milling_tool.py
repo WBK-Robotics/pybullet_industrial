@@ -108,6 +108,38 @@ class TestMillingTool(unittest.TestCase):
                         np.abs(np.mean(force_x))*10)
         self.assertTrue(np.mean(force_y) < 0)
 
+    def test_material_removel(self):
+        """This tests checks wheter the tool only removes the material within in the tool's reach.
+        """
+        p.connect(p.DIRECT)
+
+        remover_properties = {'diameter': 0.01,
+                              'rotation speed': 2*np.pi/5,
+                              'number of teeth': 60,
+                              'height': 0.1,
+                              'number of rays': 10}
+
+        position = [0.00, 0.0, 0.0]
+        milling_tool = pi.MillingTool(
+            urdf_file, position, [0, 0, 0, 1], remover_properties)
+        milling_tool.set_tool_pose(position, [0, 0, 0, 1])
+
+        pi.spawn_material_block([0, 0, -0.105], [0.3, 0.5, 0.4], pi.MetalVoxel, {
+                                'particle size': 0.1, 'color': [1, 0, 0, 1]})
+
+        for _ in range(100):
+            p.stepSimulation()
+
+        for _ in range(int(0.5/0.005)):
+            position[1] += 0.005
+            milling_tool.set_tool_pose(position, [0, 0, 0, 1])
+            milling_tool.mill()
+            p.stepSimulation()
+
+        path_clear_test_ray = p.rayTest([0, 0, 0], [0, 1, 0])
+
+        self.assertTrue(path_clear_test_ray[0][0] == -1)
+
 
 if __name__ == '__main__':
     unittest.main()

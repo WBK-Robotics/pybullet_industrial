@@ -9,18 +9,20 @@ import pybullet_industrial as pi
 class MillingTool(pi.EndeffectorTool):
 
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
-                 raycast_properties: Dict, coupled_robot: pi.RobotBase = None,
-                 tcp_frame: str = None, connector_frame: str = None, material_parameters: list = None):
+                 milling_properties: Dict, coupled_robot: pi.RobotBase = None,
+                 tcp_frame: str = None, connector_frame: str = None):
         """Initializes the milling tool.
 
         Args:
             urdf_model (str): The path to the urdf model of the milling tool
             start_position (np.array): The position of the tool center point
             start_orientation (np.array): The orientation of the tool center point
-            raycast_properties (Dict): A dictionary containing the properties of the milling tool.
+            milling_properties (Dict): A dictionary containing the properties of the milling tool.
                                        Default values are:
                                        'diameter':0.05, 'height':0.01,
                                        'number of rays':10,'rotation speed':0.1, 'number of teeth':5
+                                       'kc11':2500,'m_c':0.26
+                                       The parameters kc11 and m_c are specific for the material.
             coupled_robot (RobotBase, optional): A pybullet_industrial.RobotBase object if
                                                  the robot is coupled from the start.
                                                  Defaults to None.
@@ -30,26 +32,22 @@ class MillingTool(pi.EndeffectorTool):
             connector_frame (str, optional): The name of the urdf_link
                                              at which a robot connects.
                                              Defaults to None in which case the base link is used
-            material_parameters (list, optional): Two parameters required to calculate the specific cutting force. 
-                                                  First parameter is the base value for the specific cutting force (known as k_c1.1). 
-                                                  The second parameter is a material constant (known as m_c).
-                                                  Default ist [2500, 0.26] for 42CrMo4 steel.
+
 
         """
         super().__init__(urdf_model, start_position, start_orientation,
                          coupled_robot, tcp_frame, connector_frame)
-        if material_parameters==None:
-            self.material_parameters=[2500, 0.26]
+
         self.properties = {'diameter': 0.05,
                            'rotation speed': 1,
                            'number of teeth': 5,
                            'height': 0.1,
                            'number of rays': 10,
-                           'k_c11': material_parameters[0],
-                           'm_c': material_parameters[1]}
+                           'k_c11': 2500,
+                           'm_c': 0.26}
         self.current_angle = 0
-        if raycast_properties is not None:
-            self.change_properties(raycast_properties)
+        if milling_properties is not None:
+            self.change_properties(milling_properties)
 
     def get_cutting_state(self, ray_cast_result, tcp_frame=None):
         """A helpfer function calculating the cutting depth and speed of the tool.
@@ -138,10 +136,15 @@ class MillingTool(pi.EndeffectorTool):
 
         cutting_speed, cutting_depth = self.get_cutting_state(
             ray_cast_results, tcp_frame)
+        teeth_angles = [i * 2*np.pi/self.properties['number of teeth'] +
+                        self.current_angle for i in range(self.properties['number of teeth'])]
         cutting_force = self.force_model(cutting_speed,
                                          cutting_depth,
                                          self.properties['diameter'],
-                                         self.properties['rotation speed'])
+                                         self.properties['rotation speed'],
+                                         self.properties['kc11'],
+                                         self.properties['m_c'],
+                                         teeth_angles)
         self.apply_tcp_force(cutting_force, tcp_frame)
 
         self.current_angle = self.current_angle + \
@@ -154,8 +157,8 @@ class MillingTool(pi.EndeffectorTool):
                 removed_objects.append(ray_intersection[0])
         return removed_objects
 
-    @staticmethod
-    def force_model(self, cutting_speed, cutting_depth, number_of_teeth, rotation_speed):
+    @ staticmethod
+    def force_model(cutting_speed, cutting_depth, number_of_teeth, rotation_speed, specific_fore, chip_thickness_exponent, teeth_angles):
         """A force model that is used to calculate the force that is applied to the tool.
         Args:
             cutting_speed (float): the speed at which the cutting tool is moved into the material
@@ -165,23 +168,16 @@ class MillingTool(pi.EndeffectorTool):
         Returns:
             np.array: an array of the force that is applied to the cutting tool
         """
-        h=cutting_speed/(rotation_speed * number_of_teeth)
-        k_c=self.properties['k_c11']/(h**self.properties['m_c'])
-        cutting_force=k_c * cutting_depth *h
-        
-        force=np.zeros(3)
-        
-        ray_cast_result=[]
-        for i in number_of_teeth:
-            orientation=p.getQuaternionFromEuler(0,np.pi/2,i*2*np.pi/number_of_teeth)
-            ray_cast_result.append(self.cast_rays(self.start_position, orientation))
+        h = cutting_speed/(rotation_speed * number_of_teeth)
+        k_c = specific_fore/(h ** chip_thickness_exponent['m_c'])
 
-        for result in ray_cast_result:
-            if result[1]!=-1:
-                coordinates=result[3]
-                angle=np.arctan2(coordinates[1], coordinates[0])
-                force+=np.array([cutting_force*np.sin(angle),-cutting_force*np.cos(angle),0])
-                
+        force = np.zeros(3)
+
+        for i in range(len(cutting_depth)):
+            cutting_force = k_c * cutting_depth[i] * h
+            force += np.array([cutting_force*np.sin(teeth_angles[i]), -
+                               cutting_force*np.cos(teeth_angles[i]), 0])
+
         return force
 
     def change_properties(self, new_properties: Dict):

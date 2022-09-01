@@ -21,16 +21,16 @@ b_inner_x= [0.46656534954407297, 0.4969604863221884, 0.5121580547112462, 0.53343
 k_y = [1.5752834605521895, 1.711337882320897, 1.7086167938855228, 1.8229025081712371, 1.9725623721168153, 1.8365079503481079, 1.9807256374229378, 1.8256235966066112, 1.711337882320897, 1.711337882320897, 1.5752834605521895]
 k_x = [0.8860182370820668, 0.8860182370820668, 0.5121580547112462, 0.6945288753799392, 0.6914893617021276, 0.4969604863221884, 0.2629179331306991, 0.25987841945288753, 0.4696048632218845, 0.25987841945288753, 0.25987841945288753]
 
-def build_path(x_data, y_data):
+def build_path(x_data, y_data,number_of_steps):
     z_data=[]
     
     i=0
     path_list=[]
     while i<len(x_data):
         if i<len(x_data)-1:
-            sub_path=pi.linear_interpolation(np.array([2.5-x_data[i], y_data[i]-1, height]),np.array([2.5-x_data[i+1], y_data[i+1]-1, height]),5)
+            sub_path=pi.linear_interpolation(np.array([2.5-x_data[i], y_data[i]-1, height]),np.array([2.5-x_data[i+1], y_data[i+1]-1, height]),number_of_steps)
         if i==len(x_data)-1:
-            sub_path=pi.linear_interpolation(np.array([2.5-x_data[i], y_data[i]-1, height]),np.array([2.5-x_data[0], y_data[0]-1, height]),5)
+            sub_path=pi.linear_interpolation(np.array([2.5-x_data[i], y_data[i]-1, height]),np.array([2.5-x_data[0], y_data[0]-1, height]),number_of_steps)
         path_list.append(sub_path)
         i+=1
     path=path_list[0]
@@ -137,19 +137,19 @@ if __name__ == "__main__":
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     pi.spawn_material_block([1.5,-1,0], [1,2,0.5], pi.MetalVoxel, {'particle size': 0.5, 'color': [0, 1, 0.415686, 1]})
     
-    pi.spawn_material_block([1.5,-1,0.5], [1.03,2.03, height-0.5], pi.MetalVoxel, {'particle size': (height-0.5), 'color': [1,1,1,1]})
+    pi.spawn_material_block([1.5,-1,0.5], [1,2, height-0.5], pi.MetalVoxel, {'particle size': (height-0.5), 'color': [1,1,1,1]})
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
     
     
     path_list=[]
     for sub_x, sub_y in zip(x_ring, y_ring):
-        sub_path=build_path(sub_x, sub_y)    
+        sub_path=build_path(sub_x, sub_y,6)    
         path_list.append(sub_path)
 
-    w_path=build_path(w_x, w_y)
-    b_outer_path=build_path(b_outer_x, b_outer_y)
-    b_inner_path=build_path(b_inner_x, b_inner_y)
-    k_path=build_path(k_x, k_y)
+    w_path=build_path(w_x, w_y,15)
+    b_outer_path=build_path(b_outer_x, b_outer_y,8)
+    b_inner_path=build_path(b_inner_x, b_inner_y,2)
+    k_path=build_path(k_x, k_y, 15)
 
     path_list+=(w_path, b_outer_path, b_inner_path, k_path)
     

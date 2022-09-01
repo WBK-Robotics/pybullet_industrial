@@ -6,13 +6,15 @@ import pybullet as p
 
 class RobotBase:
 
-    def __init__(self, urdf_model: str, start_position, start_orientation, default_endeffector=None):
+    def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
+                 default_endeffector: str = None):
         """A Base class encapsulating a URDF based industrial robot manipulator
 
         Args:
             urdf_model (str): A valid path to a urdf file
-            start_position ([type]): [description]
-            start_orientation ([type]): [description]
+            start_position (np.array): The start position of the robot base
+            start_orientation (np.array): A quaternion describing the start orientation
+                                          of the robot base
             default_endeffector (str, optional): The default endeffector used 
                                                  when controlling the robots position
         """
@@ -120,8 +122,8 @@ class RobotBase:
             endeffector (str, optional): The name of a different endeffector link
 
         Returns:
-            array: The position of the endeffector
-            array: The orientation of the endeffector as a quaternion
+            np.array: The position of the endeffector
+            np.array: The orientation of the endeffector as a quaternion
         """
         if endeffector_name is None:
             endeffector_id = self._default_endeffector_id
@@ -134,15 +136,16 @@ class RobotBase:
         orientation = np.array(link_state[1])
         return position, orientation
 
-    def set_endeffector_pose(self, target_position, target_orientation=None, endeffector_name: str = None):
+    def set_endeffector_pose(self, target_position: np.array, target_orientation: np.array = None,
+                             endeffector_name: str = None):
         """Sets the pose of a robots endeffector
 
         Args:
-            target_position ([type]): The desired 3D position
-            target_orientation ([type], optional): The desired orientation as a quaternion.
-                                                   Defaults to None.
-            endeffector_name ([type], optional): The name of a different endeffector.
-                                                 Defaults to None.
+            target_position (np.array): The desired 3D position
+            target_orientation (np.array, optional): The desired orientation as a quaternion.
+                                                     Defaults to None.
+            endeffector_name (str, optional): The name of a different endeffector.
+                                              Defaults to None.
         """
         if endeffector_name is None:
             endeffector_id = self._default_endeffector_id
@@ -169,13 +172,18 @@ class RobotBase:
                                     force=self.max_joint_force[joint_number],
                                     targetPosition=joint_position)
 
-    def reset_robot(self, start_position, start_orientation, joint_values=None):
+    def reset_robot(self, start_position: np.array, start_orientation: np.array,
+                    joint_values: list = None):
         """resets the robots joints to 0 and the base to a specified position and orientation
 
         Args:
-            start_position ([type]): a 3 dimensional position
-            start_orientation ([type]): a 4 dimensional quaternion representing
-                                       the desired orientation
+            start_position (np.array): a 3 dimensional position
+            start_orientation (np.array): a 4 dimensional quaternion representing
+                                          the desired orientation
+            joint_values (list): Allows to reset the joint state of the robot given 
+                                 a list of positions.
+                                 Defaults to None in which case the joints remain in their current
+                                 configuration.
         """
         self.set_world_state(start_position, start_orientation)
 
@@ -185,13 +193,13 @@ class RobotBase:
             p.resetJointState(self.urdf, joint,
                               targetValue=joint_values[joint])
 
-    def set_world_state(self, start_position, start_orientation):
+    def set_world_state(self, start_position: np.array, start_orientation: np.array):
         """Resets the robots base to a specified position and orientation
 
         Args:
-            start_position ([type]): a 3 dimensional position
-            start_orientation ([type]): a 4 dimensional quaternion representing
-                                       the desired orientation
+            start_position (np.array): a 3 dimensional position
+            start_orientation (np.array): a 4 dimensional quaternion representing
+                                          the desired orientation
         """
         p.resetBasePositionAndOrientation(
             self.urdf, start_position, start_orientation)
@@ -200,12 +208,12 @@ class RobotBase:
         """Returns the position and orientation of the robot relative to the world
 
         Returns:
-            [type]: a 3 dimensional position and a 4 dimensional quaternion representing
-                                       the current orientation
+            list: the 3 dimensional position vector of the robot base 
+            list: a 4 dimensional quaternion representing the orientation of the robot base
         """
         return p.getBasePositionAndOrientation(self.urdf)
 
-    def _convert_endeffector(self, endeffector):
+    def _convert_endeffector(self, endeffector: str):
         """Internal Function which converts an endeffector name to an id
 
         Args:

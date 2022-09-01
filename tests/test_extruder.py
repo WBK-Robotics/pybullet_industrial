@@ -11,7 +11,7 @@ import pybullet_industrial as pi
 dirname = os.path.dirname(__file__)
 parentDir = os.path.dirname(dirname)
 urdf_file1 = os.path.join(parentDir, 'examples',
-                          'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+                          'robot_descriptions', 'comau_nj290_robot.urdf')
 urdf_file2 = os.path.join(parentDir, 'examples',
                           'robot_descriptions', 'milling_head.urdf')
 

@@ -3,15 +3,16 @@ import numpy as np
 import pybullet_industrial as pi
 
 
-def build_box_path(center_position, dimensions, radius, orientation, samples):
+def build_box_path(center_position: np.array, dimensions: np.array,
+                   radius: float, orientation: np.array, samples: int):
     """Build a box shaped path with rounded corners
 
     Args:
-        center_position ([type]): The 3D center position of the box
-        dimensions ([type]): the length and width of the box
-        radius ([type]): the radius of the corners
-        orientation ([type]): A quaternion describing the orientation of the box
-        samples ([type]): The number of points in the box path
+        center_position (np.array): The 3D center position of the box
+        dimensions (np.array): the length and width of the box
+        radius (float): the radius of the corners
+        orientation (np.array): A quaternion describing the orientation of the box
+        samples (int): The number of points in the box path
 
     Returns:
         ToolPath: The resulting Toolpath

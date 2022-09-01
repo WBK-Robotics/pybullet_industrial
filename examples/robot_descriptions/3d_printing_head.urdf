@@ -1,0 +1,40 @@
+<?xml version="1.0" ?>
+<robot name="3d_printing_head">
+  <material name="Grey">
+    <color rgba="0.4 0.4 0.4 1.0"/>
+  </material>
+  
+  <link name="baseLink">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value="0.001"/>
+       <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="kuka_meshes/MDPH2.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="Grey"/>
+    </visual>
+  </link>
+
+  <joint name="milling_trafo" type="fixed">
+		<parent link="baseLink"/>
+		<child link="tcp"/>
+		<origin xyz="-0.222558 0.1736378 0.0" rpy="0 1.57075 0"/>
+	</joint> 
+
+    <link name="tcp">
+    <visual>
+			<origin xyz="0 0 0.25" rpy="0 0 0"/>
+			<material name="almost_black">
+            <color rgba="1 0 0 1.0"/>
+            </material>
+			<geometry>
+				<cylinder length="0.01" radius="0.001"/>
+			</geometry>
+		</visual>
+	</link>
+
+
+</robot>

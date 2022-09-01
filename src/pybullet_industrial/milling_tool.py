@@ -21,7 +21,7 @@ class MillingTool(pi.EndeffectorTool):
                                        Default values are:
                                        'diameter':0.05, 'height':0.01,
                                        'number of rays':10,'rotation speed':0.1, 'number of teeth':5
-                                       'kc11':2500,'m_c':0.26
+                                       'material_specific_force':2500,'chip_thickness_exponent':0.26
                                        The parameters kc11 and m_c are specific for the material.
             coupled_robot (RobotBase, optional): A pybullet_industrial.RobotBase object if
                                                  the robot is coupled from the start.
@@ -43,8 +43,8 @@ class MillingTool(pi.EndeffectorTool):
                            'number of teeth': 5,
                            'height': 0.1,
                            'number of rays': 10,
-                           'k_c11': 2500,
-                           'm_c': 0.26}
+                           'material_specific_force': 2500,
+                           'chip_thickness_exponent': 0.26}
         self.current_angle = 0
         if milling_properties is not None:
             self.change_properties(milling_properties)
@@ -142,8 +142,8 @@ class MillingTool(pi.EndeffectorTool):
                                          cutting_depth,
                                          self.properties['diameter'],
                                          self.properties['rotation speed'],
-                                         self.properties['kc11'],
-                                         self.properties['m_c'],
+                                         self.properties['material_specific_force'],
+                                         self.properties['chip_thickness_exponent'],
                                          teeth_angles)
         self.apply_tcp_force(cutting_force, tcp_frame)
 
@@ -158,25 +158,29 @@ class MillingTool(pi.EndeffectorTool):
         return removed_objects
 
     @ staticmethod
-    def force_model(cutting_speed, cutting_depth, number_of_teeth, rotation_speed, specific_fore, chip_thickness_exponent, teeth_angles):
+    def force_model(cutting_speed, cutting_depth, number_of_teeth, rotation_speed, specific_force,
+                    chip_thickness_exponent, teeth_angles):
         """A force model that is used to calculate the force that is applied to the tool.
         Args:
             cutting_speed (float): the speed at which the cutting tool is moved into the material
             cutting_depth (np.array): an array of the depth of the cutting tool at each tooth
             number_of_teeth (int): number of teeth on the tool
             rotation_speed (float): the speed at which the cutting tool rotates
+            specific_force (float): the specific force associated with the material
+            chip_thickness_exponent (float): the exponent descibing the thickness of the chips
+            teeth_angles (list): the angles of the teeth on the tool
         Returns:
-            np.array: an array of the force that is applied to the cutting tool
+            np.array: an array of the force that is applied to the cutting tool at the tcp
         """
         h = cutting_speed/(rotation_speed * number_of_teeth)
-        k_c = specific_fore/(h ** chip_thickness_exponent['m_c'])
+        k_c = specific_force/(h ** chip_thickness_exponent)
 
         force = np.zeros(3)
 
-        for i in range(len(cutting_depth)):
-            cutting_force = k_c * cutting_depth[i] * h
-            force += np.array([cutting_force*np.sin(teeth_angles[i]), -
-                               cutting_force*np.cos(teeth_angles[i]), 0])
+        for index, depth in enumerate(cutting_depth):
+            cutting_force = k_c * depth * h
+            force -= np.array([cutting_force*np.sin(teeth_angles[index]),
+                               cutting_force*np.cos(teeth_angles[index]), 0])
 
         return force
 

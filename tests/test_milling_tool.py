@@ -86,14 +86,11 @@ class TestMillingTool(unittest.TestCase):
                 ray_cast_results)
 
             teeth_angles = [i * 2*np.pi/milling_tool.properties['number of teeth'] +
-                            milling_tool.current_angle for i in range(milling_tool.properties['number of teeth'])]
+                            milling_tool.current_angle
+                            for i in range(milling_tool.properties['number of teeth'])]
 
             cutting_force = milling_tool.force_model(0.01,
                                                      cutting_depth,
-                                                     milling_tool.properties['diameter'],
-                                                     milling_tool.properties['rotation speed'],
-                                                     milling_tool.properties['material_specific_force'],
-                                                     milling_tool.properties['chip_thickness_exponent'],
                                                      teeth_angles)
             # print(cutting_force)
             ray_cast_results = milling_tool.cast_rays(

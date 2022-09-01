@@ -157,23 +157,19 @@ class MillingTool(pi.EndeffectorTool):
                 removed_objects.append(ray_intersection[0])
         return removed_objects
 
-    @ staticmethod
-    def force_model(cutting_speed, cutting_depth, number_of_teeth, rotation_speed, specific_force,
-                    chip_thickness_exponent, teeth_angles):
+    def force_model(self, cutting_speed, cutting_depth, teeth_angles):
         """A force model that is used to calculate the force that is applied to the tool.
         Args:
             cutting_speed (float): the speed at which the cutting tool is moved into the material
             cutting_depth (np.array): an array of the depth of the cutting tool at each tooth
-            number_of_teeth (int): number of teeth on the tool
-            rotation_speed (float): the speed at which the cutting tool rotates
-            specific_force (float): the specific force associated with the material
-            chip_thickness_exponent (float): the exponent descibing the thickness of the chips
             teeth_angles (list): the angles of the teeth on the tool
         Returns:
             np.array: an array of the force that is applied to the cutting tool at the tcp
         """
-        h = cutting_speed/(rotation_speed * number_of_teeth)
-        k_c = specific_force/(h ** chip_thickness_exponent)
+        h = cutting_speed / \
+            (self.properties['rotation speed'] * self.properties['diameter'])
+        k_c = self.properties['material_specific_force'] / \
+            (h ** self.properties['chip_thickness_exponent'])
 
         force = np.zeros(3)
 

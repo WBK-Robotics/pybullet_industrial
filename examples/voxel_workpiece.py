@@ -1,7 +1,7 @@
-import pybullet as p
-import pybullet_industrial as pi
 import os
 
+import pybullet as p
+import pybullet_industrial as pi
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)

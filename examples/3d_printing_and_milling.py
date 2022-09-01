@@ -9,9 +9,9 @@ import pybullet_industrial as pi
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(dirname,
-                              'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+                              'robot_descriptions', 'kuka_robot.urdf')
     urdf_file2 = os.path.join(dirname,
-                              'robot_descriptions', 'milling_head.urdf')
+                              'robot_descriptions', '3d_printing_head.urdf')
 
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=5000)
@@ -22,11 +22,9 @@ if __name__ == "__main__":
                                         flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
     orn = p.getQuaternionFromEuler([1.5707963, 0, 0])
     p.createMultiBody(0, monastryId, baseOrientation=orn)
-    p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=True)
 
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
-
     extruder_properties = {'maximum distance': 0.5,
                            'opening angle': 0,
                            'material': pi.Plastic,
@@ -34,6 +32,7 @@ if __name__ == "__main__":
                            'number of rays': 1}
     extruder = pi.Extruder(
         urdf_file2, [1.9, 0, 1.2], start_orientation, extruder_properties)
+    p.changeVisualShape(extruder.urdf, -1, rgbaColor=[1, 0, 0, 1])
     extruder.couple(robot, 'link6')
 
     remover_properties = {'maximum distance': 0.02,
@@ -44,10 +43,16 @@ if __name__ == "__main__":
     p.changeVisualShape(remover.urdf, -1, rgbaColor=[0, 0, 1, 1])
 
     # Defining a roundet rectangular path
-    target_position = np.array([1.9, 0.0, 1.03])
+    target_position = np.array([1.9, 0.0, 0.53])
     target_orientation = p.getQuaternionFromEuler([0, 0, 0])
     test_path = pi.build_box_path(
         target_position, [0.5, 0.6], 0.1, [0, 0, 0, 1], 50)
+
+    for _ in range(20):
+        extruder.set_tool_pose(*test_path.get_start_pose())
+        for _ in range(50):
+            p.stepSimulation()
+    p.loadURDF("cube.urdf", [1.9, 0, 0], useFixedBase=True)
 
     test_path.draw()
 

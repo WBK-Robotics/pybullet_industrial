@@ -1,12 +1,13 @@
 import os
 import time
+
 import pybullet as p
 import pybullet_industrial as pi
 
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(
-        dirname, 'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+        dirname, 'robot_descriptions', 'kuka_robot.urdf')
 
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=1000)

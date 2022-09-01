@@ -61,16 +61,15 @@ class TestMillingTool(unittest.TestCase):
 
         remover_properties = {'diameter': 0.1,
                               'rotation speed': 2*np.pi/5,
-                              'number of teeth': 60,
+                              'number of teeth': 5,
                               'height': 0.1,
                               'number of rays': 10}
 
-        position = [0.00, 0.0, 0.0]
         milling_tool = pi.MillingTool(
-            urdf_file, position, [0, 0, 0, 1], remover_properties)
-        milling_tool.set_tool_pose(position, [0, 0, 0, 1])
+            urdf_file, [0, 0, 0], [0, 0, 0, 1], remover_properties)
+        milling_tool.set_tool_pose([0, 0, 0], [0, 0, 0, 1])
 
-        pi.MetalVoxel([0, 0, 0, position+np.array([0.0, 0.05, 0])],
+        pi.MetalVoxel([0, 0, 0, np.array([0.0, 0.05, 0])],
                       {'particle size': 0.1, 'color': [1, 0, 0, 1]})
 
         for _ in range(100):
@@ -79,7 +78,7 @@ class TestMillingTool(unittest.TestCase):
 
         force_x = []
         force_y = []
-        for i in range(20):
+        for _ in range(50):
             ray_cast_results = milling_tool.cast_rays(
                 tool_position, tool_orientation)
             _, cutting_depth = milling_tool.get_cutting_state(
@@ -96,7 +95,7 @@ class TestMillingTool(unittest.TestCase):
             ray_cast_results = milling_tool.cast_rays(
                 tool_position, tool_orientation)
 
-            milling_tool.current_angle += np.pi*2/5*0.1
+            milling_tool.current_angle += np.pi*2/5*0.02
 
             force_x.append(cutting_force[0])
             force_y.append(cutting_force[1])

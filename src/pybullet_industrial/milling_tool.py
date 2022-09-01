@@ -140,10 +140,6 @@ class MillingTool(pi.EndeffectorTool):
                         self.current_angle for i in range(self.properties['number of teeth'])]
         cutting_force = self.force_model(cutting_speed,
                                          cutting_depth,
-                                         self.properties['diameter'],
-                                         self.properties['rotation speed'],
-                                         self.properties['material_specific_force'],
-                                         self.properties['chip_thickness_exponent'],
                                          teeth_angles)
         self.apply_tcp_force(cutting_force, tcp_frame)
 

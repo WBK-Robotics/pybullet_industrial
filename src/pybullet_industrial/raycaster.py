@@ -19,6 +19,7 @@ class RayCaster(EndeffectorTool):
             start_position (np.array): the position at which the tool should be spawned
             start_orientation (np.array): the orientation at which the tool should be spawned
             raycast_properties(Dict): A dictionary containing the properties of the extrusion head.
+                                      During initialization only 'material' has to be set.
                                       Default Values are:
                                       'opening angle':0,'number of rays':1,
                                       'maximum distance':1
@@ -35,8 +36,7 @@ class RayCaster(EndeffectorTool):
         super().__init__(urdf_model, start_position, start_orientation,
                          coupled_robot, tcp_frame, connector_frame)
 
-        self.properties = {'shape':'cone',
-                           'opening angle': 0,
+        self.properties = {'opening angle': 0,
                            'number of rays': 1,
                            'maximum distance': 1}
         if raycast_properties is not None:
@@ -72,32 +72,26 @@ class RayCaster(EndeffectorTool):
         opening_angle = self.properties['opening angle']
         number_of_rays = self.properties['number of rays']
         ray_length = self.properties['maximum distance']
-        ray_start_pos, ray_end_pos = cone_shape_ray_positions(
-            position, orientation, opening_angle, number_of_rays, ray_length)
+        ray_start_pos = []
+        ray_end_pos = []
+
+        phi = np.random.uniform(-np.pi, np.pi, number_of_rays)
+        theta = np.random.uniform(-0.5*opening_angle,
+                                  0.5*opening_angle, number_of_rays)
+        x = np.sin(theta) * np.cos(phi)
+        y = np.sin(theta) * np.sin(phi)
+        z = np.cos(theta)
+        ray_directions = np.array([x, y, z])
+
+        rot_matrix = p.getMatrixFromQuaternion(orientation)
+        rot_matrix = np.array(rot_matrix).reshape(3, 3)
+
+        for i in range(number_of_rays):
+            ray_start_pos.append(position)
+
+            ray_dir = rot_matrix@ray_directions[:, i]
+
+            ray_end_pos.append(position-ray_length*ray_dir)
 
         results = p.rayTestBatch(ray_start_pos, ray_end_pos)
         return results
-
-
-def cone_shape_ray_positions(position, orientation, opening_angle, number_of_rays, ray_length):
-    ray_start_pos = []
-    ray_end_pos = []
-
-    phi = np.random.uniform(-np.pi, np.pi, number_of_rays)
-    theta = np.random.uniform(-0.5*opening_angle,
-                              0.5*opening_angle, number_of_rays)
-    x = np.sin(theta) * np.cos(phi)
-    y = np.sin(theta) * np.sin(phi)
-    z = np.cos(theta)
-    ray_directions = np.array([x, y, z])
-
-    rot_matrix = p.getMatrixFromQuaternion(orientation)
-    rot_matrix = np.array(rot_matrix).reshape(3, 3)
-
-    for i in range(number_of_rays):
-        ray_start_pos.append(position)
-
-        ray_dir = rot_matrix@ray_directions[:, i]
-
-        ray_end_pos.append(position-ray_length*ray_dir)
-    return ray_start_pos, ray_end_pos

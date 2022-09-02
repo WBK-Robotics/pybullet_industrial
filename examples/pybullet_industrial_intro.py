@@ -26,7 +26,7 @@ def build_path(x_data, y_data,number_of_steps):
     
     i=0
     path_list=[]
-    while i<len(x_data):
+    for x in x_data:
         if i<len(x_data)-1:
             sub_path=pi.linear_interpolation(np.array([2.5-x_data[i], y_data[i]-1, height]),np.array([2.5-x_data[i+1], y_data[i+1]-1, height]),number_of_steps)
         if i==len(x_data)-1:
@@ -42,68 +42,6 @@ def build_path(x_data, y_data,number_of_steps):
     path.draw()
     return path
 
-def scale_paths(path):
-    
-    path_copy_list=[]
-    max_x=np.max(path.positions[0])
-    min_x=np.min(path.positions[0])
-    width_x=np.abs(max_x-min_x)
-    
-    max_y=np.max(path.positions[1])
-    min_y=np.min(path.positions[1])
-    width_y=np.abs(max_y-min_y)
-
-    #assuming that path stays at the same height
-    height=np.mean(path.positions[2])
-
-    scale_list=[0.2,0.4,0.6]
-    center_point=np.array([min_x+width_x/2, min_y+width_y/2, height])
-    for scale in scale_list:
-        
-        path_copy=path
-        path_copy.translate(-center_point)
-        
-        path_copy.positions*=scale
-        path_copy.translate(center_point)
-        
-        path_copy.draw()
-        path_copy_list.append(path_copy) 
-    return path_copy_list
-
-def build_smaller_paths(path, scale):
-    x_list=[]
-    y_list=[]
-    z_list=[]
-    
-    for x,y,z in zip(path.positions[0],path.positions[1],path.positions[2]):
-        x_list.append(x)
-        y_list.append(y)
-        z_list.append(z)
-    i=0
-    new_x_list=[]
-    new_y_list=[]
-    new_z_list=[]
-    while i<len(x_list)-1:
-        new_z_list.append(height)
-    i=0
-    while i<len(x_list)-1:
-        point=np.array([x_list[i], y_list[i], z_list[i]])
-        diff_vector=point-np.array([x_list[i+1], y_list[i+1], z_list[i+1]])
-        theta=np.pi /4
-        x=np.cos(theta)*diff_vector[0]-np.sin(theta)*diff_vector[1]
-        y=np.sin(theta)*diff_vector[0]+np.cos(theta)*diff_vector[1]
-        new_x_list.append(x)
-        new_y_list.append(y)
-        i+=1
-    new_points=np.array([new_x_list, new_y_list, new_z_list])
-    new_path=pi.ToolPath(new_points)
-    new_path.draw()
-
-    return new_path
-    
-
-
-
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(dirname,
@@ -115,15 +53,13 @@ if __name__ == "__main__":
     p.setPhysicsEngineParameter(numSolverIterations=5000)
 
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    monastryId = p.createCollisionShape(p.GEOM_MESH,
-                                        fileName="samurai_monastry.obj",
-                                        flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-
+    
     orn = p.getQuaternionFromEuler([1.5707963, 0, 0])
-    p.createMultiBody(0, monastryId, baseOrientation=orn)
+    p.createMultiBody(0, baseOrientation=orn)
     
     height=0.53
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
+    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
     remover_properties = {'maximum distance': height-0.505,
@@ -134,7 +70,7 @@ if __name__ == "__main__":
     
     remover.couple(robot, 'link6')
     
-    p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
+   
     pi.spawn_material_block([1.5,-1,0], [1,2,0.5], pi.MetalVoxel, {'particle size': 0.5, 'color': [0, 1, 0.415686, 1]})
     
     pi.spawn_material_block([1.5,-1,0.5], [1,2, height-0.5], pi.MetalVoxel, {'particle size': (height-0.5), 'color': [1,1,1,1]})
@@ -165,3 +101,4 @@ if __name__ == "__main__":
             for _ in range(20):
                 p.stepSimulation()
             remover.remove()
+           

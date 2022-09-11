@@ -8,6 +8,7 @@ Welcome to pybullet industrial's documentation!
 
 .. toctree::
    
+   tutorials
    code_docu
 
 

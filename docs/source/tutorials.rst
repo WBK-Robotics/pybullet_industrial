@@ -16,6 +16,7 @@ A path contains a 3 dimensional array whith each dimension containing subsequent
 These data points can be specified or can be created automatically by using the built in functions of pybullet industrial.
 
 A box with rounded corners can be created by the use of build_box_path().
+
 .. literalinclude:: ../../examples/path_creation.py
    :language: python
    :linenos:

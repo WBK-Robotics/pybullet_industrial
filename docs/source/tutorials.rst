@@ -30,6 +30,7 @@ The result looks like this:
 
 .. image:: images/box_path.PNG
    :alt: box_path
+   :align: center
 
 You can generate a path between two points by utilizing interpolation functions.
 Here the color of the paths is prescribed.
@@ -41,6 +42,7 @@ Here the color of the paths is prescribed.
 
 .. image:: images/path_interpolation.PNG
    :alt: interpolation_example
+   :align: center
 
 
 Manipulating paths

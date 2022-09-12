@@ -28,7 +28,7 @@ In this case, the path contains 100 points. A circle can be generated similarly.
 After the paths are created, they are drawn. The default color of a path is blue.
 The result looks like this:
 
-.. image:: images/box_path.png
+.. image:: images/box_path.PNG
    :alt: box_path
 
 You can generate a path between two points by utilizing interpolation functions.
@@ -39,7 +39,7 @@ Here the color of the paths is prescribed.
    :linenos:
    :lines: 22-61
 
-.. image:: images/path_interpolation.png
+.. image:: images/path_interpolation.PNG
    :alt: interpolation_example
 
 
@@ -85,9 +85,9 @@ Finally, the tools are translated to follow the path.
 First, they are positioned at the beginning of the path.
 For each position in the path, the tools are translated and extrude or respectively remove particles.
 
-.. image:: images/3d_printing.png
+.. image:: images/3d_printing.PNG
    :alt: material_extrusion
-.. image:: images/removing.png
+.. image:: images/removing.PNG
       :alt: material_removal
 
 After they reached the end of the path, the tool will be decoupled and the new tool coupled to the robot.

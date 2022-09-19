@@ -7,7 +7,9 @@ Welcome to pybullet industrial's documentation!
 ===============================================
 
 .. toctree::
-   
+
+   getting_started
+   how_to_use
    tutorials
    code_docu
 

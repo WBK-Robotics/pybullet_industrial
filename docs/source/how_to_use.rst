@@ -115,7 +115,7 @@ This force or torque vector can either be specified in local tcp coordinates or 
 Adding material
 ===============
 
-.. image:: images/additive_manufacturing.png
+.. image:: images/additive_manufacturing.PNG
     :width: 60%
     :align: center
     :alt: additive_manufacturing

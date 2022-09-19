@@ -53,7 +53,7 @@ class Particle():
 class Plastic(Particle):
 
     def __init__(self, ray_cast_result: list,  material_properties: Dict):
-        """A class for simply Plastic particles which can be used for 3d Printing.
+        """A class for simple particles which can be used for additive manufacturing.
            The particles are infinitely rigid and stick to each other.
 
         Args:
@@ -100,7 +100,7 @@ class Plastic(Particle):
 class Paint(Particle):
 
     def __init__(self, ray_cast_result: list, material_properties: Dict):
-        """A class for simply Paint particles which stick to objects and move with them.
+        """A class for simple Paint particles which stick to objects and move with them.
            The Paint particles are purely visible and have neither mass nor a collision mesh
 
         Args:

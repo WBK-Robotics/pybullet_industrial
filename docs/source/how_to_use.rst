@@ -115,6 +115,44 @@ This force or torque vector can either be specified in local tcp coordinates or 
 Adding material
 ===============
 
+.. image:: images/additive_manufacturing.png
+    :width: 60%
+    :align: center
+    :alt: additive_manufacturing
+
+
+The Extruder class is used to simulate processes that add material to a part.
+Examples of such processes include 3d printing, welding or coating.
+
+The properites of the extruder can be grouped in two categories and are described in the extruder_properties dictionary.
+These categories are:
+- The extrusion pattern 
+- The material properties
+
+Currently the extrusion is performed in a cone shaped pattern.
+The cone is defined by the following properties:
+
+- The opening angle of the cone
+- The length of the cone
+- The number of extruded particles in the cone
+
+.. image:: images/cone_shape.png
+    :width: 60%
+    :align: center
+    :alt: cone_shape
+
+When calling the extrude function the extruder will randomly sample rays inside the cone area equal to the number of extruded particles.
+Each ray that hits and object will spawn a particle of the specified material.
+See :ref:`materials_label` for more information about different types of materials and their properties which also have to be supplied to the Extruder.
+
+Note that the extruder supports dynamic changes of both the extruder pattern as well as the type and properties of materials.
+
+
+
+
+
+
+
 Removing material
 =================
 
@@ -123,12 +161,16 @@ Moving material
 
 Sensing
 =======
-
-
+Quality inspection applications often require the use of sensors to measure the state of the workpiece.
+In the designphilosophy of pybullet_industrial this can also be modelled as a EndeffectorTool.
+The package provides a simple camera class EndeffectorTool that can be used to simulate a camera.
+Other complex sensors can be implimented similarly by subclassing the EndeffectorTool class.
 
 *********
 Materials
 *********
+
+.. _materials_label:
 
 *********
 Toolpaths

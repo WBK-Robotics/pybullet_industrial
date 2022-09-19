@@ -172,9 +172,54 @@ Materials
 
 .. _materials_label:
 
+Materials are implimented as particles with certain phyiscal properties.
+This includes their dimensions, mass as well as color.
+The pybullet_industrial package provides a set of predefined materials that can be used to simulate different types of materials.
+These are listed in the table below.
+
+===========    =============================================================================================================================================================================
+Name           Description
+===========    =============================================================================================================================================================================
+Plastic        simple particles which can be used for additive manufacturing. The particles are infinitely rigid and stick to each other.
+Paint          particles which stick to objects and move with them. The Paint particles are purely visible and have neither mass nor a collision mesh
+MetalVoxel     A simple voxel particle for cutting and milling simulations
+==========     ==============================================================================================================================================================================
+
+Particles are typically spawned using a pybullet raytrace result since they might not only require positions but also contact information about the body on which they are spawned.
+To spawn particles or groups of particles directly at a given position the spawn_material_block function can be used.
+
+
 *********
 Toolpaths
 *********
+
+.. image:: images/path_interpolation.PNG
+   :alt: interpolation_example
+   :align: center
+
+Since much of the work when setting up a simulation does not involve the actual simulation itself but controlling the robot and specifiyng its path a Toolpaths class was setup to simplify this process.
+A single toolpath objects encapsulates a path for the robots position, orientation as well as the tool activation (that is to say if the tool is active at a given point of the path).
+Using a iterator interface the toolpath can be iterated over to get the next position and orientation of the robot:
+
+::
+    
+        for position, orientation, tool_active in toolpath:
+            extruder.set_tool_pose(position, orientation)
+            if tool_active:
+                extruder.extrude()
+
+Toolpaths can also be added together as well as easily translated rotated and drawn.
+More information can be found in the code documentation.
+
+Toolpaths can be generated directly from points or from a number of G code like interpolation functions.
+A list of which can be found below:
+
+- Linear interpolation
+- Circular interpolation
+- Spline interpolation
+
+Additional functionality such as the build_box_path function can be used to generate more complex toolpaths.
+
 
 *********************
 Utility functionality

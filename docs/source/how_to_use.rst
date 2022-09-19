@@ -23,7 +23,7 @@ The pybullet_industrial package provides a class called RobotBase that can be us
 A robot in this case meaning a robot manipulator, that is to say a stationary robot with a fixed base and a number of joints that can be actuated.
 
 Joint interfaces
-================
+----------------
 
 pybullet_industrial provides interfaces for setting and measuring the state of these joints. The state of a single joint is a dictionary containing the following keys:
 
@@ -33,7 +33,7 @@ pybullet_industrial provides interfaces for setting and measuring the state of t
 - torque: the current effort of the joint (in Newtons for revolute and in Newtons per meter for prismatic joints)
 
 Endeffector interfaces
-======================
+----------------------
 
 In industrial robotics one often times does not care for the joint state of the robot, but rather for the state of the endeffector. 
 
@@ -51,7 +51,7 @@ Note that providing the orientation is optional, in this case the robot assumes 
 
 
 Utility functionality
-=====================
+---------------------
 
 Apart from the joint and endeffector interfaces the pybullet_industrial package provides some utility functionality.
 These enable resetting the robots state and moving the robot to a new position.
@@ -71,6 +71,47 @@ In robotic manfucatuing theses processes can be grouped in three categories:
 Each of theses proceses types is supported by a dedicated subclass. 
 The Base class still provides a lot of functionality common between all three types.
 
+Like the RobotBase object, the EndeffectorTool is build using a urdf file.
+This makes it easy to encapsulate the geometric description as well as the kinematic description in a single file.
+Especially important is the the tool center point (tcp) frame where all processes take place.
+If not specifically provided during initalisation, the last frame in the urdf file is assumed to be the tool center point frame.
+Equally important is the so called connector frame which is the frame that is used to attach the tool to the robot.
+If not provided the base frame is used in this case.
+
+Coupling the tool
+-----------------
+
+The most important ability of a tool is to couple to a robot.
+This attaches the connector frame of the tool to the endeffector of the robot.
+This is done by providing the robot object to the couple function of the tool.
+The tool will then attach itself to the endeffector of the robot and will be able to interact with the robot object.
+
+.. warning::
+    The coupling immediately moves the tool to the endeffector of the robot. 
+    During the runtime of the simulation this can impart a significant momentum to the robot, which can lead to unexpected behaviour.
+    It is therefore advised to either connect the tool before starting the simulation or first moving the endeffector to the position of the tool.
+    The last option being the only possible way to dynamically switch tool in the real world anyway.
+
+Tools can also be uncoupled from a robot, which will detach the tool and fix it in its current position.
+
+
+Moving the tool
+---------------
+
+The tool can be moved to a new position and orientation using the set_tool_pose function.
+If the tool is not coupled the tool is moved directly to the new position.
+If coupled the inverse kinematics of the attached robot are automatically called and the robot moves the tool to the desired position.
+The current position and orientation of the tool can be measured using the get_tool_pose function.
+The orientation is again given as a quaternion.
+
+Applying force
+--------------
+
+Alot of processes empart a dynamic force unto a tool and therefore a robot.
+The EndeffectorTool class therefore provides functionality to apply force and torque to the tool center point of the tool.
+This force or torque vector can either be specified in local tcp coordinates or world coordinates.
+
+
 Adding material
 ===============
 
@@ -79,3 +120,20 @@ Removing material
 
 Moving material
 ===============
+
+Sensing
+=======
+
+
+
+*********
+Materials
+*********
+
+*********
+Toolpaths
+*********
+
+*********************
+Utility functionality
+*********************

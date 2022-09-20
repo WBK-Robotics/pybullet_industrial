@@ -111,7 +111,7 @@ A lot of processes impart a dynamic force unto a tool and therefore a robot.
 The EndeffectorTool class, therefore, provides functionality to apply force and torque to the tool center point of the tool.
 This force or torque vector can either be specified in local TCP coordinates or world coordinates.
 
-
+===============
 Adding material
 ===============
 
@@ -159,7 +159,7 @@ Note that the extruder supports dynamic changes of both the extruder pattern as 
 
 
 
-
+=================
 Removing material
 =================
 
@@ -191,12 +191,14 @@ For this package the kienzle force model was choosen.
 
 .. todo::
     Add a link to the kienzle force model and explain it.
+    Also add a table for parameters of different materials
 
 
-
+===============
 Moving material
 ===============
 
+=======
 Sensing
 =======
 Quality inspection applications often require the use of sensors to measure the state of the workpiece.

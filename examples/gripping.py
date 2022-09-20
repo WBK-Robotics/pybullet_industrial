@@ -40,7 +40,7 @@ def build_linear_path(start, end, steps):
     for i in range(steps):
         path[i] = start+(end-start)*(i/(steps-1))
     return path
-def move_along_path(endeffektor: pi.EndeffectorTool, path, stop=False):
+def move_along_path(endeffektor: pi.EndeffectorTool, path, target_orientation, stop=False):
     """Moving a designated endeffector along the provided path.
     Args:
         endeffector (endeffector_tool): Endeffector to be moved.
@@ -63,73 +63,126 @@ if __name__ == "__main__":
                               'robot_descriptions', 'comau_NJ290_3-0_m_clean.urdf')
     urdf_file2 = os.path.join(dirname,
                               'robot_descriptions', 'gripper_cad.urdf')
+    urdf_file4 = os.path.join(dirname,
+                              'robot_descriptions', 'screwDriver.urdf')
     urdf_file3 = os.path.join(dirname,
                               'robot_descriptions', 'cube_small.urdf')
-
 
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=10000)
 
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    monastryId = p.createCollisionShape(p.GEOM_MESH,
-                                        fileName="samurai_monastry.obj",
-                                        flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
 
-    orn = p.getQuaternionFromEuler([1.5707963, 0, 0])
-    p.createMultiBody(0, monastryId, baseOrientation=orn)
-    p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=True)
+    FoFaPath = os.path.join(dirname,
+                            'Objects', 'FoFa', 'FoFa.urdf')
+    p.loadURDF(FoFaPath, useFixedBase=True, globalScaling=0.001)
+
 
     p.setGravity(0, 0, -10)
+    start_pos = np.array([2.0, -6.5, 0])
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-    robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+    robot = pi.RobotBase(urdf_file1, start_pos, start_orientation)
+
+    start_pos2 = np.array([6.25, -6.5, 0])
+    start_orientation2 = p.getQuaternionFromEuler([0, 0, np.pi])
+    robot2 = pi.RobotBase(urdf_file1, start_pos2, start_orientation2)
+
+    p.loadURDF("cube.urdf", np.array([2.125, 0, 0.5]) + start_pos, useFixedBase=True)
 
 
     gripper = pi.Gripper(
-        urdf_file2, [1.9, 0, 1.2], start_orientation)
+        urdf_file2, [1.9, 0, 1.2]+start_pos, start_orientation)
     gripper.couple(robot, 'link6')
 
-    target_position = np.array([1.9, 0])
-    target_orientation = p.getQuaternionFromEuler([-np.pi, 0, 0])
+    start_orientation_sg = p.getQuaternionFromEuler([0, 0, np.pi / 2])
+    suctionGripper = pi.SuctionGripper(
+        urdf_file4, [-1.9, 0, 5]+start_pos2, start_orientation, suction_links=["tcp"])
+
+    suctionGripper.couple(robot2, 'link6')
+
+    p.resetDebugVisualizerCamera(cameraDistance=4.8, cameraYaw=50.0, cameraPitch=-30,
+                                 cameraTargetPosition=np.array([1.9, 0, 1]) + start_pos)
+
+
+
+
+    start_orientation_gr = p.getQuaternionFromEuler([-np.pi, 0, 0])
     steps = 100
     base_height = 1.03
-    test_path = build_circular_path(target_position, 0.3, 0, 2 * np.pi, steps, base_height)
-    for c in gripper._gripper_constraints:
-        print(p.getConstraintInfo(c))
-    for _ in range(20):
-        gripper.set_tool_pose([1.9, 0, 2.0], target_orientation)
+#    for c in gripper._gripper_constraints:
+#        print(p.getConstraintInfo(c))
+    safepoint1 = start_pos+[1.9, 0.5, 2.0]
+    safepoint2 = start_pos2+[-1.9, -0.5, 2.0]
+    grippoint1 = [1.9, -0.25, 1.05] + start_pos
+    grippoint1_2 = grippoint1 + [0, 0, 0.1]
+    droppoint1 = [-1.9, 0.25, 1.15] + start_pos2
+    grippoint2 = droppoint1.copy() + [0, 0, -0.1105]
+    grippoint2_2 = grippoint2 + [0, 0, 0.1]
+    droppoint2 = grippoint1.copy() + [0, 0, 0.1]
+
+    for _ in range(25):
+        p.stepSimulation()
+        time.sleep(0.01)
+
+    for _ in range(8):
+        gripper.set_tool_pose(safepoint1, start_orientation_gr)
         gripper.actuate(0.0)
+        suctionGripper.set_tool_pose(safepoint2, start_orientation_sg)
         for _ in range(20):
             p.stepSimulation()
             time.sleep(0.01)
-    spawnpoint=[1.9, 0.25, 1.05]
-    grippoint=[1.9, 0.25, 1.05]
-    droppoint1=[1.9, -0.25, 1.14]
-    droppoint2=[1.9, -0.05, 1.14]
+
+
+
     delta=0.1
-    p.loadURDF(urdf_file3, spawnpoint, useFixedBase=False)
-    gripper.set_tool_pose([1.9, 0, 1.5], target_orientation)
-    for _ in range(100):
-        p.stepSimulation()
-        time.sleep(0.01)
-    path = build_linear_path(np.array([1.9, 0, 1.5]), np.array(grippoint), 10)
+    p.loadURDF(urdf_file3, grippoint1, useFixedBase=False)
     while True:
-        move_along_path(gripper, path, True)
+        path = build_linear_path(np.array(safepoint1), np.array(grippoint1_2), 10)
+        move_along_path(gripper, path,start_orientation_gr)
+        path = build_linear_path(np.array(grippoint1_2), np.array(grippoint1), 10)
+        move_along_path(gripper, path,start_orientation_gr)
+        for _ in range(25):
+            p.stepSimulation()
+            time.sleep(0.01)
         gripper.actuate(1.0)
         for _ in range(25):
             p.stepSimulation()
             time.sleep(0.01)
-        path = build_linear_path(np.array(grippoint), np.array(droppoint2), 10)
-        move_along_path(gripper, path)
-        path = build_linear_path(np.array(droppoint2), np.array(droppoint1), 10)
-        move_along_path(gripper, path, True)
-        gripper.actuate(0.0)
-        for _ in range(100):
+        path = build_linear_path(np.array(grippoint1), np.array(grippoint1_2), 10)
+        move_along_path(gripper, path, start_orientation_gr)
+        path = build_linear_path(np.array(grippoint1_2), np.array(droppoint1), 10)
+        move_along_path(gripper, path,start_orientation_gr)
+        for _ in range(25):
             p.stepSimulation()
             time.sleep(0.01)
-        p.loadURDF(urdf_file3, spawnpoint, useFixedBase=False)
-        path = build_linear_path(np.array(droppoint1), np.array(droppoint2), 10)
-        move_along_path(gripper, path)
+        gripper.actuate(0.0)
+        for _ in range(25):
+            p.stepSimulation()
+            time.sleep(0.01)
+        path = build_linear_path(np.array(droppoint1), np.array(safepoint1), 10)
+        move_along_path(gripper, path,start_orientation_gr)
 
-        path = build_linear_path(np.array(droppoint2), np.array(grippoint), 10)
-        droppoint1[2]=droppoint1[2]+delta
-        droppoint2[2]=droppoint2[2]+delta
+        path = build_linear_path(np.array(safepoint2), np.array(grippoint2_2), 10)
+        move_along_path(suctionGripper, path,start_orientation_sg)
+        path = build_linear_path(np.array(grippoint2_2), np.array(grippoint2), 10)
+        move_along_path(suctionGripper, path,start_orientation_sg)
+        for _ in range(25):
+            p.stepSimulation()
+            time.sleep(0.01)
+        suctionGripper.activate(0.001)
+        for _ in range(25):
+            p.stepSimulation()
+            time.sleep(0.01)
+        path = build_linear_path(np.array(grippoint2), np.array(grippoint2_2), 10)
+        move_along_path(suctionGripper, path,start_orientation_sg)
+        path = build_linear_path(np.array(grippoint2_2), np.array(droppoint2), 10)
+        move_along_path(suctionGripper, path,start_orientation_sg)
+        for _ in range(25):
+            p.stepSimulation()
+            time.sleep(0.01)
+        suctionGripper.deactivate()
+        for _ in range(25):
+            p.stepSimulation()
+            time.sleep(0.01)
+        path = build_linear_path(np.array(droppoint2), np.array(safepoint2), 10)
+        move_along_path(suctionGripper, path,start_orientation_sg)

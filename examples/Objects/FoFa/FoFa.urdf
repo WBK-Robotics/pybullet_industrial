@@ -1,0 +1,102 @@
+<?xml version="1.0" ?>
+<robot name="FoFa">
+  <link name="baseLink">
+    <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0"/>
+      <contact_cfm value="0.0"/>
+      <contact_erp value="0.8"/>
+      <damping value=".0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+       <mass value="1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="2"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+		<mesh filename="mesh/Roboterzelle_DeMoBat_AgiloDrive.stl"/>
+      </geometry>
+       <material name="grey">
+        <color rgba="0.7 0.7 0.7 1"/>
+      </material>
+    </visual>
+    <collision concave="yes">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+	 	<mesh filename="mesh/Roboterzelle_DeMoBat_AgiloDrive.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="glassLink">
+    <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0"/>
+      <contact_cfm value="0.0"/>
+      <contact_erp value="0.8"/>
+      <damping value=".0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+       <mass value="1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="2"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+		<mesh filename="mesh/Roboterzelle_DeMoBat_AgiloDrive_Scheiben.stl"/>
+      </geometry>
+       <material name="glass">
+          <color rgba="0.3, 0.3, 0.6, 0.3"/>
+      </material>
+    </visual>
+    <collision concave="yes">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+	 	<mesh filename="mesh/Roboterzelle_DeMoBat_AgiloDrive_Scheiben.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="fenceLink">
+    <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0"/>
+      <contact_cfm value="0.0"/>
+      <contact_erp value="0.8"/>
+      <damping value=".0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+       <mass value="1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="2"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+		<mesh filename="mesh/Roboterzelle_DeMoBat_AgiloDrive_Zaun.stl"/>
+      </geometry>
+       <material name="grey">
+        <color rgba="0.7 0.7 0.7 1"/>
+      </material>
+    </visual>
+    <collision concave="yes">
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+	 	<mesh filename="mesh/Roboterzelle_DeMoBat_AgiloDrive_Zaun.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="glassJoint" type="fixed">
+      <parent link="baseLink"/>
+      <child link="glassLink"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <joint name="fenceLink" type="fixed">
+      <parent link="baseLink"/>
+      <child link="fenceLink"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+</robot>
+

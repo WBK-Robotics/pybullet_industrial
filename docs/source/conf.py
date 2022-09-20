@@ -9,6 +9,7 @@
 import sys
 import os
 import mock
+import sphinx_gallery
 
 MOCK_MODULES = ['numpy', 'casadi', 'pybullet', 'scipy']
 for mod_name in MOCK_MODULES:

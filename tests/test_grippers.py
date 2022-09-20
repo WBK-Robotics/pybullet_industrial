@@ -7,14 +7,12 @@ import pybullet_data
 import pybullet_industrial as pi
 
 
-
-
 class TestGrippers(unittest.TestCase):
     def test_grippers(self):
         dirname = os.path.dirname(__file__)
         parentDir = os.path.dirname(dirname)
         urdf_file1 = os.path.join(parentDir, 'examples',
-                                  'robot_descriptions', 'comau_NJ290_3-0_m_clean.urdf')
+                                  'robot_descriptions', 'comau_nj290_robot.urdf')
         urdf_file2 = os.path.join(parentDir, 'examples',
                                   'robot_descriptions', 'gripper_cad.urdf')
         urdf_file4 = os.path.join(parentDir, 'examples',
@@ -40,7 +38,8 @@ class TestGrippers(unittest.TestCase):
         start_orientation2 = p.getQuaternionFromEuler([0, 0, np.pi])
         robot2 = pi.RobotBase(urdf_file1, start_pos2, start_orientation2)
 
-        p.loadURDF("cube.urdf", np.array([2.125, 0, 0.5]) + start_pos, useFixedBase=True)
+        p.loadURDF("cube.urdf", np.array(
+            [2.125, 0, 0.5]) + start_pos, useFixedBase=True)
 
         gripper = pi.Gripper(
             urdf_file2, [1.9, 0, 1.2] + start_pos, start_orientation)
@@ -83,55 +82,62 @@ class TestGrippers(unittest.TestCase):
         pos_precision = 0.02
         within_precision = True
 
-
-        path = build_linear_path(np.array(safepoint1), np.array(grippoint1_2), 10)
+        path = build_linear_path(np.array(safepoint1),
+                                 np.array(grippoint1_2), 10)
         move_along_path(gripper, path, start_orientation_gr)
-        path = build_linear_path(np.array(grippoint1_2), np.array(grippoint1), 10)
+        path = build_linear_path(
+            np.array(grippoint1_2), np.array(grippoint1), 10)
         move_along_path(gripper, path, start_orientation_gr)
         for _ in range(25):
             p.stepSimulation()
         gripper.actuate(1.0)
         for _ in range(25):
             p.stepSimulation()
-        path = build_linear_path(np.array(grippoint1), np.array(grippoint1_2), 10)
+        path = build_linear_path(np.array(grippoint1),
+                                 np.array(grippoint1_2), 10)
         move_along_path(gripper, path, start_orientation_gr)
-        path = build_linear_path(np.array(grippoint1_2), np.array(droppoint1), 10)
+        path = build_linear_path(
+            np.array(grippoint1_2), np.array(droppoint1), 10)
         move_along_path(gripper, path, start_orientation_gr)
         for _ in range(25):
             p.stepSimulation()
         gripper.actuate(0.0)
         for _ in range(25):
             p.stepSimulation()
-        path = build_linear_path(np.array(droppoint1), np.array(safepoint1), 10)
+        path = build_linear_path(np.array(droppoint1),
+                                 np.array(safepoint1), 10)
         move_along_path(gripper, path, start_orientation_gr)
 
         current_position, _ = p.getBasePositionAndOrientation(minicube)
         position_error = np.linalg.norm(current_position - grippoint2)
         print(position_error)
         within_precision = within_precision and (
-                position_error <= pos_precision)
+            position_error <= pos_precision)
 
-
-
-        path = build_linear_path(np.array(safepoint2), np.array(grippoint2_2), 10)
+        path = build_linear_path(np.array(safepoint2),
+                                 np.array(grippoint2_2), 10)
         move_along_path(suctionGripper, path, start_orientation_sg)
-        path = build_linear_path(np.array(grippoint2_2), np.array(grippoint2), 10)
+        path = build_linear_path(
+            np.array(grippoint2_2), np.array(grippoint2), 10)
         move_along_path(suctionGripper, path, start_orientation_sg)
         for _ in range(25):
             p.stepSimulation()
         suctionGripper.activate(0.001)
         for _ in range(25):
             p.stepSimulation()
-        path = build_linear_path(np.array(grippoint2), np.array(grippoint2_2), 10)
+        path = build_linear_path(np.array(grippoint2),
+                                 np.array(grippoint2_2), 10)
         move_along_path(suctionGripper, path, start_orientation_sg)
-        path = build_linear_path(np.array(grippoint2_2), np.array(droppoint2), 10)
+        path = build_linear_path(
+            np.array(grippoint2_2), np.array(droppoint2), 10)
         move_along_path(suctionGripper, path, start_orientation_sg)
         for _ in range(25):
             p.stepSimulation()
         suctionGripper.deactivate()
         for _ in range(25):
             p.stepSimulation()
-        path = build_linear_path(np.array(droppoint2), np.array(safepoint2), 10)
+        path = build_linear_path(np.array(droppoint2),
+                                 np.array(safepoint2), 10)
         move_along_path(suctionGripper, path, start_orientation_sg)
 
         current_position, _ = p.getBasePositionAndOrientation(minicube)
@@ -139,9 +145,10 @@ class TestGrippers(unittest.TestCase):
         print(position_error)
 
         within_precision = within_precision and (
-                position_error <= pos_precision)
+            position_error <= pos_precision)
         p.disconnect()
         self.assertTrue(within_precision)
+
 
 def build_linear_path(start, end, steps):
     """Function which builds a linar path
@@ -157,6 +164,7 @@ def build_linear_path(start, end, steps):
         path[i] = start + (end - start) * (i / (steps - 1))
     return path
 
+
 def move_along_path(endeffektor: pi.EndeffectorTool, path, target_orientation, stop=False):
     """Moving a designated endeffector along the provided path.
     Args:
@@ -171,3 +179,7 @@ def move_along_path(endeffektor: pi.EndeffectorTool, path, target_orientation, s
     if stop:
         for _ in range(100):
             p.stepSimulation()
+
+
+if __name__ == '__main__':
+    unittest.main()

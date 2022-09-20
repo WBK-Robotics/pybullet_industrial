@@ -6,9 +6,7 @@ import numpy as np
 import time
 
 
-
-
-def build_circular_path(center, radius, min_angle, max_angle, steps,height):
+def build_circular_path(center, radius, min_angle, max_angle, steps, height):
     """Function which builds a circular path
     Args:
         center (array): the center of the circle
@@ -20,13 +18,15 @@ def build_circular_path(center, radius, min_angle, max_angle, steps,height):
         array: array of 3 dimensional path points
     """
     path = np.zeros((3, steps))
-    path[2,:]=height
+    path[2, :] = height
     for i in range(steps):
         path_angle = min_angle+i*(max_angle-min_angle)/steps
         new_position = center + radius * \
             np.array([np.sin(path_angle), np.cos(path_angle)])
         path[:2, i] = new_position
     return path
+
+
 def build_linear_path(start, end, steps):
     """Function which builds a linar path
     Args:
@@ -36,10 +36,12 @@ def build_linear_path(start, end, steps):
     Returns:
         array: array of 3 dimensional path points
     """
-    path = np.zeros((steps,3))
+    path = np.zeros((steps, 3))
     for i in range(steps):
         path[i] = start+(end-start)*(i/(steps-1))
     return path
+
+
 def move_along_path(endeffektor: pi.EndeffectorTool, path, target_orientation, stop=False):
     """Moving a designated endeffector along the provided path.
     Args:
@@ -60,7 +62,7 @@ if __name__ == "__main__":
 
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(dirname,
-                              'robot_descriptions', 'comau_NJ290_3-0_m_clean.urdf')
+                              'robot_descriptions', 'comau_nj290_robot.urdf')
     urdf_file2 = os.path.join(dirname,
                               'robot_descriptions', 'gripper_cad.urdf')
     urdf_file4 = os.path.join(dirname,
@@ -77,7 +79,6 @@ if __name__ == "__main__":
                             'Objects', 'FoFa', 'FoFa.urdf')
     p.loadURDF(FoFaPath, useFixedBase=True, globalScaling=0.001)
 
-
     p.setGravity(0, 0, -10)
     start_pos = np.array([2.0, -6.5, 0])
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
@@ -87,8 +88,8 @@ if __name__ == "__main__":
     start_orientation2 = p.getQuaternionFromEuler([0, 0, np.pi])
     robot2 = pi.RobotBase(urdf_file1, start_pos2, start_orientation2)
 
-    p.loadURDF("cube.urdf", np.array([2.125, 0, 0.5]) + start_pos, useFixedBase=True)
-
+    p.loadURDF("cube.urdf", np.array(
+        [2.125, 0, 0.5]) + start_pos, useFixedBase=True)
 
     gripper = pi.Gripper(
         urdf_file2, [1.9, 0, 1.2]+start_pos, start_orientation)
@@ -102,9 +103,6 @@ if __name__ == "__main__":
 
     p.resetDebugVisualizerCamera(cameraDistance=4.8, cameraYaw=50.0, cameraPitch=-30,
                                  cameraTargetPosition=np.array([1.9, 0, 1]) + start_pos)
-
-
-
 
     start_orientation_gr = p.getQuaternionFromEuler([-np.pi, 0, 0])
     steps = 100
@@ -132,15 +130,15 @@ if __name__ == "__main__":
             p.stepSimulation()
             time.sleep(0.01)
 
-
-
-    delta=0.1
+    delta = 0.1
     p.loadURDF(urdf_file3, grippoint1, useFixedBase=False)
     while True:
-        path = build_linear_path(np.array(safepoint1), np.array(grippoint1_2), 10)
-        move_along_path(gripper, path,start_orientation_gr)
-        path = build_linear_path(np.array(grippoint1_2), np.array(grippoint1), 10)
-        move_along_path(gripper, path,start_orientation_gr)
+        path = build_linear_path(np.array(safepoint1),
+                                 np.array(grippoint1_2), 10)
+        move_along_path(gripper, path, start_orientation_gr)
+        path = build_linear_path(
+            np.array(grippoint1_2), np.array(grippoint1), 10)
+        move_along_path(gripper, path, start_orientation_gr)
         for _ in range(25):
             p.stepSimulation()
             time.sleep(0.01)
@@ -148,10 +146,12 @@ if __name__ == "__main__":
         for _ in range(25):
             p.stepSimulation()
             time.sleep(0.01)
-        path = build_linear_path(np.array(grippoint1), np.array(grippoint1_2), 10)
+        path = build_linear_path(np.array(grippoint1),
+                                 np.array(grippoint1_2), 10)
         move_along_path(gripper, path, start_orientation_gr)
-        path = build_linear_path(np.array(grippoint1_2), np.array(droppoint1), 10)
-        move_along_path(gripper, path,start_orientation_gr)
+        path = build_linear_path(
+            np.array(grippoint1_2), np.array(droppoint1), 10)
+        move_along_path(gripper, path, start_orientation_gr)
         for _ in range(25):
             p.stepSimulation()
             time.sleep(0.01)
@@ -159,13 +159,16 @@ if __name__ == "__main__":
         for _ in range(25):
             p.stepSimulation()
             time.sleep(0.01)
-        path = build_linear_path(np.array(droppoint1), np.array(safepoint1), 10)
-        move_along_path(gripper, path,start_orientation_gr)
+        path = build_linear_path(np.array(droppoint1),
+                                 np.array(safepoint1), 10)
+        move_along_path(gripper, path, start_orientation_gr)
 
-        path = build_linear_path(np.array(safepoint2), np.array(grippoint2_2), 10)
-        move_along_path(suctionGripper, path,start_orientation_sg)
-        path = build_linear_path(np.array(grippoint2_2), np.array(grippoint2), 10)
-        move_along_path(suctionGripper, path,start_orientation_sg)
+        path = build_linear_path(np.array(safepoint2),
+                                 np.array(grippoint2_2), 10)
+        move_along_path(suctionGripper, path, start_orientation_sg)
+        path = build_linear_path(
+            np.array(grippoint2_2), np.array(grippoint2), 10)
+        move_along_path(suctionGripper, path, start_orientation_sg)
         for _ in range(25):
             p.stepSimulation()
             time.sleep(0.01)
@@ -173,10 +176,12 @@ if __name__ == "__main__":
         for _ in range(25):
             p.stepSimulation()
             time.sleep(0.01)
-        path = build_linear_path(np.array(grippoint2), np.array(grippoint2_2), 10)
-        move_along_path(suctionGripper, path,start_orientation_sg)
-        path = build_linear_path(np.array(grippoint2_2), np.array(droppoint2), 10)
-        move_along_path(suctionGripper, path,start_orientation_sg)
+        path = build_linear_path(np.array(grippoint2),
+                                 np.array(grippoint2_2), 10)
+        move_along_path(suctionGripper, path, start_orientation_sg)
+        path = build_linear_path(
+            np.array(grippoint2_2), np.array(droppoint2), 10)
+        move_along_path(suctionGripper, path, start_orientation_sg)
         for _ in range(25):
             p.stepSimulation()
             time.sleep(0.01)
@@ -184,5 +189,6 @@ if __name__ == "__main__":
         for _ in range(25):
             p.stepSimulation()
             time.sleep(0.01)
-        path = build_linear_path(np.array(droppoint2), np.array(safepoint2), 10)
-        move_along_path(suctionGripper, path,start_orientation_sg)
+        path = build_linear_path(np.array(droppoint2),
+                                 np.array(safepoint2), 10)
+        move_along_path(suctionGripper, path, start_orientation_sg)

@@ -14,9 +14,9 @@ The following sections will dive deeper into the robot and endeffector objects a
     :align: center
     :alt: robot_tool_overview
 
-*************
+#############
 Robot objects
-*************
+#############
 
 Robot objects are one of the main objects in the package. Their main purpose is to load a dynamic robot simulation into a pybullet simulation and provide a set of functions to control the robot and get information about the robot's state.
 The pybullet_industrial package provides a class called RobotBase that can be used to load a robot from a UDF (universal robot description file) file and interact with it.
@@ -57,9 +57,9 @@ Apart from the joint and endeffector interfaces, the pybullet_industrial package
 These enable resetting the robot's state and moving the robot to a new position.
 More information about these functions can be found in the Code documentation.
 
-*****************
+#################
 Endeffector tools
-*****************
+#################
 
 The endeffector tool is the main object for simulating processes in the pybullet_industrial package.
 In robotic manufacturing, these processes can be grouped into three categories:
@@ -111,9 +111,9 @@ A lot of processes impart a dynamic force unto a tool and therefore a robot.
 The EndeffectorTool class, therefore, provides functionality to apply force and torque to the tool center point of the tool.
 This force or torque vector can either be specified in local TCP coordinates or world coordinates.
 
-===============
+***************
 Adding material
-===============
+***************
 
 .. image:: images/additive_manufacturing.PNG
     :width: 60%
@@ -159,9 +159,9 @@ Note that the extruder supports dynamic changes of both the extruder pattern as 
 
 
 
-=================
+*****************
 Removing material
-=================
+*****************
 
 Material removal is one of the most important manufacturing processes.
 Since pybullet is by default a multi body physics simulation, each removal process wil delete a full object.
@@ -194,9 +194,9 @@ For this package the kienzle force model was choosen.
     Also add a table for parameters of different materials
 
 
-===============
+***************
 Moving material
-===============
+***************
 
 =======
 Sensing
@@ -206,9 +206,9 @@ In the design philosophy of pybullet_industrial this can also be modeled as an E
 The package provides a simple camera class EndeffectorTool that can be used to simulate a camera.
 Other complex sensors can be implemented similarly by subclassing the EndeffectorTool class.
 
-*********
+#########
 Materials
-*********
+#########
 
 .. _materials_label:
 
@@ -229,9 +229,9 @@ Particles are typically spawned using a pybullet raytrace result since they migh
 To spawn particles or groups of particles directly at a given position the spawn_material_block function can be used.
 
 
-*********
+#########
 Toolpaths
-*********
+#########
 
 .. image:: images/path_interpolation.PNG
    :alt: interpolation_example
@@ -261,9 +261,9 @@ A list of which can be found below:
 Additional functionality such as the build_box_path function can be used to generate more complex toolpaths.
 
 
-*********************
+#####################
 Utility functionality
-*********************
+#####################
 
 The pybullet_industrial package also provides several utility functions that can be used to simplify working with simulations.
 These include functions to draw points, paths, and coordinate systems as well as the ability to draw robot frames.

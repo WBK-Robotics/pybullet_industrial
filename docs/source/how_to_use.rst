@@ -148,6 +148,13 @@ See :ref:`materials_label` for more information about different types of materia
 Note that the extruder supports dynamic changes of both the extruder pattern as well as the type and properties of materials.
 
 
+.. important::
+
+    By default the extruder does not feature any process force model.
+    This means that the extrusion process will not apply any force to the tool center point of the tool.
+    This is because the extrusion process is typically not a dynamic process.
+    To still employ a process force model, the user can create their own child of the Extruder class and override the calculate_process_force function.
+    This function is called every time the extrusion is called and should return a force vector in world coordinates which is applied to the TCP used for extrusion.
 
 
 

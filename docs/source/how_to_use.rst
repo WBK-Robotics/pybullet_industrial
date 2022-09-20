@@ -35,18 +35,18 @@ pybullet_industrial provides interfaces for setting and measuring the state of t
 Endeffector interfaces
 ----------------------
 
-In industrial robotics one often times does not care for the joint state of the robot, but rather for the state of the endeffector. 
+In industrial robotics one often times does not care for the joint state of the robot, but rather for the state of the endeffector.
 
 .. warning::
-    The endeffector is the part of the robot that is attached to the end of the last joint and that is typically used to interact with the environment. 
+    The endeffector is the part of the robot that is attached to the end of the last joint and that is typically used to interact with the environment.
     But for the pybullet_industrial package interaction with the environment is handled by the EndeffectorTool class. This means that the endeffector refers in this case to the end of the robots flange.
 
-The pybullet_industrial package provides interfaces for setting and measuring the state of the endeffector. 
+The pybullet_industrial package provides interfaces for setting and measuring the state of the endeffector.
 These intertfaces make it possible to set the desired position and orientation of the endeffector and to measure the current position and orientation of the endeffector.
 Note that providing the orientation is optional, in this case the robot assumes a arbitrary rotation at a given position.
 
 .. important::
-    The orientation is given as a quaternion, which is a 4-tuple of floats. 
+    The orientation is given as a quaternion, which is a 4-tuple of floats.
     The first three elements of the tuple are the imaginary part of the quaternion and the last element is the real part.
 
 
@@ -68,7 +68,7 @@ In robotic manfucatuing theses processes can be grouped in three categories:
 - Removing Material (Such as milling, drilling, cutting etc.)
 - Moving Material (Such as moving a part from one place to another)
 
-Each of theses proceses types is supported by a dedicated subclass. 
+Each of theses proceses types is supported by a dedicated subclass.
 The Base class still provides a lot of functionality common between all three types.
 
 Like the RobotBase object, the EndeffectorTool is build using a urdf file.
@@ -87,7 +87,7 @@ This is done by providing the robot object to the couple function of the tool.
 The tool will then attach itself to the endeffector of the robot and will be able to interact with the robot object.
 
 .. warning::
-    The coupling immediately moves the tool to the endeffector of the robot. 
+    The coupling immediately moves the tool to the endeffector of the robot.
     During the runtime of the simulation this can impart a significant momentum to the robot, which can lead to unexpected behaviour.
     It is therefore advised to either connect the tool before starting the simulation or first moving the endeffector to the position of the tool.
     The last option being the only possible way to dynamically switch tool in the real world anyway.
@@ -126,7 +126,7 @@ Examples of such processes include 3d printing, welding or coating.
 
 The properites of the extruder can be grouped in two categories and are described in the extruder_properties dictionary.
 These categories are:
-- The extrusion pattern 
+- The extrusion pattern
 - The material properties
 
 Currently the extrusion is performed in a cone shaped pattern.
@@ -202,7 +202,7 @@ A single toolpath objects encapsulates a path for the robots position, orientati
 Using a iterator interface the toolpath can be iterated over to get the next position and orientation of the robot:
 
 ::
-    
+
         for position, orientation, tool_active in toolpath:
             extruder.set_tool_pose(position, orientation)
             if tool_active:
@@ -224,3 +224,8 @@ Additional functionality such as the build_box_path function can be used to gene
 *********************
 Utility functionality
 *********************
+
+The pybullet_industrial package also provides a number of utility functions that can be used to simplify working with simulations.
+These include functions to draw points, paths, coordinate systems as well as the ability to draw a robots frames.
+Additionally the package provides functionality for selecting objects using the mouse.
+

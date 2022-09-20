@@ -132,7 +132,7 @@ class MillingTool(pi.EndeffectorTool):
             tcp_frame (str): The name of the tool center point frame. Defaults to None.
 
         Returns:
-            array: [description]
+            np.array: a 3 dimensional array containing the process force in the x,y,z direction
         """
         cutting_speed, cutting_depth = self.get_cutting_state(
             ray_cast_results, tcp_frame)

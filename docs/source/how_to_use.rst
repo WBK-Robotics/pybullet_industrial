@@ -163,6 +163,37 @@ Note that the extruder supports dynamic changes of both the extruder pattern as 
 Removing material
 =================
 
+Material removal is one of the most important manufacturing processes.
+Since pybullet is by default a multi body physics simulation, each removal process wil delete a full object.
+In order to accurately simulate material removal a simple voxel engine was added which is  described in the section :ref:`materials_label`
+pybullet_industrial offers two classes for simulating material removal processes.
+
+Remover
+-------
+The first class is the Remover class. It is the twin of the Extruder class and uses the same cone shaped raycast.
+But instead of adding material, it removes material from the environment.
+The remover can be used to simulate processes such as lasercutting, sandblasting or similar processes that work at range.
+
+.. important::
+
+    Like the extruder, the remover does not have a default force model.
+    However like the extruder it is possible to create a child class and override the calculate_process_force function.
+
+Milling
+-------
+
+For material removal processes that require a tool to be in contact with the workpiece, the Milling class can be used.
+The class implements a cutting tool of configurable diameter and number of cutting teeth.
+Each cutting tooth rotates around the z-axis of the tool center point and removes material it touches.
+This removal processes creates a process force that acts on the tool center point.
+
+For this package the kienzle force model was choosen.
+
+.. todo::
+    Add a link to the kienzle force model and explain it.
+
+
+
 Moving material
 ===============
 

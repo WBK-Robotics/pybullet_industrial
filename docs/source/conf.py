@@ -9,7 +9,6 @@
 import sys
 import os
 import mock
-import sphinx_gallery
 
 MOCK_MODULES = ['numpy', 'casadi', 'pybullet', 'scipy']
 for mod_name in MOCK_MODULES:
@@ -40,13 +39,9 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.ifconfig',
               'sphinx.ext.viewcode',
               'sphinx.ext.githubpages',
-              'sphinx.ext.napoleon',
-              'sphinx_gallery.gen_gallery']
+              'sphinx.ext.napoleon']
 
-sphinx_gallery_conf = {
-    'examples_dirs': '../examples',   # path to your example scripts
-    'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
-}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

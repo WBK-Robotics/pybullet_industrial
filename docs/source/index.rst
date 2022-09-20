@@ -32,7 +32,6 @@ This would require much more sophisticated models, which are not the focus of th
    how_to_use
    tutorials
    code_docu
-   auto_examples/index
 
 
 Indices and tables

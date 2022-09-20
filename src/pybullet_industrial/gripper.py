@@ -101,10 +101,11 @@ class SuctionGripper(EndeffectorTool):
                                                 Defaults to None in which case the base link is used.
             suction_links ([type], optional): The names of the urdf_links wich represent the active suction parts.
                                               Defaults to all Links.
-                                            
+
         """
         super().__init__(urdf_model, start_position, start_orientation, coupled_robots, tcp_frame, connector_frames)
         self.suction_constraints = []
+        self._suction_links_ids = []
 
         self._link_name_to_index = {}
         for joint_number in range(p.getNumJoints(self.urdf)):
@@ -132,12 +133,11 @@ class SuctionGripper(EndeffectorTool):
 
         i = 0
         while i < len(contact_points):
-            if contact_points[i][2] is self.urdf or contact_points[i][2] is self._coupled_robot.urdf or contact_points[i][8]>tolerance:
+            if contact_points[i][2] is self.urdf or contact_points[i][2] is self._coupled_robot.urdf or \
+                    contact_points[i][8] > tolerance:
                 del contact_points[i]
             else:
-                print(contact_points[i][2], contact_points[i][8])
-                i = i+1
-        print(contact_points)
+                i = i + 1
 
         if self._suction_links_ids is not None:
             i = 0
@@ -146,12 +146,10 @@ class SuctionGripper(EndeffectorTool):
                     del contact_points[i]
                 else:
                     i = i + 1
-        print(contact_points)
 
         for cp in contact_points:
             if cp[2] not in coupled_bodys:
                 coupled_bodys.append(cp[2])
-
 
         for cb in coupled_bodys:
             positionO, orientationO = p.getBasePositionAndOrientation(cb)

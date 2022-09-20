@@ -123,6 +123,26 @@ class MillingTool(pi.EndeffectorTool):
 
         return ray_cast_results
 
+    def calculate_process_force(self, ray_cast_results, tcp_frame=None):
+        """Function calculating the process force of the milling tool.
+
+        Args:
+            ray_cast_results (list): The result of a batch ray cast
+                                       as performed by the mill function
+            tcp_frame (str): The name of the tool center point frame. Defaults to None.
+
+        Returns:
+            array: [description]
+        """
+        cutting_speed, cutting_depth = self.get_cutting_state(
+            ray_cast_results, tcp_frame)
+        teeth_angles = [i * 2*np.pi/self.properties['number of teeth'] +
+                        self.current_angle for i in range(self.properties['number of teeth'])]
+        cutting_force = self.force_model(cutting_speed,
+                                         cutting_depth,
+                                         teeth_angles)
+        return cutting_force
+
     def mill(self, tcp_frame=None, debug=False):
         """Function that performs a milling operation.
 
@@ -137,13 +157,7 @@ class MillingTool(pi.EndeffectorTool):
         position, orientation = self.get_tool_pose(tcp_frame)
         ray_cast_results = self.cast_rays(position, orientation, debug)
 
-        cutting_speed, cutting_depth = self.get_cutting_state(
-            ray_cast_results, tcp_frame)
-        teeth_angles = [i * 2*np.pi/self.properties['number of teeth'] +
-                        self.current_angle for i in range(self.properties['number of teeth'])]
-        cutting_force = self.force_model(cutting_speed,
-                                         cutting_depth,
-                                         teeth_angles)
+        cutting_force = self.calculate_process_force(ray_cast_results, tcp_frame)
         self.apply_tcp_force(cutting_force, tcp_frame)
 
         self.current_angle = self.current_angle + \

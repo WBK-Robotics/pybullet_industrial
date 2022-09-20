@@ -1,0 +1,196 @@
+<robot name="KUKA KR180R2500extra">
+
+  <material name="Black">
+    <color rgba="0.0 0.0 0.0 1.0"/>
+  </material>
+  <material name="Blue">
+    <color rgba="0.0 0.0 0.8 1.0"/>
+  </material>
+  <material name="Green">
+    <color rgba="0.0 0.8 0.0 1.0"/>
+  </material>
+  <material name="Grey">
+    <color rgba="0.4 0.4 0.4 1.0"/>
+  </material>
+  <material name="Orange">
+    <color rgba="1.0 0.423529411765 0.0392156862745 1.0"/>
+  </material>
+  <material name="Brown">
+    <color rgba="0.870588235294 0.811764705882 0.764705882353 1.0"/>
+  </material>
+  <material name="Red">
+    <color rgba="0.8 0.0 0.0 1.0"/>
+  </material>
+  <material name="White">
+    <color rgba="1.0 1.0 1.0 1.0"/>
+  </material>
+  
+  <link name="world"/>	
+
+	<joint name="world_robot_joint" type="fixed">
+		<origin rpy="1.5707963 -1.5707963 3.1415926" xyz="0 0 0"/>
+		<parent link="world"/>
+		<child link="link0"/>
+	</joint>
+  
+  <link name="link0">
+    <visual>
+      <origin rpy="1.5707963 0 1.5707963" xyz="0 0 0"/>
+      <geometry>
+		    <mesh filename="kuka_meshes/kr180_r2500_extra_lnk0.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="Black"/>
+    </visual>
+    <collision>
+      <origin rpy="1.5707963 0 1.5707963" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="kuka_meshes/kr180_r2500_extra_lnk0.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  
+	<joint name="joint1" type="revolute">
+		<origin rpy="0 0 0" xyz="0 0 0"/>
+		<parent link="link0"/>
+		<child link="link1"/>
+		<axis xyz="-1 0 0" />
+		<limit effort="300.0" lower="-3.228859" upper="3.228859" velocity="2.146755"/>
+	</joint>
+  
+  <link name="link1">
+    <visual>
+      <origin rpy="1.5707963 0 1.5707963" xyz="0 0 0"/>
+      <geometry>
+	      <mesh filename="kuka_meshes/kr180_r2500_extra_lnk1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="Orange"/>
+    </visual>
+    <collision>
+      <origin rpy="1.5707963 0 1.5707963" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="kuka_meshes/kr180_r2500_extra_lnk1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>    
+  </link>
+  
+	<joint name="joint2" type="revolute">
+		<parent link="link1"/>
+		<child link="link2"/>
+		<origin rpy="0 0 1.5708" xyz="0.675 0.350 0" />
+		<axis xyz="0 0 1" />
+		<limit effort="300.0" lower="-2.4435" upper="-0.0873" velocity="2.00712864"/>	
+	</joint>
+	
+  <link name="link2">
+    <visual>
+      <origin rpy="1.5707963 0 1.5707963" xyz="-0.675 -0.350 0"/>
+      <geometry>
+	      <mesh filename="kuka_meshes/kr180_r2500_extra_lnk2.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="Orange"/>
+    </visual>
+    <collision>
+      <origin rpy="1.5707963 0 1.5707963" xyz="-0.675 -0.350 0"/>
+      <geometry>
+        <mesh filename="kuka_meshes/kr180_r2500_extra_lnk2.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>    
+  </link>
+  
+	<joint name="joint3" type="revolute">
+		<parent link="link2"/>
+		<child link="link3"/>
+		<origin xyz="1.150 0 0" rpy="0 0 -1.5708"/>
+		<axis xyz="0 0 1" />
+		<limit effort="300.0" lower="-2.0944" upper="2.7053" velocity="2.094395"/>
+	</joint>  
+	
+  <link name="link3">
+    <visual>
+      <origin rpy="1.5707963 0 1.5707963" xyz="-1.825 -0.350 0"/>
+      <geometry>
+	      <mesh filename="kuka_meshes/kr180_r2500_extra_lnk3.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="Orange"/>
+    </visual>
+    <collision>
+      <origin rpy="1.5707963 0 1.5707963" xyz="-1.825 -0.350 0"/>
+      <geometry>
+        <mesh filename="kuka_meshes/kr180_r2500_extra_lnk3.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  
+  <joint name="joint4" type="revolute">
+		<parent link="link3"/>
+		<child link="link4"/>
+		<origin xyz="-0.041 1.000 0" rpy="0 3.1416 0"/>
+		<axis xyz="0 -1 0" />
+		<limit effort="300.0" lower="-6.10865" upper="6.10865" velocity="3.124139"/>
+	</joint>
+	
+  <link name="link4">
+    <visual>
+      <origin rpy="1.5707963 0 1.5707963" xyz="-1.784 -1.350 0"/>
+      <geometry>
+	      <mesh filename="kuka_meshes/kr180_r2500_extra_lnk4.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="Orange"/>
+    </visual>
+    <collision>
+      <origin rpy="1.5707963 0 1.5707963" xyz="-1.784 -1.350 0"/>
+      <geometry>
+        <mesh filename="kuka_meshes/kr180_r2500_extra_lnk4.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  
+ 	<joint name="joint5" type="revolute">
+		<parent link="link4"/>
+		<child link="link5"/>
+		<origin xyz="0 0 0" rpy="0 0 0"/>
+		<axis xyz="0 0 -1" />
+		<limit effort="300.0" lower="-2.1816616" upper="2.1816616" velocity="3.00196"/>
+	</joint>
+	
+  <link name="link5">
+    <visual>
+      <origin rpy="1.5707963 0 1.5707963" xyz="-1.784 -1.350 0"/>
+      <geometry>
+	      <mesh filename="kuka_meshes/kr180_r2500_extra_lnk5.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="Orange"/>
+    </visual>
+    <collision>
+      <origin rpy="1.5707963 0 1.5707963" xyz="-1.784 -1.350 0"/>
+      <geometry>
+        <mesh filename="kuka_meshes/kr180_r2500_extra_lnk5.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  
+  <joint name="joint6" type="revolute">
+		<parent link="link5"/>
+		<child link="link6"/>
+		<origin xyz="0 0.215 0" rpy="0 3.1416 0"/>
+		<axis xyz="0 -1 0" />
+		<limit effort="300.0" lower="-6.10865" upper="6.10865" velocity="3.822271"/>
+	</joint>
+	
+  <link name="link6">
+    <visual>
+      <origin rpy="1.5707963 0 1.5707963" xyz="-1.784 -1.565 0"/>
+      <geometry>
+	      <mesh filename="kuka_meshes/kr180_r2500_extra_lnk6.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="Black"/>
+    </visual>
+    <collision>
+      <origin rpy="1.5707963 0 1.5707963" xyz="-1.784 -1.565 0"/>
+      <geometry>
+        <mesh filename="kuka_meshes/kr180_r2500_extra_lnk6.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  
+</robot>	

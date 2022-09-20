@@ -1,26 +1,27 @@
-import pybullet as p
 import numpy as np
-from typing import List
+import pybullet as p
+
 from pybullet_industrial import RobotBase
 
 
 class EndeffectorTool:
-    def __init__(self, urdf_model: str, start_position, start_orientation, coupled_robots: List[RobotBase] = None, tcp_frame=None,connector_frames=None):
+    def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
+                 coupled_robot: RobotBase = None, tcp_frame: str = None, connector_frame: str = None):
         """The base class for all Tools and Sensors connected to a Robot
 
         Args:
             urdf_model (str): A valid path to a urdf file describint the tool geometry
-            start_position ([type]): the position at which the tool should be spawned
-            start_orientation ([type]): the orientation at which the tool should be spawned
-            coupled_robot ([type], optional): A wbk_sim.Robot object if 
-                                              the robot is coupled from the start. 
-                                              Defaults to None.
-            tcp_frame ([type], optional): The name of the urdf_link 
-                                          describing the tool center point.
-                                          Defaults to None in which case the last link is used.
-            connector_frame ([type], optional): The name of the urdf_link 
-                                                at which a robot connects.
-                                                Defaults to None in which case the base link is used.
+            start_position (np.array): the position at which the tool should be spawned
+            start_orientation (np.array): the orientation at which the tool should be spawned
+            coupled_robot (pi.RobotBase, optional): A pybullet_omdistrial.RobotBase object if
+                                                    the robot is coupled from the start.
+                                                    Defaults to None.
+            tcp_frame (str, optional): The name of the urdf_link
+                                       describing the tool center point.
+                                       Defaults to None in which case the last link is used.
+            connector_frame (str, optional): The name of the urdf_link at which a robot connects.
+                                             Defaults to None in which case
+                                             the base link is used.
         """
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,
@@ -41,15 +42,21 @@ class EndeffectorTool:
         else:
             self._tcp_id = self._convert_link_to_id(tcp_frame)
 
-        
-        if connector_frames is None:
+        if connector_frame is None:
             self._connector_id = -1
+            base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf)
         else:
-            for frame in connector_frames:
-                self._connector_id=self._convert_link_to_id(connector_frames)
+            self._connector_id = self._convert_link_to_id(connector_frame)
+            link_state = p.getLinkState(self.urdf, self._connector_id)
+            base_pos = link_state[0]
+            base_ori = link_state[1]
+
+        self._tcp_translation, self._tcp_rotation = p.multiplyTransforms(
+            *p.invertTransform(base_pos, base_ori), *self.get_tool_pose(tcp_frame))
 
         self._coupled_robot = None
         self._coupling_link = None
+
         self._coupling_constraint = p.createConstraint(self.urdf,
                                                        -1, -1, -1,
                                                        p.JOINT_FIXED,
@@ -59,52 +66,45 @@ class EndeffectorTool:
                                                        None,
                                                        start_orientation)
 
-        if not coupled_robots is None:
-            self.couple(coupled_robots)
+        if coupled_robot is not None:
+            self.couple(coupled_robot)
 
-        if self._connector_id == -1:
-            base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf) 
-        else:
-            link_state = p.getLinkState(self.urdf, self._connector_id)
-            base_pos = link_state[0]
-            base_ori = link_state[1]
-
-        tcp_pos, tcp_ori = self.get_tool_pose(tcp_frame)
-        base_pos_inv, base_ori_inv = p.invertTransform(base_pos, base_ori)
-        self._tcp_translation, self._tcp_rotation = p.multiplyTransforms(base_pos_inv, base_ori_inv, tcp_pos, tcp_ori)
-
-    def couple(self, robot, endeffector_name=None):
+    def couple(self, robot: RobotBase, endeffector_name: str = None):
         """Dynamically Couples the Tool with the Endeffector of a given robot.
         Note that this endeffector can also be a virtual link to connect a sensor.
         A Tool can only be coupled with one robot
 
         Args:
-            robot (wbk_sim.robot): The robot whith which the tool should couple.
-            endeffector_name (str, optional): The endeffector of the robot 
-                                              where the tool should couple to. 
+            robot (pybullet_industrial.RobotBase): The robot whith which the tool should couple.
+            endeffector_name (str, optional): The endeffector of the robot
+                                              where the tool should couple to.
                                               Defaults to None.
 
         Raises:
-            Error: [description]
+            ValueError: If the tool is already coupled.
+            TypeError: if the object to couple is nof of class RobotBase.
         """
-        # creates a fixed constrained between the choosen robot and the tool
         if self._coupled_robot is not None:
-            raise ValueError("The Tool is already coupled with a robot")
+            raise ValueError("The tool is already coupled with a robot")
+        if not isinstance(robot, RobotBase):
+            raise TypeError(
+                "A EndeffectorTool can only couple with a RobotBase object")
+
+        if endeffector_name is None:
+            endeffector_index = robot._default_endeffector_id
         else:
-            if endeffector_name == None:
-                endeffector_index = robot._default_endeffector_id
-            else:
-                endeffector_index = robot._convert_endeffector(
-                    endeffector_name)
-            self._coupled_robot = robot
-            self._coupling_link = endeffector_name
-            p.removeConstraint(self._coupling_constraint)
-            self._coupling_constraint = p.createConstraint(self._coupled_robot.urdf, endeffector_index,
-                                                           self.urdf, self._connector_id,
-                                                           p.JOINT_FIXED,
-                                                           [0, 0, 0],
-                                                           [0, 0, 0],
-                                                           [0, 0, 0])
+
+            endeffector_index = robot._convert_endeffector(
+                endeffector_name)
+        self._coupled_robot = robot
+        self._coupling_link = endeffector_name
+        p.removeConstraint(self._coupling_constraint)
+        self._coupling_constraint = p.createConstraint(self._coupled_robot.urdf, endeffector_index,
+                                                       self.urdf, self._connector_id,
+                                                       p.JOINT_FIXED,
+                                                       [0, 0, 0],
+                                                       [0, 0, 0],
+                                                       [0, 0, 0])
 
     def is_coupled(self):
         """Function which returns true if the Tool is currently coupled to a robot
@@ -118,8 +118,8 @@ class EndeffectorTool:
             return 1
 
     def decouple(self):
-        """Decouples the tool from the current robot. 
-           In this case a new constraint is created rooting the tool in its current pose. 
+        """Decouples the tool from the current robot.
+           In this case a new constraint is created rooting the tool in its current pose.
         """
         self._coupled_robot = None
         self._coupling_link = None
@@ -136,11 +136,11 @@ class EndeffectorTool:
         pass
 
     def get_tool_pose(self, tcp_frame: str = None):
-        """Returns the pose of the tool center point. 
+        """Returns the pose of the tool center point.
            Using the tcp_frame argument the state of other links can also be returned
 
         Args:
-            tcp_frame (str, optional): the name of the link whose pose should be returned. 
+            tcp_frame (str, optional): the name of the link whose pose should be returned.
                                        Defaults to None in which case the default tcp is used
 
         Returns:
@@ -158,22 +158,25 @@ class EndeffectorTool:
         orientation = np.array(link_state[1])
         return position, orientation
 
-    def set_tool_pose(self, target_position, target_orientation=None):
+    def set_tool_pose(self, target_position: np.array, target_orientation: np.array = None):
         """Allows the control of the tool.
            If the tool is coupled the inverse kinematic control of a coupled robot is used.
            If not the tool is moved directly.
 
         Args:
-            target_position (_type_): the desired position of the tool center point (tcp)
-            target_orientation (_type_, optional): the desired position of 
-                                                   the tool center point (tcp). 
-                                                   If none is provided only 
+            target_position (np.array): the desired position of the tool center point (tcp)
+            target_orientation (np.array, optional): the desired position of
+                                                   the tool center point (tcp).
+                                                   If none is provided only
                                                    the position of the robot is controlled.
         """
 
         if self.is_coupled():
-            tcp_translation_inv, tcp_rotation_inv = p.invertTransform(self._tcp_translation, self._tcp_rotation)
-            adj_target_position, adj_target_orientation = p.multiplyTransforms(target_position, target_orientation, tcp_translation_inv, tcp_rotation_inv)
+            tcp_translation_inv, tcp_rotation_inv = p.invertTransform(
+                self._tcp_translation, self._tcp_rotation)
+            adj_target_position, adj_target_orientation = p.multiplyTransforms(
+                target_position, target_orientation, tcp_translation_inv, tcp_rotation_inv)
+
             self._coupled_robot.set_endeffector_pose(
                 adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
         else:
@@ -190,7 +193,38 @@ class EndeffectorTool:
                                                            None,
                                                            target_orientation)
 
-    def _convert_link_to_id(self, tcp):
+    def apply_tcp_force(self, force: np.array, world_coordinates: bool = True):
+        """Function which can apply a external Force at a the next simulation step.
+
+            Carefull, this does not behave as expected for setRealTimeSimulation(1)!
+
+        Args:
+            force (np.array): A 3 dimensional force vector in Newton.
+            world_coordinates (bool, optional): Specify wheter the force is defined
+                                                in the world coordinates or the relative link frame.
+                                                Defaults to True.
+        """
+        if world_coordinates:
+            position, _ = self.get_tool_pose()
+            p.applyExternalForce(self.urdf, self._tcp_id,
+                                 force, position, p.WORLD_FRAME)
+        else:
+            p.applyExternalForce(self.urdf, self._tcp_id,
+                                 force, [0, 0, 0], p.LINK_FRAME)
+
+    def apply_tcp_torque(self, torque: np.array):
+        """Function which can apply a external Torque at a the next simulation step.
+           The local tcp_link frames are used as the main torque axis.
+
+            Carefull, this does not behave as expected for setRealTimeSimulation(1)!
+
+        Args:
+            torque (np.array): A 3 dimensional torque vector in Newtonmeter.
+        """
+        p.applyExternalTorque(self.urdf, self._tcp_id,
+                              torque, p.LINK_FRAME)
+
+    def _convert_link_to_id(self, tcp: str):
         """Internal function that converts between link names and pybullet specific indexes
 
         Args:
@@ -202,44 +236,11 @@ class EndeffectorTool:
         Returns:
             int: the pybullet specific index of the link
         """
-        if isinstance(tcp, str):
-            if tcp in self._link_name_to_index.keys():
-                return self._link_name_to_index[tcp]
-            else:
-                ValueError("Invalid Link name! valid names are: " +
-                           str(self._link_name_to_index.keys()))
-        else:
+        if not isinstance(tcp, str):
             raise TypeError(
                 "The Link name must be a String describing a URDF link")
+        if not tcp in self._link_name_to_index:
+            raise ValueError("Invalid Link name! valid names are: " +
+                             str(self._link_name_to_index.keys()))
 
-
-def quaternion_inverse(quaternion):
-    """Calculates the inverse of a given quaternion
-
-    Args:
-        quaternion (np.array): a quaternion
-
-    Returns:
-        np.array: The inverse quaternion
-    """
-    q = np.array(quaternion, copy=True)
-    np.negative(q[1:], q[1:])
-    return q / np.dot(q, q)
-
-
-def quaternion_multiply(quaternion1, quaternion0):
-    """Multiplies two quaternions. Note that this operation is not commutative
-
-    Args:
-        quaternion1 (np.array): the first quaternion
-        quaternion0 (np.array): the second quaternion
-
-    Returns:
-        np.array: the resulting quaternion
-    """
-    w0, x0, y0, z0 = quaternion0
-    w1, x1, y1, z1 = quaternion1
-    return np.array([
-        -x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0, x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
-        -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0, x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0
-    ])
+        return self._link_name_to_index[tcp]

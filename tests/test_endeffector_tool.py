@@ -8,9 +8,31 @@ import pybullet_industrial as pi
 dirname = os.path.dirname(__file__)
 parentDir = os.path.dirname(dirname)
 urdf_file1 = os.path.join(parentDir, 'examples',
-                          'robot_descriptions', 'comau_NJ290_3-0_m.urdf')
+                          'robot_descriptions', 'comau_nj290_robot.urdf')
 urdf_file2 = os.path.join(parentDir, 'examples',
                           'robot_descriptions', 'milling_head.urdf')
+
+steps = 20
+center_position = [2.5, 0, 1.2]
+test_path = pi.build_box_path(
+    center_position, [1.2, 0.8], 0.01, [0, 0, 0, 1], steps)
+
+orientation_setup = pi.build_box_path([0, 0, 0], [0.3, 0.3], 0.15, [
+                                      0, 0, 0, 1], len(test_path))
+orientation_path = np.zeros((4, len(test_path)))
+for i in range(len(test_path)):
+    test_path.orientations[:, i] = p.getQuaternionFromEuler(
+        orientation_setup.positions[:, i])
+
+
+def spawn_pendulum(start_position):
+    urdf_path = os.path.join(parentDir, 'examples',
+                             'robot_descriptions', 'pendulum.urdf')
+    pendulum = pi.EndeffectorTool(
+        urdf_path, start_position, [0, 0, 0, 1])
+
+    p.resetJointState(pendulum.urdf, 0, targetValue=0.5)
+    return pendulum
 
 
 class TestEndeffectorTool(unittest.TestCase):
@@ -79,16 +101,10 @@ class TestEndeffectorTool(unittest.TestCase):
         milling_head = pi.EndeffectorTool(
             urdf_file2, [1.9, 0, 1.2], start_orientation)
 
-        steps = 20
-        target_position = [2.5, 0, 1.2]
-        test_path = build_lemniscate_path(target_position, steps, 1.2, 0.8)
-        target_orientation = p.getQuaternionFromEuler([0, 0, 0])
-
         pos_precision = 0.02
         ori_precision = 0.004
         within_precision = True
-        for i in range(steps):
-            target_position = test_path[:, i]
+        for target_position, target_orientation, _ in test_path:
             milling_head.set_tool_pose(target_position, target_orientation)
 
             for _ in range(300):
@@ -99,11 +115,8 @@ class TestEndeffectorTool(unittest.TestCase):
             position_error = np.linalg.norm(current_position-target_position)
             orientation_error = np.linalg.norm(
                 current_orientation-target_orientation)
-
-            # discard first values where robot converges with path
-            if i > 2:
-                within_precision = within_precision and (
-                    position_error <= pos_precision) and (orientation_error <= ori_precision)
+            within_precision = within_precision and (
+                position_error <= pos_precision) and (orientation_error <= ori_precision)
         p.disconnect()
         self.assertTrue(within_precision)
 
@@ -117,16 +130,16 @@ class TestEndeffectorTool(unittest.TestCase):
             urdf_file2, [1.9, 0, 1.2], start_orientation)
         milling_head.couple(robot, 'link6')
 
-        steps = 20
-        target_position = [2.5, 0, 1.2]
-        test_path = build_lemniscate_path(target_position, steps, 1.2, 0.8)
-        target_orientation = p.getQuaternionFromEuler([0, 0, 0])
-
         pos_precision = 0.02
-        ori_precision = 0.004
+        ori_precision = 0.006
         within_precision = True
-        for i in range(steps):
-            target_position = test_path[:, i]
+
+        for _ in range(20):
+            milling_head.set_tool_pose(*test_path.get_start_pose())
+            for _ in range(50):
+                p.stepSimulation()
+
+        for target_position, target_orientation, _ in test_path:
             milling_head.set_tool_pose(target_position, target_orientation)
 
             for _ in range(150):
@@ -139,34 +152,50 @@ class TestEndeffectorTool(unittest.TestCase):
                 current_orientation-target_orientation)
 
             # discard first values where robot converges with path
-            if i > 2:
-                within_precision = within_precision and (
-                    position_error <= pos_precision) and (orientation_error <= ori_precision)
+            within_precision = within_precision and (
+                position_error <= pos_precision) and (orientation_error <= ori_precision)
         p.disconnect()
         self.assertTrue(within_precision)
 
+    def test_external_force_setting(self):
+        physics_client = p.connect(p.DIRECT)
+        p.setPhysicsEngineParameter(numSolverIterations=15000)
 
-def build_lemniscate_path(midpoint, steps, height, length):
-    """Function which builds a figure 8 path
+        pendulum1 = spawn_pendulum([0, 0, 0])
+        pendulum2 = spawn_pendulum([0, 0.6, 0])
+        pendulum3 = spawn_pendulum([0, 1.2, 0])
+        pendulum4 = spawn_pendulum([0, 1.8, 0])
 
-    Args:
-        midpoint ([type]): [description]
-        steps ([type]): [description]
-        height ([type]): [description]
-        length ([type]): [description]
+        p.setTimeStep(0.5)
+        steps = 10
+        for _ in range(steps):
+            pendulum1.apply_tcp_force([-10, 0, 20.0], world_coordinates=True)
+            pendulum2.apply_tcp_force([0, 1, 0])
+            pendulum3.apply_tcp_force(
+                [-1, 0, 0.0], world_coordinates=False)
+            pendulum4.apply_tcp_torque([00, 1, 00])
 
-    Returns:
-        [type]: [description]
-    """
-    path = np.zeros((3, steps))
-    path[2, :] = height
-    for i in range(steps):
-        path_state = 1/steps*i*2*np.pi
-        path[0, i] = length * np.cos(path_state) / \
-            (1+np.sin(path_state)**2)+midpoint[0]
-        path[1, i] = length * np.sin(path_state) * np.cos(path_state) / \
-            (1+np.sin(path_state)**2)+midpoint[1]
-    return path
+            p.stepSimulation()
+
+            position1, _ = pendulum1.get_tool_pose()
+            position2, _ = pendulum2.get_tool_pose()
+            pendulum_state3 = p.getLinkState(
+                pendulum3.urdf, 0, computeLinkVelocity=1)
+            pendulum_state4 = p.getLinkState(
+                pendulum4.urdf, 0, computeLinkVelocity=1)
+
+        pendulum1_upgright = position1[2]-0.5 <= 0.001
+
+        init_pendulum_position = np.array([0.23971271, 0.60000369, 0.43879131])
+        pendulum2_unmoved = np.linalg.norm(
+            position2-init_pendulum_position) <= 0.001
+
+        pendulum3_rotating_anti_clockwise = pendulum_state3[7][1] < 0
+        pendulum4_rotating_clockwise = pendulum_state4[7][1] > 0
+
+        p.disconnect()
+        self.assertTrue(pendulum1_upgright and pendulum2_unmoved and
+                        pendulum3_rotating_anti_clockwise and pendulum4_rotating_clockwise)
 
 
 if __name__ == '__main__':

@@ -122,4 +122,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-examples/Objects/Motor - Kopie (2)/004Lid_top.urdf
+
+
+.vscode/
+
+kuka_robot.png
+
+igus.mp4
+

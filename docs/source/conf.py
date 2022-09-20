@@ -10,7 +10,7 @@ import sys
 import os
 import mock
 
-MOCK_MODULES = ['numpy', 'casadi', 'pybullet']
+MOCK_MODULES = ['numpy', 'casadi', 'pybullet', 'scipy']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 
@@ -40,6 +40,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.githubpages',
               'sphinx.ext.napoleon']
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

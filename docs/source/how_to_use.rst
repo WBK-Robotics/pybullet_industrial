@@ -9,6 +9,9 @@ Speaking plainly, this means that robot tools encapsulate the various manufactur
 
 The following sections will dive deeper into the robot and endeffector objects and detail how they can be used to simulate manufacturing scenarios.
 
+
+.. todo:: Descripe how pybullet_industrial is meant to be used in conjunction with pybullet (no end to end functionality)
+
 .. image:: images/robot_tool_overview.svg
     :width: 60%
     :align: center
@@ -22,9 +25,9 @@ Robot objects are one of the main objects in the package. Their main purpose is 
 The pybullet_industrial package provides a class called :class:`RobotBase` that can be used to load a robot from a UDF (universal robot description file) file and interact with it.
 A robot in this case means a robot manipulator, that is to say, a stationary robot with a fixed base and a number of joints that can be actuated.
 
-
+****************
 Joint interfaces
-================
+****************
 
 pybullet_industrial provides interfaces for setting and measuring the state of these joints. The state of a single joint is a dictionary containing the following keys:
 
@@ -33,9 +36,9 @@ pybullet_industrial provides interfaces for setting and measuring the state of t
 - reaction force: the current reaction force of the joint (in Newtons)
 - torque: the current effort of the joint (in Newtons for revolute and in Newtons per meter for prismatic joints)
 
-
+**********************
 Endeffector interfaces
-======================
+**********************
 
 In industrial robotics one often does not care for the joint state of the robot, but rather for the state of the endeffector.
 
@@ -52,8 +55,9 @@ Note that providing the orientation is optional, in this case, the robot assumes
     The first three elements of the tuple are the imaginary part of the quaternion and the last element is the real part.
 
 
+*********************
 Utility functionality
-=====================
+*********************
 
 Apart from the joint and endeffector interfaces, the pybullet_industrial package provides some utility functionality.
 These enable resetting the robot's state and moving the robot to a new position.
@@ -80,9 +84,9 @@ If not specifically provided during initialization, the last frame in the URDF f
 Equally important is the so-called connector frame which is the frame that is used to attach the tool to the robot.
 If not provided the base frame is used in this case.
 
-
+*****************
 Coupling the tool
-=================
+*****************
 
 The most important ability of a tool is to couple to a robot.
 This attaches the connector frame of the tool to the endeffector of the robot.
@@ -97,9 +101,9 @@ The tool will then attach itself to the endeffector of the robot and will be abl
 
 Tools can also be uncoupled from a robot, which will detach the tool and fix it in its current position.
 
-
+***************
 Moving the tool
-===============
+***************
 
 The tool can be moved to a new position and orientation using the :func:`EndeffectorTool.set_tool_pose` function.
 If the tool is not coupled the tool is moved directly to the new position.
@@ -107,9 +111,9 @@ If coupled the inverse kinematics of the attached robot is automatically called 
 The current position and orientation of the tool can be measured using the :func:`EndeffectorTool.get_tool_pose` function.
 The orientation is again given as a quaternion.
 
-
+**************
 Applying force
-==============
+**************
 
 A lot of processes impart a dynamic force unto a tool and therefore a robot.
 The :class:`EndeffectorTool` class, therefore, provides functionality to apply force and torque to the tool center point of the tool.
@@ -221,9 +225,14 @@ The first class, called :class:`Gripper`, simulates finger grippers like the one
 
 The :class:`Gripper` class is initialized with a URDF file that describes the geometry of the gripper.
 It can then be actuated using the :func:`Gripper.actuate` function which takes in an input between 0 and 1.
-0 corresponds to an open gripper and 1 to a closed gripper.
+0 corresponds to a closed gripper and 1 to an open gripper.
 This relative input is then mapped to the joint limits of the gripper. The lower limit corresponds to a closed gripper and the upper limit to an open gripper.
+A illustration using a two finger gripper can be found below:
 
+.. image:: images/finger_gripper.png
+    :width: 80%
+    :align: center
+    :alt: gripper
 
 Suction Gripper
 ===============

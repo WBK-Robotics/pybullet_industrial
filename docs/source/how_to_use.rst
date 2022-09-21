@@ -4,7 +4,7 @@ Using the Package
 
 This page describes the general design of the classes and functions in this package to enable users to use the package to its full potential.  The package is designed to be used in a variety of ways, and the following sections describe the different ways in which the package can be used.
 The aim of pybullet_industrial was to merge the worlds of process simulations and multibody robot simulations by providing a combined solution with reasonable performance in both domains.
-The main robot simulation functionality is provided by a dedicated Robot object called RobotBase, while the process is simulated by a class called EndeffectorTool.
+The main robot simulation functionality is provided by a dedicated Robot object called :class:`RobotBase`, while the process is simulated by a class called :class:`EndeffectorTool`.
 Speaking plainly, this means that robot tools encapsulate the various manufacturing processes.
 
 The following sections will dive deeper into the robot and endeffector objects and detail how they can be used to simulate manufacturing scenarios.
@@ -19,7 +19,7 @@ Robot objects
 #############
 
 Robot objects are one of the main objects in the package. Their main purpose is to load a dynamic robot simulation into a pybullet simulation and provide a set of functions to control the robot and get information about the robot's state.
-The pybullet_industrial package provides a class called RobotBase that can be used to load a robot from a UDF (universal robot description file) file and interact with it.
+The pybullet_industrial package provides a class called :class:`RobotBase` that can be used to load a robot from a UDF (universal robot description file) file and interact with it.
 A robot in this case means a robot manipulator, that is to say, a stationary robot with a fixed base and a number of joints that can be actuated.
 
 ****************
@@ -41,7 +41,7 @@ In industrial robotics one often does not care for the joint state of the robot,
 
 .. warning::
     The endeffector is the part of the robot that is attached to the end of the last joint and that is typically used to interact with the environment.
-    But for the pybullet_industrial package interaction with the environment is handled by the EndeffectorTool class. This means that the endeffector refers in this case to the end of the robot's flange.
+    But for the pybullet_industrial package interaction with the environment is handled by the :class:`EndeffectorTool` class. This means that the endeffector refers in this case to the end of the robot's flange.
 
 The pybullet_industrial package provides interfaces for setting and measuring the state of the endeffector.
 These interfaces make it possible to set the desired position and orientation of the endeffector and to measure the current position and orientation of the endeffector.
@@ -73,7 +73,7 @@ In robotic manufacturing, these processes can be grouped into three main categor
 Each of these process types is supported by a dedicated subclass.
 The Base class still provides a lot of functionality common between all three types.
 
-Like the RobotBase object, the EndeffectorTool is built using a URDF file.
+Like the :class:`RobotBase` object, the :class:`EndeffectorTool` is built using a URDF file.
 This makes it easy to encapsulate the geometric description as well as the kinematic description in a single file.
 Especially important is the tool center point (TCP) frame where all processes take place.
 If not specifically provided during initialization, the last frame in the URDF file is assumed to be the tool center point frame.
@@ -112,7 +112,7 @@ Applying force
 **************
 
 A lot of processes impart a dynamic force unto a tool and therefore a robot.
-The EndeffectorTool class, therefore, provides functionality to apply force and torque to the tool center point of the tool.
+The :class:`EndeffectorTool` class, therefore, provides functionality to apply force and torque to the tool center point of the tool.
 This force or torque vector can either be specified in local TCP coordinates or world coordinates.
 
 
@@ -125,10 +125,10 @@ Adding material
     :alt: additive_manufacturing
 
 
-The Extruder class is used to simulate processes that add material to a part.
+The :class:`Extruder` class is used to simulate processes that add material to a part.
 Examples of such processes include 3d printing, welding, and coating.
 
-The properties of the extruder can be grouped into two categories and are described in the extruder_properties dictionary.
+The properties of the :class:`Extruder` can be grouped into two categories and are described in the extruder_properties dictionary.
 These categories are:
 - The extrusion pattern
 - The material properties
@@ -145,19 +145,19 @@ The cone is defined by the following properties:
     :align: center
     :alt: cone_shape
 
-When calling the extrude function the extruder will randomly sample rays inside the cone area equal to the number of extruded particles.
+When calling the extrude function the :class:`Extruder` will randomly sample rays inside the cone area equal to the number of extruded particles.
 Each ray that hits an object will spawn a particle of the specified material.
-See :ref:`materials_label` for more information about different types of materials and their properties which also have to be supplied to the Extruder.
+See :ref:`materials_label` for more information about different types of materials and their properties which also have to be supplied to the :class:`Extruder`.
 
-Note that the extruder supports dynamic changes of both the extruder pattern as well as the type and properties of materials.
+Note that the :class:`Extruder` supports dynamic changes of both the extruder pattern as well as the type and properties of materials.
 
 
 .. important::
 
-    By default the extruder does not feature any process force model.
+    By default the :class:`Extruder` does not feature any process force model.
     This means that the extrusion process will not apply any force to the tool center point of the tool.
     This is because the extrusion process is typically not a dynamic process.
-    To still employ a process force model, the user can create their own child of the Extruder class and override the calculate_process_force function.
+    To still employ a process force model, the user can create their own child of the :class:`Extruder` class and override the calculate_process_force function.
     This function is called every time the extrusion is called and should return a force vector in world coordinates which is applied to the TCP used for extrusion.
 
 
@@ -175,20 +175,20 @@ pybullet_industrial offers two classes for simulating material removal processes
 *******
 Remover
 *******
-The first class is the Remover class. It is the twin of the Extruder class and uses the same cone shaped raycast.
+The first class is the :class:`Remover` class. It is the twin of the :class:`Extruder` class and uses the same cone shaped raycast.
 But instead of adding material, it removes material from the environment.
-The remover can be used to simulate processes such as lasercutting, sandblasting or similar processes that work at range.
+The :class:`Remover` can be used to simulate processes such as lasercutting, sandblasting or similar processes that work at range.
 
 .. important::
 
-    Like the extruder, the remover does not have a default force model.
-    However like the extruder it is possible to create a child class and override the calculate_process_force function.
+    Like the :class:`Extruder`, the :class:`Remover` does not have a default force model.
+    However like the :class:`Extruder` it is possible to create a child class and override the calculate_process_force function.
 
 *******
 Milling
 *******
 
-For material removal processes that require a tool to be in contact with the workpiece, the Milling class can be used.
+For material removal processes that require a tool to be in contact with the workpiece, the :class:`MillingTool` class can be used.
 The class implements a cutting tool of configurable diameter and number of cutting teeth.
 Each cutting tooth rotates around the z-axis of the tool center point and removes material it touches.
 This removal processes creates a process force that acts on the tool center point.
@@ -203,15 +203,29 @@ For this package the kienzle force model was choosen.
 
 Moving material
 ---------------
+Moving material using a robot is typically achieved using a gripper.
+The pybullet_industrial package provides two classes for simulating grippers.
 
+The first class, called :class:`Gripper`, simulates finger grippers like the one pictured below.
 
+.. image:: images/gripper.png
+    :width: 60%
+    :align: center
+    :alt: gripper
+
+The second class is called :class:`SuctionGripper` and simulates suction grippers like the one pictured below.
+
+.. image:: images/suction_gripper.png
+    :width: 60%
+    :align: center
+    :alt: suction_gripper
 
 Sensing
 -------
 Quality inspection applications often require the use of sensors to measure the state of the workpiece.
-In the design philosophy of pybullet_industrial this can also be modeled as an EndeffectorTool.
-The package provides a simple camera class EndeffectorTool that can be used to simulate a camera.
-Other complex sensors can be implemented similarly by subclassing the EndeffectorTool class.
+In the design philosophy of pybullet_industrial this can also be modeled as an :class:`:class:`EndeffectorTool``.
+The package provides a simple camera class :class:`EndeffectorTool` that can be used to simulate a camera.
+Other complex sensors can be implemented similarly by subclassing the :class:`EndeffectorTool` class.
 
 #########
 Materials
@@ -237,35 +251,35 @@ To spawn particles or groups of particles directly at a given position the spawn
 
 
 #########
-Toolpaths
+ToolPaths
 #########
 
 .. image:: images/path_interpolation.PNG
    :alt: interpolation_example
    :align: center
 
-Since much of the work when setting up a simulation does not involve the actual simulation itself but controlling the robot and specifying its path a Toolpaths class was set up to simplify this process.
-A single toolpath object encapsulates a path for the robot's position, orientation as well as tool activation (that is to say if the tool is active at a given point of the path).
-Using an iterator interface the toolpath can be iterated over to get the next position and orientation of the robot:
+Since much of the work when setting up a simulation does not involve the actual simulation itself but controlling the robot and specifying its path a :class:`ToolPath`s class was set up to simplify this process.
+A single :class:`ToolPath` object encapsulates a path for the robot's position, orientation as well as tool activation (that is to say if the tool is active at a given point of the path).
+Using an iterator interface the :class:`ToolPath` can be iterated over to get the next position and orientation of the robot:
 
 ::
 
-        for position, orientation, tool_active in toolpath:
+        for position, orientation, tool_active in :class:`ToolPath`:
             extruder.set_tool_pose(position, orientation)
             if tool_active:
                 extruder.extrude()
 
-Toolpaths can also be added together as well as easily translated rotated and drawn.
+:class:`ToolPath`s can also be added together as well as easily translated rotated and drawn.
 More information can be found in the code documentation.
 
-Toolpaths can be generated directly from points or several G-code like interpolation functions.
+:class:`ToolPath`s can be generated directly from points or several G-code like interpolation functions.
 A list of which can be found below:
 
 - Linear interpolation
 - Circular interpolation
 - Spline interpolation
 
-Additional functionality such as the build_box_path function can be used to generate more complex toolpaths.
+Additional functionality such as the build_box_path function can be used to generate more complex :class:`ToolPath`s.
 
 
 #####################

@@ -63,7 +63,7 @@ if __name__ == "__main__":
     gripper.couple(robot, 'link6')
 
     start_orientation_sg = p.getQuaternionFromEuler([0, 0, np.pi / 2])
-    suction_gripper = pi.suction_gripper(
+    suction_gripper = pi.SuctionGripper(
         urdf_file4, [-1.9, 0, 5] + start_pos2, start_orientation, suction_links=["tcp"])
 
     suction_gripper.couple(robot2, 'link6')

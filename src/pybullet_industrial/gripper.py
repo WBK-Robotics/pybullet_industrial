@@ -13,15 +13,15 @@ class Gripper(EndeffectorTool):
 
         Args:
             urdf_model (str): A valid path to a urdf file describing the tool geometry
-            start_position ([type]): the position at which the tool should be spawned
-            start_orientation ([type]): the orientation at which the tool should be spawned
-            coupled_robots ([type], optional): A wbk_sim.Robot object if
+            start_position (np.array): the position at which the tool should be spawned
+            start_orientation (np.array): the orientation at which the tool should be spawned
+            coupled_robots (pi.RobotBase, optional): A wbk_sim.Robot object if
                                               the robot is coupled from the start.
                                               Defaults to None.
-            tcp_frame ([type], optional): The name of the urdf_link
+            tcp_frame (str, optional): The name of the urdf_link
                                           describing the tool center point.
                                           Defaults to None in which case the last link is used.
-            connector_frames ([type], optional): The name of the urdf_link
+            connector_frames (str, optional): The name of the urdf_link
                                                 at which a robot connects.
                                                 Defaults to None in which case the base link is used.
         """
@@ -71,7 +71,7 @@ class Gripper(EndeffectorTool):
         """Actuates the gripper.
 
         Args:
-            target([float]): Relative amount of maximum travel distance the gripper should move
+            target(float): Relative amount of maximum travel distance the gripper should move
          """
         for joint_number in self._actuated_joints:
             p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
@@ -88,18 +88,18 @@ class SuctionGripper(EndeffectorTool):
 
         Args:
             urdf_model (str): A valid path to a urdf file describing the tool geometry
-            start_position ([type]): the position at which the tool should be spawned
-            start_orientation ([type]): the orientation at which the tool should be spawned
-            coupled_robots ([type], optional): A wbk_sim.Robot object if
+            start_position (np.array): the position at which the tool should be spawned
+            start_orientation (np.array): the orientation at which the tool should be spawned
+            coupled_robots (pi.RobotBase, optional): A wbk_sim.Robot object if
                                               the robot is coupled from the start.
                                               Defaults to None.
-            tcp_frame ([type], optional): The name of the urdf_link
+            tcp_frame (str, optional): The name of the urdf_link
                                           describing the tool center point.
                                           Defaults to None in which case the last link is used.
-            connector_frames ([type], optional): The name of the urdf_link
+            connector_frames (str, optional): The name of the urdf_link
                                                 at which a robot connects.
                                                 Defaults to None in which case the base link is used.
-            suction_links ([type], optional): The names of the urdf_links wich represent the active suction parts.
+            suction_links (str, optional): The names of the urdf_links wich represent the active suction parts.
                                               Defaults to all Links.
 
         """
@@ -122,43 +122,39 @@ class SuctionGripper(EndeffectorTool):
     def activate(self, tolerance=0.0001):
         """Function to activate the suction gripper--> creates constraints between gripper and object
 
-        :param tolerance: tolerance of contacts, i.e. at which distance the contact point is considered relevant.
-        :returns ids of coupled objects
+        Args:
+            tolerance (float, optional): tolerance of contacts, i.e. at which distance the contact point is considered relevant.
+        Returns:
+            list[int]: ids of coupled objects
         """
         contact_points = list(p.getContactPoints(self.urdf))
-        positionG, orientationG = self.get_tool_pose()
-        invPos, invOrn = p.invertTransform(positionG, orientationG)
+        position_g, orientation_g = self.get_tool_pose()
+        inv_pos, inv_orn = p.invertTransform(position_g, orientation_g)
 
         coupled_bodys = []
 
-        i = 0
-        while i < len(contact_points):
-            if contact_points[i][2] is self.urdf or contact_points[i][2] is self._coupled_robot.urdf or \
-                    contact_points[i][8] > tolerance:
-                del contact_points[i]
-            else:
-                i = i + 1
-
+        for pnt in contact_points:
+            if pnt[2] is self.urdf or pnt[2] is self._coupled_robot.urdf or \
+                    pnt[8] > tolerance:
+                del pnt
+                
         if self._suction_links_ids is not None:
-            i = 0
-            while i < len(contact_points):
-                if contact_points[i][3] not in self._suction_links_ids:
-                    del contact_points[i]
-                else:
-                    i = i + 1
+            for pnt in contact_points:
+                if pnt[3] not in self._suction_links_ids:
+                    del pnt
 
         for cp in contact_points:
             if cp[2] not in coupled_bodys:
                 coupled_bodys.append(cp[2])
 
         for cb in coupled_bodys:
-            positionO, orientationO = p.getBasePositionAndOrientation(cb)
-            restraintPos, restraintOrn = p.multiplyTransforms(invPos, invOrn, positionO, orientationO)
+            position_o, orientation_o = p.getBasePositionAndOrientation(cb)
+            restraint_pos, restraint_orn = p.multiplyTransforms(inv_pos, inv_orn, position_o, orientation_o)
             cid_grip = p.createConstraint(self.urdf, self._tcp_id,
                                           cb, -1,
                                           p.JOINT_FIXED, [0, 0, 0],
-                                          parentFramePosition=restraintPos, childFramePosition=[0, 0, 0],
-                                          parentFrameOrientation=restraintOrn, childFrameOrientation=None)
+                                          parentFramePosition=restraint_pos, childFramePosition=[0, 0, 0],
+                                          parentFrameOrientation=restraint_orn, childFrameOrientation=None)
             self.suction_constraints.append(cid_grip)
         return coupled_bodys
 

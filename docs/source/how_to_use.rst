@@ -22,8 +22,9 @@ Robot objects are one of the main objects in the package. Their main purpose is 
 The pybullet_industrial package provides a class called RobotBase that can be used to load a robot from a UDF (universal robot description file) file and interact with it.
 A robot in this case means a robot manipulator, that is to say, a stationary robot with a fixed base and a number of joints that can be actuated.
 
+****************
 Joint interfaces
-----------------
+****************
 
 pybullet_industrial provides interfaces for setting and measuring the state of these joints. The state of a single joint is a dictionary containing the following keys:
 
@@ -32,8 +33,9 @@ pybullet_industrial provides interfaces for setting and measuring the state of t
 - reaction force: the current reaction force of the joint (in Newtons)
 - torque: the current effort of the joint (in Newtons for revolute and in Newtons per meter for prismatic joints)
 
+**********************
 Endeffector interfaces
-----------------------
+**********************
 
 In industrial robotics one often does not care for the joint state of the robot, but rather for the state of the endeffector.
 
@@ -49,9 +51,9 @@ Note that providing the orientation is optional, in this case, the robot assumes
     The orientation is given as a quaternion, which is a 4-tuple of floats.
     The first three elements of the tuple are the imaginary part of the quaternion and the last element is the real part.
 
-
+*********************
 Utility functionality
----------------------
+*********************
 
 Apart from the joint and endeffector interfaces, the pybullet_industrial package provides some utility functionality.
 These enable resetting the robot's state and moving the robot to a new position.
@@ -62,7 +64,7 @@ Endeffector tools
 #################
 
 The endeffector tool is the main object for simulating processes in the pybullet_industrial package.
-In robotic manufacturing, these processes can be grouped into three categories:
+In robotic manufacturing, these processes can be grouped into three main categories:
 
 - Adding Material (Such as welding, gluing, 3d printing, etc.)
 - Removing Material (Such as milling, drilling, cutting, etc.)
@@ -78,8 +80,9 @@ If not specifically provided during initialization, the last frame in the URDF f
 Equally important is the so-called connector frame which is the frame that is used to attach the tool to the robot.
 If not provided the base frame is used in this case.
 
+*****************
 Coupling the tool
------------------
+*****************
 
 The most important ability of a tool is to couple to a robot.
 This attaches the connector frame of the tool to the endeffector of the robot.
@@ -94,9 +97,9 @@ The tool will then attach itself to the endeffector of the robot and will be abl
 
 Tools can also be uncoupled from a robot, which will detach the tool and fix it in its current position.
 
-
+***************
 Moving the tool
----------------
+***************
 
 The tool can be moved to a new position and orientation using the set_tool_pose function.
 If the tool is not coupled the tool is moved directly to the new position.
@@ -104,16 +107,17 @@ If coupled the inverse kinematics of the attached robot is automatically called 
 The current position and orientation of the tool can be measured using the get_tool_pose function.
 The orientation is again given as a quaternion.
 
+**************
 Applying force
---------------
+**************
 
 A lot of processes impart a dynamic force unto a tool and therefore a robot.
 The EndeffectorTool class, therefore, provides functionality to apply force and torque to the tool center point of the tool.
 This force or torque vector can either be specified in local TCP coordinates or world coordinates.
 
-***************
+
 Adding material
-***************
+---------------
 
 .. image:: images/additive_manufacturing.PNG
     :width: 60%
@@ -132,9 +136,9 @@ These categories are:
 Currently, the extrusion is performed in a cone-shaped pattern.
 The cone is defined by the following properties:
 
-- The opening angle of the cone
-- The length of the cone
-- The number of extruded particles in the cone
+- The opening angle of the cone (opening angle)
+- The length of the cone (maximum distance)
+- The number of extruded particles in the cone (number of rays)
 
 .. image:: images/cone_shape.png
     :width: 60%
@@ -159,17 +163,18 @@ Note that the extruder supports dynamic changes of both the extruder pattern as 
 
 
 
-*****************
+
 Removing material
-*****************
+-----------------
 
 Material removal is one of the most important manufacturing processes.
 Since pybullet is by default a multi body physics simulation, each removal process wil delete a full object.
 In order to accurately simulate material removal a simple voxel engine was added which is  described in the section :ref:`materials_label`
 pybullet_industrial offers two classes for simulating material removal processes.
 
+*******
 Remover
--------
+*******
 The first class is the Remover class. It is the twin of the Extruder class and uses the same cone shaped raycast.
 But instead of adding material, it removes material from the environment.
 The remover can be used to simulate processes such as lasercutting, sandblasting or similar processes that work at range.
@@ -179,8 +184,9 @@ The remover can be used to simulate processes such as lasercutting, sandblasting
     Like the extruder, the remover does not have a default force model.
     However like the extruder it is possible to create a child class and override the calculate_process_force function.
 
+*******
 Milling
--------
+*******
 
 For material removal processes that require a tool to be in contact with the workpiece, the Milling class can be used.
 The class implements a cutting tool of configurable diameter and number of cutting teeth.
@@ -194,13 +200,14 @@ For this package the kienzle force model was choosen.
     Also add a table for parameters of different materials
 
 
-***************
-Moving material
-***************
 
-=======
+Moving material
+---------------
+
+
+
 Sensing
-=======
+-------
 Quality inspection applications often require the use of sensors to measure the state of the workpiece.
 In the design philosophy of pybullet_industrial this can also be modeled as an EndeffectorTool.
 The package provides a simple camera class EndeffectorTool that can be used to simulate a camera.

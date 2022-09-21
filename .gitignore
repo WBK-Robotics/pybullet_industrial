@@ -123,8 +123,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+
 .vscode/
 
 kuka_robot.png
 
 igus.mp4
+

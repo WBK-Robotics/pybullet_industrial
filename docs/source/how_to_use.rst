@@ -264,13 +264,13 @@ This includes their dimensions, mass as well as color.
 The pybullet_industrial package provides a set of predefined materials that can be used to simulate different types of materials.
 These are listed in the table below.
 
-===========             =============================================================================================================================================================================
+===================     =============================================================================================================================================================================
 Name                    Description
-===========             =============================================================================================================================================================================
+===================     =============================================================================================================================================================================
 :class:`Plastic`        simple particles which can be used for additive manufacturing. The particles are infinitely rigid and stick to each other.
 :class:`Paint`          particles that stick to objects and move with them. The Paint particles are purely visible and have neither mass nor a collision mesh
 :class:`MetalVoxel`     A simple voxel particle for cutting and milling simulations
-==========              ==============================================================================================================================================================================
+===================     ==============================================================================================================================================================================
 
 Particles are typically spawned using a pybullet raytrace result since they might not only require positions but also contact information about the body on which they are spawned.
 To spawn particles or groups of particles directly at a given position the :func:`spawn_material_block` function can be used.
@@ -284,7 +284,7 @@ ToolPaths
    :alt: interpolation_example
    :align: center
 
-Since much of the work when setting up a simulation does not involve the actual simulation itself but controlling the robot and specifying its path a :class:`ToolPath`s class was set up to simplify this process.
+Since much of the work when setting up a simulation does not involve the actual simulation itself but controlling the robot and specifying its path a :class:`ToolPath` class was set up to simplify this process.
 A single :class:`ToolPath` object encapsulates a path for the robot's position, orientation as well as tool activation (that is to say if the tool is active at a given point of the path).
 Using an iterator interface the :class:`ToolPath` can be iterated over to get the next position and orientation of the robot:
 
@@ -295,17 +295,17 @@ Using an iterator interface the :class:`ToolPath` can be iterated over to get th
             if tool_active:
                 extruder.extrude()
 
-:class:`ToolPath`s can also be added together as well as easily translated rotated and drawn.
+:class:`ToolPath` objects can also be added together as well as easily translated rotated and drawn.
 More information can be found in the code documentation.
 
-:class:`ToolPath`s can be generated directly from points or several G-code like interpolation functions.
+A :class:`ToolPath` can be generated directly from points or several G-code like interpolation functions.
 A list of which can be found below:
 
 - Linear interpolation :func:`linear_interpolation`
 - Circular interpolation :func:`circular_interpolation`
 - Spline interpolation :func:`spline_interpolation`
 
-Additional functionality such as the build_box_path function can be used to generate more complex :class:`ToolPath`s.
+Additional functionality such as the build_box_path function can be used to generate more complex :class:`ToolPath` objects.
 
 
 #####################

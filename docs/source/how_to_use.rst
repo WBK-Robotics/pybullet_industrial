@@ -210,6 +210,10 @@ For this package the kienzle force model was choosen.
 Moving material
 ***************
 
+.. images:: images/move_material.PNG
+    :width: 100%
+    :align: center
+    :alt: move_material
 
 Moving material using a robot is typically achieved using a gripper.
 The pybullet_industrial package provides two classes for simulating grippers.

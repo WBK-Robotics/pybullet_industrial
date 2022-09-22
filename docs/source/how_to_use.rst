@@ -14,9 +14,9 @@ The following sections will dive deeper into the robot and endeffector objects a
     :align: center
     :alt: robot_tool_overview
 
-Note that the pybullet_industrial package is meant to be used in conjucntion with pybullet.
+Note that the pybullet_industrial package is meant to be used in conjunction with pybullet.
 Its objects are designed to be used within pybullet's simulation loop, and the package is not meant to be used as a standalone simulation package.
-A example of how to use the package can be found in the `examples`_ folder and is repeated below:
+An example of how to use the package can be found in the `examples`_ folder and is repeated below:
 
 .. literalinclude:: ../../examples/orientation_ctr.py
    :language: python
@@ -41,10 +41,10 @@ Joint interfaces
 
 pybullet_industrial provides interfaces for setting and measuring the state of these joints. The state of a single joint is a dictionary containing the following keys:
 
-- position: the current position of the joint (in radians for revolute and in meters for prismatic joints)
-- velocity: the current velocity of the joint (in radians per second for revolute and in meters per second for prismatic joints)
+- position: the current position of the joint (in radians for revolute and meters for prismatic joints)
+- velocity: the current velocity of the joint (in radians per second for revolute and meters per second for prismatic joints)
 - reaction force: the current reaction force of the joint (in Newtons)
-- torque: the current effort of the joint (in Newtons for revolute and in Newtons per meter for prismatic joints)
+- torque: the current effort of the joint (in Newtons for revolute and Newtons per meter for prismatic joints)
 
 **********************
 Endeffector interfaces
@@ -106,7 +106,7 @@ The tool will then attach itself to the endeffector of the robot and will be abl
 .. important::
     The coupling is performed by creating a dynamic constraint between both bodies.
     This can sometimes cause problems where the solver has trouble converging resulting in the robot and the tool moving apart.
-    This happens espescially if the tool is pressing against another object.
+    This happens especially if the tool is pressing against another object.
     To prevent this from happening, the pybullet simulations number of solver iterations can be increased using the 'p.setPhysicsEngineParameter(numSolverIterations=5000)' function.
     In practice values above 5000 seem to result in satisfactory behavior.
 
@@ -181,7 +181,7 @@ Note that the :class:`Extruder` supports dynamic changes of both the extruder pa
 
     By default the :class:`Extruder` does not feature any process force model.
     This means that the extrusion process will not apply any force to the tool center point of the tool.
-    This is because the extrusion process is typically not a dynamic process.
+    This is because the extrusion process is typically not dynamic.
     To still employ a process force model, the user can create their own child of the :class:`Extruder` class and override the :func:`Extruder.calculate_process_force` function.
     This function is called every time the :func:`Extruder.extrude` function is called and should return a force vector in world coordinates which is automatically applied to the TCP used for extrusion.
 
@@ -193,17 +193,17 @@ Removing material
 *****************
 
 Material removal is one of the most important manufacturing processes.
-Since pybullet is by default a multi body physics simulation, each removal process wil delete a full object.
-In order to accurately simulate material removal a simple voxel engine was added which is  described in the section :ref:`materials_label`
+Since pybullet is by default a multi-body physics simulation, each removal process will delete a full object.
+To accurately simulate material removal a simple voxel engine was added which is  described in the section :ref:`materials_label`
 pybullet_industrial offers two classes for simulating material removal processes.
 
 
 Remover
 =======
 
-The first class is the :class:`Remover` class. It is the twin of the :class:`Extruder` class and uses the same cone shaped raycast.
+The first class is the :class:`Remover` class. It is the twin of the :class:`Extruder` class and uses the same cone-shaped raycast.
 But instead of adding material, it removes material from the environment.
-The :class:`Remover` can be used to simulate processes such as lasercutting, sandblasting or similar processes that work at range.
+The :class:`Remover` can be used to simulate processes such as laser cutting, sandblasting, or similar processes that work at range.
 
 .. important::
 
@@ -216,10 +216,10 @@ Milling
 
 For material removal processes that require a tool to be in contact with the workpiece, the :class:`MillingTool` class can be used.
 The class implements a cutting tool of configurable diameter and number of cutting teeth.
-Each cutting tooth rotates around the z-axis of the tool center point and removes material it touches.
-This removal processes creates a process force that acts on the tool center point.
+Each cutting tooth rotates around the z-axis of the tool center point and removes the material it touches.
+This removal process creates a process force that acts on the tool center point.
 
-For this package the kienzle force model was choosen whose formualtion can be seen down below
+For this package, the Kienzle force model was chosen whose formulation can be seen down below
 
 
 .. image:: images/cutting_force.png
@@ -227,10 +227,11 @@ For this package the kienzle force model was choosen whose formualtion can be se
     :align: center
     :alt: cutting_force
 
-Here the chip thickness exponent as well as the material specific force are dependent on the material being cut.
-For the purposes of this library these parameters are stored in the `milling_properties` dictionary of the :class:`MillingTool` class.
+Here the chip thickness exponent, as well as the material specific force, are dependent on the material being cut.
+For this library these parameters are stored in the `milling_properties` dictionary of the :class:`MillingTool` class.
 This means that people have to change these values manually in the tool when switching between materials.
 
+.. TODO:: what are the default settings and what do they correspond to?
 
 
 ***************
@@ -255,10 +256,10 @@ The first class, called :class:`Gripper`, simulates finger grippers like the one
     :alt: gripper
 
 The :class:`Gripper` class is initialized with a URDF file that describes the geometry of the gripper.
-It can then be actuated using the :func:`Gripper.actuate` function which takes in an input between 0 and 1.
+It can then be actuated using the :func:`Gripper.actuate` function which takes in input between 0 and 1.
 0 corresponds to a closed gripper and 1 to an open gripper.
 This relative input is then mapped to the joint limits of the gripper. The lower limit corresponds to a closed gripper and the upper limit to an open gripper.
-A illustration using a two finger gripper can be found below:
+An illustration using a two-finger gripper can be found below:
 
 .. image:: images/finger_gripper.png
     :width: 80%
@@ -303,7 +304,7 @@ Name                    Description
 :class:`MetalVoxel`     A simple voxel particle for cutting and milling simulations
 ===================     ==============================================================================================================================================================================
 
-Particles are typically spawned using a pybullet raytrace result since they might not only require positions but also contact information about the body on which they are spawned.
+Particles are typically spawned using a pybullet raycast result since they might not only require positions but also contact information about the body on which they are spawned.
 To spawn particles or groups of particles directly at a given position the :func:`spawn_material_block` function can be used.
 
 
@@ -329,7 +330,7 @@ Using an iterator interface the :class:`ToolPath` can be iterated over to get th
 :class:`ToolPath` objects can also be added together as well as easily translated rotated and drawn.
 More information can be found in the code documentation.
 
-A :class:`ToolPath` can be generated directly from points or several G-code like interpolation functions.
+A :class:`ToolPath` can be generated directly from points or several G-code-like interpolation functions.
 A list of which can be found below:
 
 - Linear interpolation :func:`linear_interpolation`

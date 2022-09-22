@@ -31,4 +31,4 @@ The source version is the most up-to-date version of the library. It is recommen
     cd pybullet_industrial
     pip install src/
 
-.. note:: If you ar on windwoes, you may need to use the command ``pip install src\\`` instead.
+.. note:: If you are on windows, you may need to use the command ``pip install src\\`` instead.

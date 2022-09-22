@@ -24,8 +24,6 @@ A example of how to use the package can be found in the `examples`_ folder and i
 
 
 
-.. todo:: Descripe how pybullet_industrial is meant to be used in conjunction with pybullet (no end to end functionality) Show sample simulation as a guideline.
-
 
 
 
@@ -105,6 +103,15 @@ This attaches the connector frame of the tool to the endeffector of the robot.
 This is done by providing the robot object to the :func:`EndeffectorTool.couple` function of the tool.
 The tool will then attach itself to the endeffector of the robot and will be able to interact with the robot object.
 
+.. important::
+    The coupling is performed by creating a dynamic constraint between both bodies.
+    This can sometimes cause problems where the solver has trouble converging resulting in the robot and the tool moving apart.
+    This happens espescially if the tool is pressing against another object.
+    To prevent this from happening, the pybullet simulations number of solver iterations can be increased using the 'p.setPhysicsEngineParameter(numSolverIterations=5000)' function.
+    In practice values above 5000 seem to result in satisfactory behavior.
+
+
+
 .. warning::
     The coupling immediately moves the tool to the endeffector of the robot.
     During the runtime of the simulation, this can impart significant momentum to the robot, which can lead to unexpected behavior.
@@ -114,7 +121,6 @@ The tool will then attach itself to the endeffector of the robot and will be abl
 Tools can also be uncoupled from a robot, which will detach the tool and fix it in its current position.
 
 
-.. TODO:: Add talk about how the coupling is achieved using a constraint,  Aslo talk about number of solver iterations for smooth tool coupling.
 
 ***************
 Moving the tool
@@ -299,7 +305,7 @@ To spawn particles or groups of particles directly at a given position the :func
 ToolPaths
 #########
 
-.. image:: images/path_interpolation.PNG
+.. image:: images/robot_paths.PNG
    :alt: interpolation_example
    :align: center
 

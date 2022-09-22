@@ -1,6 +1,10 @@
 Getting started
 ***************
 
+.. image:: logo.png
+    :width: 80%
+    :align: center
+    :alt: pybullet_industrial_logo
 
 There are two ways to get started with the library. The first is to use the newest source version from the repository.
 The second is to use the latest release version from pip. The source version is the most up-to-date, but it is also the most unstable.

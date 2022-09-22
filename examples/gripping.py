@@ -5,6 +5,7 @@ import pybullet as p
 import pybullet_data
 import pybullet_industrial as pi
 
+
 def move_along_path(endeffector: pi.EndeffectorTool, path: pi.ToolPath, stop=False):
     """Moving a designated endeffector along the provided path.
     Args:
@@ -33,13 +34,16 @@ if __name__ == "__main__":
     urdf_file3 = os.path.join(dirname,
                               'robot_descriptions', 'cube_small.urdf')
 
-    physics_client = p.connect(p.GUI)
+    physics_client = p.connect(p.GUI, options='--background_color_red=1 ' +
+                                              '--background_color_green=1 ' +
+                                              '--background_color_blue=1')
+    p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
     p.setPhysicsEngineParameter(numSolverIterations=10000)
 
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
     fofa_path = os.path.join(dirname,
-                            'Objects', 'FoFa', 'FoFa.urdf')
+                             'Objects', 'FoFa', 'FoFa.urdf')
     p.loadURDF(fofa_path, useFixedBase=True, globalScaling=0.001)
 
     p.setGravity(0, 0, -10)
@@ -50,8 +54,10 @@ if __name__ == "__main__":
     start_pos2 = np.array([6.25, -6.5, 0])
     start_orientation2 = p.getQuaternionFromEuler([0, 0, np.pi])
     robot2 = pi.RobotBase(urdf_file1, start_pos2, start_orientation2)
-    robot.set_joint_position({'q2': np.deg2rad(-15.0),'q3': np.deg2rad(-90.0)})
-    robot2.set_joint_position({'q2': np.deg2rad(-15.0), 'q3': np.deg2rad(-90.0)})
+    robot.set_joint_position(
+        {'q2': np.deg2rad(-15.0), 'q3': np.deg2rad(-90.0)})
+    robot2.set_joint_position(
+        {'q2': np.deg2rad(-15.0), 'q3': np.deg2rad(-90.0)})
     for _ in range(100):
         p.stepSimulation()
 
@@ -97,11 +103,13 @@ if __name__ == "__main__":
     while True:
         path = pi.linear_interpolation(np.array(safepoint1),
                                        np.array(grippoint1_2), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_gr] * len(path.orientations[0]))
         move_along_path(gripper, path, start_orientation_gr)
         path = pi.linear_interpolation(
             np.array(grippoint1_2), np.array(grippoint1), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_gr] * len(path.orientations[0]))
         move_along_path(gripper, path)
         for _ in range(25):
             p.stepSimulation()
@@ -111,12 +119,14 @@ if __name__ == "__main__":
             p.stepSimulation()
             time.sleep(0.01)
         path = pi.linear_interpolation(np.array(grippoint1),
-                                 np.array(grippoint1_2), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+                                       np.array(grippoint1_2), 10)
+        path.orientations = np.transpose(
+            [start_orientation_gr] * len(path.orientations[0]))
         move_along_path(gripper, path)
         path = pi.linear_interpolation(
             np.array(grippoint1_2), np.array(droppoint1), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_gr] * len(path.orientations[0]))
         move_along_path(gripper, path)
         for _ in range(25):
             p.stepSimulation()
@@ -126,17 +136,20 @@ if __name__ == "__main__":
             p.stepSimulation()
             time.sleep(0.01)
         path = pi.linear_interpolation(np.array(droppoint1),
-                                 np.array(safepoint1), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+                                       np.array(safepoint1), 10)
+        path.orientations = np.transpose(
+            [start_orientation_gr] * len(path.orientations[0]))
         move_along_path(gripper, path)
 
         path = pi.linear_interpolation(np.array(safepoint2),
-                                 np.array(grippoint2_2), 10)
-        path.orientations = np.transpose([start_orientation_sg] * len(path.orientations[0]))
+                                       np.array(grippoint2_2), 10)
+        path.orientations = np.transpose(
+            [start_orientation_sg] * len(path.orientations[0]))
         move_along_path(suction_gripper, path, start_orientation_sg)
         path = pi.linear_interpolation(
             np.array(grippoint2_2), np.array(grippoint2), 10)
-        path.orientations = np.transpose([start_orientation_sg] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_sg] * len(path.orientations[0]))
         move_along_path(suction_gripper, path)
         for _ in range(25):
             p.stepSimulation()
@@ -146,12 +159,14 @@ if __name__ == "__main__":
             p.stepSimulation()
             time.sleep(0.01)
         path = pi.linear_interpolation(np.array(grippoint2),
-                                 np.array(grippoint2_2), 10)
-        path.orientations = np.transpose([start_orientation_sg] * len(path.orientations[0]))
+                                       np.array(grippoint2_2), 10)
+        path.orientations = np.transpose(
+            [start_orientation_sg] * len(path.orientations[0]))
         move_along_path(suction_gripper, path)
         path = pi.linear_interpolation(
             np.array(grippoint2_2), np.array(droppoint2), 10)
-        path.orientations = np.transpose([start_orientation_sg] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_sg] * len(path.orientations[0]))
         move_along_path(suction_gripper, path)
         for _ in range(25):
             p.stepSimulation()
@@ -161,6 +176,7 @@ if __name__ == "__main__":
             p.stepSimulation()
             time.sleep(0.01)
         path = pi.linear_interpolation(np.array(droppoint2),
-                                 np.array(safepoint2), 10)
-        path.orientations = np.transpose([start_orientation_sg] * len(path.orientations[0]))
+                                       np.array(safepoint2), 10)
+        path.orientations = np.transpose(
+            [start_orientation_sg] * len(path.orientations[0]))
         move_along_path(suction_gripper, path)

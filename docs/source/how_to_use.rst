@@ -219,11 +219,17 @@ The class implements a cutting tool of configurable diameter and number of cutti
 Each cutting tooth rotates around the z-axis of the tool center point and removes material it touches.
 This removal processes creates a process force that acts on the tool center point.
 
-For this package the kienzle force model was choosen.
+For this package the kienzle force model was choosen whose formualtion can be seen down below
 
-.. todo::
-    Add a link to the kienzle force model and explain it.
-    Also add a table for parameters of different materials
+
+.. image:: images/cutting_force.png
+    :width: 80%
+    :align: center
+    :alt: cutting_force
+
+Here the chip thickness exponent as well as the material specific force are dependent on the material being cut.
+For the purposes of this library these parameters are stored in the `milling_properties` dictionary of the :class:`MillingTool` class.
+This means that people have to change these values manually in the tool when switching between materials.
 
 
 

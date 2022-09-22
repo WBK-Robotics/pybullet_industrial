@@ -9,14 +9,25 @@ Speaking plainly, this means that robot tools encapsulate the various manufactur
 
 The following sections will dive deeper into the robot and endeffector objects and detail how they can be used to simulate manufacturing scenarios.
 
-
-.. todo:: Descripe how pybullet_industrial is meant to be used in conjunction with pybullet (no end to end functionality) Aslo talk about number of solver iterations for smooth tool coupling. Show sample simulation as a guideline.
-
-
 .. image:: images/robot_tool_overview.svg
     :width: 60%
     :align: center
     :alt: robot_tool_overview
+
+Note that the pybullet_industrial package is meant to be used in conjucntion with pybullet.
+Its objects are designed to be used within pybullet's simulation loop, and the package is not meant to be used as a standalone simulation package.
+A example of how to use the package can be found in the `examples`_ folder and is repeated below:
+
+.. literalinclude:: ../../examples/orientation_ctr.py
+   :language: python
+   :linenos:
+
+
+
+.. todo:: Descripe how pybullet_industrial is meant to be used in conjunction with pybullet (no end to end functionality) Show sample simulation as a guideline.
+
+
+
 
 #############
 Robot objects
@@ -103,7 +114,7 @@ The tool will then attach itself to the endeffector of the robot and will be abl
 Tools can also be uncoupled from a robot, which will detach the tool and fix it in its current position.
 
 
-.. TODO:: Add talk about how the coupling is achieved using a constraint
+.. TODO:: Add talk about how the coupling is achieved using a constraint,  Aslo talk about number of solver iterations for smooth tool coupling.
 
 ***************
 Moving the tool
@@ -214,7 +225,7 @@ For this package the kienzle force model was choosen.
 Moving material
 ***************
 
-.. images:: images/move_material.PNG
+.. image:: images/move_material.PNG
     :width: 100%
     :align: center
     :alt: move_material

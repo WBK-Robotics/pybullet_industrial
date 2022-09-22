@@ -3,8 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+
+
+
 Welcome to pybullet industrial's documentation!
 ===============================================
+
+.. image:: logo.png
+    :width: 80%
+    :align: center
+    :alt: robot_tool_overview
 
 Pybullet_industrial package combining the world of classical robot simulations with the world of industrial processes.
 The library is capable of simulating different manufacturing tools and workpieces, as well as the robot itself.

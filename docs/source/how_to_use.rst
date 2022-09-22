@@ -9,8 +9,8 @@ Speaking plainly, this means that robot tools encapsulate the various manufactur
 
 The following sections will dive deeper into the robot and endeffector objects and detail how they can be used to simulate manufacturing scenarios.
 
-.. image:: images/robot_tool_overview.svg
-    :width: 60%
+.. image:: images/pybullet_industrial_overview.png
+    :width: 100%
     :align: center
     :alt: robot_tool_overview
 

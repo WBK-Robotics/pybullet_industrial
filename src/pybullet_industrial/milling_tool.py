@@ -180,7 +180,7 @@ class MillingTool(pi.EndeffectorTool):
             np.array: an array of the force that is applied to the cutting tool at the tcp
         """
         h = cutting_speed / \
-            (self.properties['rotation speed'] * self.properties['diameter'])
+            (self.properties['rotation speed'] * self.properties['number of teeth'])
         k_c = self.properties['material_specific_force'] / \
             (h ** self.properties['chip_thickness_exponent'])
 

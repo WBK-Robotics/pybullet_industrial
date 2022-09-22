@@ -302,7 +302,7 @@ Name                    Description
 :class:`Plastic`        simple particles which can be used for additive manufacturing. The particles are infinitely rigid and stick to each other.
 :class:`Paint`          particles that stick to objects and move with them. The Paint particles are purely visible and have neither mass nor a collision mesh
 :class:`MetalVoxel`     A simple voxel particle for cutting and milling simulations
-===================     ==============================================================================================================================================================================
+===================     =============================================================================================================================================================================
 
 Particles are typically spawned using a pybullet raycast result since they might not only require positions but also contact information about the body on which they are spawned.
 To spawn particles or groups of particles directly at a given position the :func:`spawn_material_block` function can be used.

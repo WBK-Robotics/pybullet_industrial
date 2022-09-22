@@ -10,7 +10,8 @@ Speaking plainly, this means that robot tools encapsulate the various manufactur
 The following sections will dive deeper into the robot and endeffector objects and detail how they can be used to simulate manufacturing scenarios.
 
 
-.. todo:: Descripe how pybullet_industrial is meant to be used in conjunction with pybullet (no end to end functionality)
+.. todo:: Descripe how pybullet_industrial is meant to be used in conjunction with pybullet (no end to end functionality) Aslo talk about number of solver iterations for smooth tool coupling. Show sample simulation as a guideline.
+
 
 .. image:: images/robot_tool_overview.svg
     :width: 60%
@@ -100,6 +101,9 @@ The tool will then attach itself to the endeffector of the robot and will be abl
     The last option is the only possible way to dynamically switch tools in the real world anyway.
 
 Tools can also be uncoupled from a robot, which will detach the tool and fix it in its current position.
+
+
+.. TODO:: Add talk about how the coupling is achieved using a constraint
 
 ***************
 Moving the tool

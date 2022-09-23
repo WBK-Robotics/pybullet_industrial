@@ -192,6 +192,11 @@ Note that the :class:`Extruder` supports dynamic changes of both the extruder pa
 Removing material
 *****************
 
+.. image:: images/milling.png
+    :width: 80%
+    :align: center
+    :alt: milling
+
 Material removal is one of the most important manufacturing processes.
 Since pybullet is by default a multi-body physics simulation, each removal process will delete a full object.
 To accurately simulate material removal a simple voxel engine was added which is  described in the section :ref:`materials_label`

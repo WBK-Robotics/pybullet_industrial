@@ -157,7 +157,8 @@ class MillingTool(pi.EndeffectorTool):
         position, orientation = self.get_tool_pose(tcp_frame)
         ray_cast_results = self.cast_rays(position, orientation, debug)
 
-        cutting_force = self.calculate_process_force(ray_cast_results, tcp_frame)
+        cutting_force = self.calculate_process_force(
+            ray_cast_results, tcp_frame)
         self.apply_tcp_force(cutting_force, tcp_frame)
 
         self.current_angle = self.current_angle + \
@@ -180,7 +181,8 @@ class MillingTool(pi.EndeffectorTool):
             np.array: an array of the force that is applied to the cutting tool at the tcp
         """
         h = cutting_speed / \
-            (self.properties['rotation speed'] * self.properties['number of teeth'])
+            (self.properties['rotation speed'] *
+             self.properties['number of teeth'])
         k_c = self.properties['material_specific_force'] / \
             (h ** self.properties['chip_thickness_exponent'])
 

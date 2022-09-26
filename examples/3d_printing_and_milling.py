@@ -17,11 +17,9 @@ if __name__ == "__main__":
     p.setPhysicsEngineParameter(numSolverIterations=5000)
 
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    monastryId = p.createCollisionShape(p.GEOM_MESH,
-                                        fileName="samurai_monastry.obj",
-                                        flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-    orn = p.getQuaternionFromEuler([1.5707963, 0, 0])
-    p.createMultiBody(0, monastryId, baseOrientation=orn)
+    fofa_path = os.path.join(dirname,
+                             'Objects', 'FoFa', 'FoFa.urdf')
+    p.loadURDF(fofa_path, [-4, 5, 0], useFixedBase=True, globalScaling=0.001)
 
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)

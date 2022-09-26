@@ -39,12 +39,12 @@ if __name__ == "__main__":
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=5000)
 
+
+    fofa_path = os.path.join(dirname,
+                             'Objects', 'FoFa', 'FoFa.urdf')
+    p.loadURDF(fofa_path, [-4, 5, 0], useFixedBase=True, globalScaling=0.001)
+
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    monastryId = p.createCollisionShape(p.GEOM_MESH,
-                                        fileName="samurai_monastry.obj",
-                                        flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-    orn = p.getQuaternionFromEuler([1.5707963, 0, 0])
-    p.createMultiBody(0, monastryId, baseOrientation=orn)
     p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=True)
 
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])

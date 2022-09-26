@@ -61,32 +61,38 @@ if __name__ == "__main__":
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=5000)
 
-    orn = p.getQuaternionFromEuler([1.5707963, 0, 0])
+    fofa_path = os.path.join(dirname,
+                             'Objects', 'FoFa', 'FoFa.urdf')
+    p.loadURDF(fofa_path, [-4, 5, 0], useFixedBase=True, globalScaling=0.001)
 
     height = 0.53
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
-    robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
-    robot2 = pi.RobotBase(
-        urdf_file1, [0, 2, 0], start_orientation=p.getQuaternionFromEuler([0, 0, 0]))
-
+    robot = pi.RobotBase(urdf_file1, [-1, -2, 0], start_orientation)
     remover_properties = {'maximum distance': height-0.505,
                           'opening angle': 0,
                           'number of rays': 1}
     remover = pi.Remover(
         urdf_file2, [2, 0, 2], start_orientation, remover_properties)
-
-    remover2 = pi.Remover(
-        urdf_file2, [2, 0, 2], start_orientation, remover_properties)
-
     remover.couple(robot, 'link6')
-    remover2.couple(robot2, 'link6')
 
-    pi.spawn_material_block([1.5, -1, 0], [1, 2, 0.5], pi.MetalVoxel,
+    robot2 = pi.RobotBase(
+        urdf_file1, [-1, 2, 0], start_orientation=p.getQuaternionFromEuler([0, 0, 0]))
+    extruder_properties = {'maximum distance': 0.7,
+                           'opening angle': np.pi/2,
+                           'material': pi.Paint,
+                           'number of rays': 6,
+                           'material properties': {'particle size': 0.015,
+                                                   'color': [0, 0, 1, 1]}}
+    extruder = pi.Extruder(
+        urdf_file2, [1.9, 0, 1.2], [0, 0, 0, 1], extruder_properties)
+    extruder.couple(robot2, 'link6')
+
+    pi.spawn_material_block([0.5, -1, 0], [1, 2, 0.5], pi.MetalVoxel,
                             {'particle size': 0.5, 'color': [0, 1, 0.415686, 1]})
 
-    pi.spawn_material_block([1.5, -1, 0.5], [1, 2, height-0.5], pi.MetalVoxel,
+    pi.spawn_material_block([0.5, -1, 0.5], [1, 2, height-0.5], pi.MetalVoxel,
                             {'particle size': (height-0.5), 'color': [1, 1, 1, 1]})
 
     path_list = []
@@ -95,12 +101,16 @@ if __name__ == "__main__":
     #    path_list.append(sub_path)
 
     w_path = build_path(w_x, w_y, 15)
+    w_path.translate([-1, 0, 0])
     w_path.draw()
     b_outer_path = build_path(b_outer_x, b_outer_y, 8)
+    b_outer_path.translate([-1, 0, 0.1])
     b_outer_path.draw()
     b_inner_path = build_path(b_inner_x, b_inner_y, 2)
+    b_inner_path.translate([-1, 0, 0.1])
     b_inner_path.draw()
     k_path = build_path(k_x, k_y, 15)
+    k_path.translate([-1, 0, 0])
     k_path.draw()
 
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
@@ -108,14 +118,18 @@ if __name__ == "__main__":
     #path_list += (w_path, b_outer_path, b_inner_path, k_path)
     path_list = [w_path, b_outer_path]
 
-    for _ in range(40):
+    for _ in range(20):
         remover.set_tool_pose(*path_list[0].get_start_pose())
-        remover2.set_tool_pose(*path_list[1].get_start_pose())
+        extruder.set_tool_pose(*path_list[1].get_start_pose())
         for _ in range(100):
             p.stepSimulation()
 
-    for position, orientation, tool_path in path_list[0]:
-        remover.set_tool_pose(position, orientation)
+    upper_orientation = [0, 0, 0, 1]
+    for i in range(max(len(path_list[0]), len(path_list[1]))):
+        print(path_list[0].positions[:, i])
+        remover.set_tool_pose(path_list[0].positions[:, i], upper_orientation)
+        extruder.set_tool_pose(path_list[1].positions[:, i], upper_orientation)
         for _ in range(50):
             p.stepSimulation()
         remover.remove()
+        extruder.extrude()

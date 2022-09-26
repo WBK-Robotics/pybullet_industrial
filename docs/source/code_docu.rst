@@ -29,6 +29,10 @@ Code Documentation
    :members:
    :undoc-members:
 
+.. automodule:: pybullet_industrial.milling_tool
+   :members:
+   :undoc-members:
+
 .. automodule:: pybullet_industrial.sensors
    :members:
    :undoc-members:

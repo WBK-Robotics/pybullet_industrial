@@ -48,6 +48,20 @@ class Extruder(RayCaster):
 
         self.change_properties(extruder_properties)
 
+    def calculate_process_force(self, ray_cast_results, tcp_frame=None):
+        """Function calculating the process force of the milling tool.
+
+        Args:
+            ray_cast_results (list): The result of a batch ray cast
+                                       as performed by the remove function
+            tcp_frame (str): The name of the tool center point frame. Defaults to None.
+
+        Returns:
+            np.array: a 3 dimensional array containing the process force in the x,y,z direction
+        """
+
+        return np.zeros(3)
+
     def extrude(self, tcp_frame: str = None):
         """Extrudes material from the specified tcp_frame.
 
@@ -57,6 +71,10 @@ class Extruder(RayCaster):
         """
         position, orientation = self.get_tool_pose(tcp_frame)
         ray_cast_results = self.cast_rays(position, orientation)
+
+        process_force = self.calculate_process_force(
+            ray_cast_results, tcp_frame)
+        self.apply_tcp_force(process_force, tcp_frame)
 
         particle_list = []
         for ray_intersection in ray_cast_results:

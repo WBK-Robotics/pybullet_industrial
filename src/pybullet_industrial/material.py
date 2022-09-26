@@ -1,7 +1,7 @@
 from typing import Dict
 
-import pybullet as p
 import numpy as np
+import pybullet as p
 
 
 class Particle():
@@ -9,9 +9,9 @@ class Particle():
         """A template class for material particles extruded by a extruder endeffector tool
 
         Args:
-            ray_cast_result (list): The result of a pybullet ray_cast 
-                                    as performed by the Extruder class. 
-                                    It is made up of: [objectUniqueId, 
+            ray_cast_result (list): The result of a pybullet ray_cast
+                                    as performed by the Extruder class.
+                                    It is made up of: [objectUniqueId,
                                                        linkIndex,
                                                        hit fraction,
                                                        hit position,
@@ -59,7 +59,7 @@ class Plastic(Particle):
         Args:
             ray_cast_result (list): The result of a pybullet ray_cast
                                     as performed by the Extruder class.
-                                    It is made up of: [objectUniqueId, 
+                                    It is made up of: [objectUniqueId,
                                                        linkIndex,
                                                        hit fraction,
                                                        hit position,
@@ -87,8 +87,8 @@ class Plastic(Particle):
         """Returns the position of a particle in the world frame
 
         Returns:
-            [float,float,float]: The three dimensional position of the particle 
-                                 in the world coordinate system 
+            [float,float,float]: The three dimensional position of the particle
+                                 in the world coordinate system
         """
         position, _ = p.getBasePositionAndOrientation(self.particle_id)
         return position
@@ -170,8 +170,8 @@ class Paint(Particle):
         """Returns the position of a particle in the world frame
 
         Returns:
-            [float,float,float]: The three dimensional position of the particle 
-                                 in the world coordinate system 
+            [float,float,float]: The three dimensional position of the particle
+                                 in the world coordinate system
         """
         hit_position = self.hit_position
         initial_target_position = self.initial_target_position
@@ -200,7 +200,7 @@ class MetalVoxel(Particle):
         """A simple voxel class for cutting and milling simulations
 
         Args:
-            ray_cast_result (list): The result of a pybullet ray_cast 
+            ray_cast_result (list): The result of a pybullet ray_cast
                                     as performed by the Extruder class.
             material_properties (Dict): A dictionary containing the properties of the material.
                                         The default properties for a Metal Voxel are:
@@ -231,8 +231,8 @@ class MetalVoxel(Particle):
         """Returns the position of a particle in the world frame
 
         Returns:
-            [float,float,float]: The three dimensional position of the particle 
-                                 in the world coordinate system 
+            [float,float,float]: The three dimensional position of the particle
+                                 in the world coordinate system
         """
         position, _ = p.getBasePositionAndOrientation(self.particle_id)
         return position
@@ -248,7 +248,7 @@ def spawn_material_block(base_position: list, dimensions: list,
     Args:
         base_position ([float,float,float]): The position of the lower left base corner of the block
         dimensions ([float,float,float]): The dimensions of the block in [width,breath,height]
-        material (Particle): A particle that should be spawned 
+        material (Particle): A particle that should be spawned
         material_properties (Dict): A dictionary containing the properties of the material.
                                     It needs to contain a key 'particle size'.
 

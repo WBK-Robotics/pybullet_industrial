@@ -10,7 +10,7 @@ import sys
 import os
 import mock
 
-MOCK_MODULES = ['numpy', 'casadi', 'pybullet','scipy']
+MOCK_MODULES = ['numpy', 'casadi', 'pybullet', 'scipy']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 
@@ -41,6 +41,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.githubpages',
               'sphinx.ext.napoleon']
 
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -56,7 +57,9 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
-
+html_theme_options = {
+    'style_nav_header_background': '#009682', 'logo_only': True}
+html_logo = "header_logo.png"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".

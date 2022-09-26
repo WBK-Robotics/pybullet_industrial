@@ -3,7 +3,7 @@ Code Documentation
 
 .. toctree::
    :hidden:
-   
+
 
 .. automodule:: pybullet_industrial.robot_base
    :members:
@@ -46,6 +46,10 @@ Code Documentation
    :undoc-members:
 
 .. automodule:: pybullet_industrial.utility
+   :members:
+   :undoc-members:
+
+.. automodule:: pybullet_industrial.gripper
    :members:
    :undoc-members:
 

@@ -93,6 +93,7 @@ class EndeffectorTool:
         if endeffector_name is None:
             endeffector_index = robot._default_endeffector_id
         else:
+
             endeffector_index = robot._convert_endeffector(
                 endeffector_name)
         self._coupled_robot = robot
@@ -171,7 +172,6 @@ class EndeffectorTool:
         """
 
         if self.is_coupled():
-
             tcp_translation_inv, tcp_rotation_inv = p.invertTransform(
                 self._tcp_translation, self._tcp_rotation)
             adj_target_position, adj_target_orientation = p.multiplyTransforms(

@@ -10,7 +10,7 @@ import sys
 import os
 import mock
 
-MOCK_MODULES = ['numpy', 'casadi', 'pybullet', 'scipy']
+MOCK_MODULES = ['numpy', 'casadi', 'pybullet', 'scipy', 'scipy.interpolate']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 

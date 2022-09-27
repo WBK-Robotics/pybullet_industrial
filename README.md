@@ -5,10 +5,10 @@
 [![Documentation Status](https://readthedocs.org/projects/pybullet-industrial/badge/?version=latest)](https://pybullet-industrial.readthedocs.io/en/latest/?badge=latest)
 
 
-
-The Pybullet_industrial package combines the world of classical robot simulations with the world of industrial processes.
+Pybullet_industrial is a process-aware robot simulation.
+It aims to enable scientists and researchers to easily simulate robotics scenarios where a robot is participating in a manufacturing process.
+It achieves this by combining the world of classical robot simulations with the world of industrial processes.
 The library is capable of simulating different manufacturing tools and workpieces, as well as the robot itself.
-The simulation is based on the pybullet library.
 With the help of the pybullet_industrial package you will be able to:
 
 - simulate additive manufacturing processes

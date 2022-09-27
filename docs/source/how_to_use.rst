@@ -16,7 +16,7 @@ The following sections will dive deeper into the robot and endeffector objects a
 
 Note that the pybullet_industrial package is meant to be used in conjunction with pybullet.
 Its objects are designed to be used within pybullet's simulation loop, and the package is not meant to be used as a standalone simulation package.
-An example of how to use the package can be found in the GitHub repository `example directory<https://github.com/WBK-Robotics/pybullet_industrial/tree/main/examples>`_  and is repeated below:
+An example of how to use the package can be found in the GitHub repository `example directory <https://github.com/WBK-Robotics/pybullet_industrial/tree/main/examples>`_  and is repeated below:
 
 .. literalinclude:: ../../examples/orientation_ctr.py
    :language: python
@@ -236,7 +236,8 @@ Here the chip thickness exponent, as well as the material specific force, are de
 For this library these parameters are stored in the `milling_properties` dictionary of the :class:`MillingTool` class.
 This means that people have to change these values manually in the tool when switching between materials.
 
-.. TODO:: what are the default settings and what do they correspond to?
+The default parameters corrsepond to standart steel (42CrMo4) with a chip thickness exponent of 2500 and a material specific force of 0.26.
+Tables for different materials can be found in many different sources, for example in the book "Mechanical and Metal Trades Handbook" by Ulrich Fischer and Roland Gomeringer.
 
 
 ***************

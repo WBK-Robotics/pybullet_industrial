@@ -27,7 +27,6 @@ author = 'Jan Baumgärtner, Malte Hansjosten'
 release = '1.0.0'
 
 
-
 # -- General configuration ---------------------------------------------------
 
 

@@ -24,7 +24,7 @@ setuptools.setup(
     name='pybullet_industrial',
     version='1.0',
     author='Jan Baumgärtner',
-    description='A simulation environment for the WBKrobots',
+    description='Pybullet_industrial is a process-aware robot simulation framework for pybullet.',
     install_requires=[req for req in requirements if req[:2] != "# "],
     packages=setuptools.find_packages(),
     package_data={'pybullet_industrial': need_files}

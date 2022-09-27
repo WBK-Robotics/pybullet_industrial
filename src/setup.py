@@ -22,7 +22,7 @@ for root, dirs, files in os.walk(hh):
 
 setuptools.setup(
     name='pybullet_industrial',
-    version='1.0',
+    version='0.9',
     author='Jan Baumgärtner',
     description='Pybullet_industrial is a process-aware robot simulation framework for pybullet.',
     install_requires=[req for req in requirements if req[:2] != "# "],

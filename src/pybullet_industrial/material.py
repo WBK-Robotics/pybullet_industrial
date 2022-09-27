@@ -112,6 +112,7 @@ class Paint(Particle):
                                     The default properties for Paint are:
                                     'particle size': 0.3, 'color': [1, 0, 0, 1]
     """
+
     def __init__(self, ray_cast_result: list, material_properties: Dict):
 
         self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
@@ -210,6 +211,7 @@ class MetalVoxel(Particle):
                                     The default properties for a Metal Voxel are:
                                     'particle size': 0.3, 'color': [1, 0, 0, 1]
     """
+
     def __init__(self, ray_cast_result: list,  material_properties: Dict):
 
         self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
@@ -267,18 +269,18 @@ def spawn_material_block(base_position: list, dimensions: list,
     particle_size = material_properties['particle size']
     half_extents = particle_size*0.5
 
-    batchPositions = []
+    batch_positions = []
 
     for x in range(int(dimensions[0]/particle_size)):
         for y in range(int(dimensions[1]/particle_size)):
             for z in range(int(dimensions[2]/particle_size)):
-                batchPositions.append(
+                batch_positions.append(
                     [x * particle_size+base_position[0]+half_extents,
                      y * particle_size+base_position[1]+half_extents,
                      z * particle_size+base_position[2]+half_extents])
 
     objects = []
-    for positions in batchPositions:
+    for positions in batch_positions:
         particle = material([0, 0, 0, positions], material_properties)
         objects.append(particle)
 

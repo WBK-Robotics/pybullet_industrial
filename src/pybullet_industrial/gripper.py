@@ -143,26 +143,26 @@ class SuctionGripper(EndeffectorTool):
 
         coupled_bodys = []
 
-        for pnt in contact_points:
-            if pnt[2] is self.urdf or pnt[2] is self._coupled_robot.urdf or \
-                    pnt[8] > tolerance:
-                del pnt
+        for point in contact_points:
+            if point[2] is self.urdf or point[2] is self._coupled_robot.urdf or \
+                    point[8] > tolerance:
+                del point
 
         if self._suction_links_ids is not None:
-            for pnt in contact_points:
-                if pnt[3] not in self._suction_links_ids:
-                    del pnt
+            for point in contact_points:
+                if point[3] not in self._suction_links_ids:
+                    del point
 
-        for cp in contact_points:
-            if cp[2] not in coupled_bodys:
-                coupled_bodys.append(cp[2])
+        for point in contact_points:
+            if point[2] not in coupled_bodys:
+                coupled_bodys.append(point[2])
 
-        for cb in coupled_bodys:
-            position_o, orientation_o = p.getBasePositionAndOrientation(cb)
+        for body in coupled_bodys:
+            position_o, orientation_o = p.getBasePositionAndOrientation(body)
             restraint_pos, restraint_orn = p.multiplyTransforms(
                 inv_pos, inv_orn, position_o, orientation_o)
             cid_grip = p.createConstraint(self.urdf, self._tcp_id,
-                                          cb, -1,
+                                          body, -1,
                                           p.JOINT_FIXED, [0, 0, 0],
                                           parentFramePosition=restraint_pos,
                                           childFramePosition=[0, 0, 0],

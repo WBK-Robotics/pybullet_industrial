@@ -16,7 +16,7 @@ The following sections will dive deeper into the robot and endeffector objects a
 
 Note that the pybullet_industrial package is meant to be used in conjunction with pybullet.
 Its objects are designed to be used within pybullet's simulation loop, and the package is not meant to be used as a standalone simulation package.
-An example of how to use the package can be found in the `examples`_ folder and is repeated below:
+An example of how to use the package can be found in the GitHub repository `example directory<https://github.com/WBK-Robotics/pybullet_industrial/tree/main/examples>`_  and is repeated below:
 
 .. literalinclude:: ../../examples/orientation_ctr.py
    :language: python
@@ -107,7 +107,7 @@ The tool will then attach itself to the endeffector of the robot and will be abl
     The coupling is performed by creating a dynamic constraint between both bodies.
     This can sometimes cause problems where the solver has trouble converging resulting in the robot and the tool moving apart.
     This happens especially if the tool is pressing against another object.
-    To prevent this from happening, the pybullet simulations number of solver iterations can be increased using the 'p.setPhysicsEngineParameter(numSolverIterations=5000)' function.
+    To prevent this from happening, the pybullet simulations number of solver iterations can be increased using the `p.setPhysicsEngineParameter(numSolverIterations=5000)` function.
     In practice values above 5000 seem to result in satisfactory behavior.
 
 
@@ -286,8 +286,8 @@ Sensing
 *******
 
 Quality inspection applications often require the use of sensors to measure the state of the workpiece.
-In the design philosophy of pybullet_industrial this can also be modeled as an :class:`:class:`EndeffectorTool``.
-The package provides a simple camera class :class:`EndeffectorTool` that can be used to simulate a camera.
+In the design philosophy of pybullet_industrial this can also be modeled as an :class:`EndeffectorTool`.
+The package provides a simple :class:`Camera` class endeffector tool that can be used to simulate a camera.
 Other complex sensors can be implemented similarly by subclassing the :class:`EndeffectorTool` class.
 
 #########

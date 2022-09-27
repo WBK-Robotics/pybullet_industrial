@@ -12,9 +12,9 @@ Welcome to pybullet industrial's documentation!
 .. image:: logo.png
     :width: 80%
     :align: center
-    :alt: robot_tool_overview
+    :alt: pybullet_industrial_logo
 
-Pybullet_industrial package combining the world of classical robot simulations with the world of industrial processes.
+The Pybullet_industrial package combines the world of classical robot simulations with the world of industrial processes.
 The library is capable of simulating different manufacturing tools and workpieces, as well as the robot itself.
 The simulation is based on the pybullet library.
 With the help of the pybullet_industrial package you will be able to:
@@ -22,17 +22,17 @@ With the help of the pybullet_industrial package you will be able to:
 - simulate additive manufacturing processes
 - simulate milling processes and how the resulting forces impact the robot
 - simulating paint coating scenarios
-- simulate handling of complex tasks using a variety of grippers
+- simulate the handling of complex tasks using a variety of grippers
 
 
 What pybullet_industrial is not
 -------------------------------
 
 While the library can simulate process forces, it is no substitute for a proper FEM simulation.
-This is because the library does not focus on modelling a given process, but rather the robot's interaction with the process.
+This is because the library does not focus on modeling a given process, but rather on the robot's interaction with the process.
 
-Also take note that the library does not claim to bridge the sim2real gap. It is thus not meant to be used for training robots.
-This would require much more sophisticated models, which are not the focus of this library. However using the tools of this package it is certainly possible to develop such models.
+Also, take note that the library does not claim to bridge the sim2real gap. It is thus not meant to be used for training robots.
+This would require much more sophisticated models, which are not the focus of this library. However, using the tools of this package it is certainly possible to develop such models.
 
 .. toctree::
 

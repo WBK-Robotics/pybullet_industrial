@@ -6,7 +6,7 @@
 
 
 
-The Pybullet_industrial package combining the world of classical robot simulations with the world of industrial processes.
+The Pybullet_industrial package combines the world of classical robot simulations with the world of industrial processes.
 The library is capable of simulating different manufacturing tools and workpieces, as well as the robot itself.
 The simulation is based on the pybullet library.
 With the help of the pybullet_industrial package you will be able to:
@@ -14,7 +14,7 @@ With the help of the pybullet_industrial package you will be able to:
 - simulate additive manufacturing processes
 - simulate milling processes and how the resulting forces impact the robot
 - simulating paint coating scenarios
-- simulate handling of complex tasks using a variety of grippers
+- simulate the handling of complex tasks using a variety of grippers
 
 
 ## Getting Started

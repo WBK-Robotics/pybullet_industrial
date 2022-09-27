@@ -7,34 +7,36 @@ import pybullet_industrial as pi
 
 
 class MillingTool(pi.EndeffectorTool):
+    """A class implementing a milling tool.
+    The tool is modeled as a set of teeth that remove material
+    and apply forces on the tcp frame according to the kienzle model.
 
+    Args:
+        urdf_model (str): The path to the urdf model of the milling tool
+        start_position (np.array): The position of the tool center point
+        start_orientation (np.array): The orientation of the tool center point
+        milling_properties (Dict): A dictionary containing the properties of the milling tool.
+                                   Default values are:
+                                   'diameter':0.05, 'height':0.01,
+                                   'number of rays':10,'rotation speed':0.1, 'number of teeth':5
+                                   'material_specific_force':2500,'chip_thickness_exponent':0.26
+                                   The parameters kc11 and m_c are specific for the material.
+        coupled_robot (RobotBase, optional): A pybullet_industrial.RobotBase object if
+                                             the robot is coupled from the start.
+                                             Defaults to None.
+        tcp_frame (str, optional): The name of the urdf_link
+                                   describing the tool center point.
+                                   Defaults to None in which case the last link is used.
+        connector_frame (str, optional): The name of the urdf_link
+                                         at which a robot connects.
+                                         Defaults to None in which case the base link is used
+
+
+    """
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
                  milling_properties: Dict, coupled_robot: pi.RobotBase = None,
                  tcp_frame: str = None, connector_frame: str = None):
-        """Initializes the milling tool.
 
-        Args:
-            urdf_model (str): The path to the urdf model of the milling tool
-            start_position (np.array): The position of the tool center point
-            start_orientation (np.array): The orientation of the tool center point
-            milling_properties (Dict): A dictionary containing the properties of the milling tool.
-                                       Default values are:
-                                       'diameter':0.05, 'height':0.01,
-                                       'number of rays':10,'rotation speed':0.1, 'number of teeth':5
-                                       'material_specific_force':2500,'chip_thickness_exponent':0.26
-                                       The parameters kc11 and m_c are specific for the material.
-            coupled_robot (RobotBase, optional): A pybullet_industrial.RobotBase object if
-                                                 the robot is coupled from the start.
-                                                 Defaults to None.
-            tcp_frame (str, optional): The name of the urdf_link
-                                       describing the tool center point.
-                                       Defaults to None in which case the last link is used.
-            connector_frame (str, optional): The name of the urdf_link
-                                             at which a robot connects.
-                                             Defaults to None in which case the base link is used
-
-
-        """
         super().__init__(urdf_model, start_position, start_orientation,
                          coupled_robot, tcp_frame, connector_frame)
 

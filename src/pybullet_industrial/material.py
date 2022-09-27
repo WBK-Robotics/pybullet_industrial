@@ -5,19 +5,23 @@ import pybullet as p
 
 
 class Particle():
-    def __init__(self, ray_cast_result: list, material_properties: Dict):
-        """A template class for material particles extruded by a extruder endeffector tool
+    """A template class for material particles extruded by a extruder endeffector tool.
 
-        Args:
-            ray_cast_result (list): The result of a pybullet ray_cast
-                                    as performed by the Extruder class.
-                                    It is made up of: [objectUniqueId,
-                                                       linkIndex,
-                                                       hit fraction,
-                                                       hit position,
-                                                       hit normal]
-            material_properties (Dict): A dictionary containing the properties of the material
-        """
+    All materials should inherit from this class and implement its methods.
+
+    Args:
+        ray_cast_result (list): The result of a pybullet ray_cast
+                                as performed by the Extruder class.
+                                It is made up of: [objectUniqueId,
+                                                    linkIndex,
+                                                    hit fraction,
+                                                    hit position,
+                                                    hit normal]
+        material_properties (Dict): A dictionary containing the properties of the material
+    """
+
+    def __init__(self, ray_cast_result: list, material_properties: Dict):
+
         self.properties = {}
         pass
 
@@ -51,23 +55,24 @@ class Particle():
 
 
 class Plastic(Particle):
+    """A class for simple particles which can be used for additive manufacturing.
+        The particles are infinitely rigid and stick to each other.
+
+    Args:
+        ray_cast_result (list): The result of a pybullet ray_cast
+                                as performed by the Extruder class.
+                                It is made up of: [objectUniqueId,
+                                                    linkIndex,
+                                                    hit fraction,
+                                                    hit position,
+                                                    hit normal]
+        material_properties (Dict): A dictionary containing the properties of the material.
+                                    The default properties for Plastic are:
+                                    'particle size': 0.3, 'color': [1, 0, 0, 1]
+    """
 
     def __init__(self, ray_cast_result: list,  material_properties: Dict):
-        """A class for simple particles which can be used for additive manufacturing.
-           The particles are infinitely rigid and stick to each other.
 
-        Args:
-            ray_cast_result (list): The result of a pybullet ray_cast
-                                    as performed by the Extruder class.
-                                    It is made up of: [objectUniqueId,
-                                                       linkIndex,
-                                                       hit fraction,
-                                                       hit position,
-                                                       hit normal]
-            material_properties (Dict): A dictionary containing the properties of the material.
-                                        The default properties for Plastic are:
-                                        'particle size': 0.3, 'color': [1, 0, 0, 1]
-        """
         self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
         self.set_material_properties(material_properties)
         particle_size = self.properties['particle size']
@@ -98,17 +103,17 @@ class Plastic(Particle):
 
 
 class Paint(Particle):
+    """A class for simple Paint particles which stick to objects and move with them.
+        The Paint particles are purely visible and have neither mass nor a collision mesh
 
+    Args:
+        ray_cast_result (list): The result of a pybullet ray_cast as performed by the extruder
+        material_properties (Dict): A dictionary containing the properties of the material.
+                                    The default properties for Paint are:
+                                    'particle size': 0.3, 'color': [1, 0, 0, 1]
+    """
     def __init__(self, ray_cast_result: list, material_properties: Dict):
-        """A class for simple Paint particles which stick to objects and move with them.
-           The Paint particles are purely visible and have neither mass nor a collision mesh
 
-        Args:
-            ray_cast_result (list): The result of a pybullet ray_cast as performed by the extruder
-            material_properties (Dict): A dictionary containing the properties of the material.
-                                        The default properties for Paint are:
-                                        'particle size': 0.3, 'color': [1, 0, 0, 1]
-        """
         self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
         self.set_material_properties(material_properties)
         particle_size = self.properties['particle size']
@@ -196,16 +201,17 @@ class Paint(Particle):
 
 
 class MetalVoxel(Particle):
-    def __init__(self, ray_cast_result: list,  material_properties: Dict):
-        """A simple voxel class for cutting and milling simulations
+    """A simple voxel class for cutting and milling simulations
 
-        Args:
-            ray_cast_result (list): The result of a pybullet ray_cast
-                                    as performed by the Extruder class.
-            material_properties (Dict): A dictionary containing the properties of the material.
-                                        The default properties for a Metal Voxel are:
-                                        'particle size': 0.3, 'color': [1, 0, 0, 1]
-        """
+    Args:
+        ray_cast_result (list): The result of a pybullet ray_cast
+                                as performed by the Extruder class.
+        material_properties (Dict): A dictionary containing the properties of the material.
+                                    The default properties for a Metal Voxel are:
+                                    'particle size': 0.3, 'color': [1, 0, 0, 1]
+    """
+    def __init__(self, ray_cast_result: list,  material_properties: Dict):
+
         self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
         self.set_material_properties(material_properties)
         particle_size = self.properties['particle size']

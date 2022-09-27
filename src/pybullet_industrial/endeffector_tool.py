@@ -5,24 +5,26 @@ from pybullet_industrial import RobotBase
 
 
 class EndeffectorTool:
+    """The base class for all Tools and Sensors connected to a Robot
+
+    Args:
+        urdf_model (str): A valid path to a urdf file describint the tool geometry
+        start_position (np.array): the position at which the tool should be spawned
+        start_orientation (np.array): the orientation at which the tool should be spawned
+        coupled_robot (pi.RobotBase, optional): A pybullet_omdistrial.RobotBase object if
+                                                the robot is coupled from the start.
+                                                Defaults to None.
+        tcp_frame (str, optional): The name of the urdf_link
+                                   describing the tool center point.
+                                   Defaults to None in which case the last link is used.
+        connector_frame (str, optional): The name of the urdf_link at which a robot connects.
+                                         Defaults to None in which case
+                                         the base link is used.
+    """
+
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
                  coupled_robot: RobotBase = None, tcp_frame: str = None, connector_frame: str = None):
-        """The base class for all Tools and Sensors connected to a Robot
 
-        Args:
-            urdf_model (str): A valid path to a urdf file describint the tool geometry
-            start_position (np.array): the position at which the tool should be spawned
-            start_orientation (np.array): the orientation at which the tool should be spawned
-            coupled_robot (pi.RobotBase, optional): A pybullet_omdistrial.RobotBase object if
-                                                    the robot is coupled from the start.
-                                                    Defaults to None.
-            tcp_frame (str, optional): The name of the urdf_link
-                                       describing the tool center point.
-                                       Defaults to None in which case the last link is used.
-            connector_frame (str, optional): The name of the urdf_link at which a robot connects.
-                                             Defaults to None in which case
-                                             the base link is used.
-        """
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,
                                start_position, start_orientation,

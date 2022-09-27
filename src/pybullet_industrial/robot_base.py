@@ -5,19 +5,20 @@ import pybullet as p
 
 
 class RobotBase:
+    """A Base class encapsulating a URDF based industrial robot manipulator
+
+    Args:
+        urdf_model (str): A valid path to a urdf file
+        start_position (np.array): The start position of the robot base
+        start_orientation (np.array): A quaternion describing the start orientation
+                                      of the robot base
+        default_endeffector (str, optional): The default endeffector used
+                                             when controlling the robots position
+    """
 
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
                  default_endeffector: str = None):
-        """A Base class encapsulating a URDF based industrial robot manipulator
 
-        Args:
-            urdf_model (str): A valid path to a urdf file
-            start_position (np.array): The start position of the robot base
-            start_orientation (np.array): A quaternion describing the start orientation
-                                          of the robot base
-            default_endeffector (str, optional): The default endeffector used 
-                                                 when controlling the robots position
-        """
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,
                                start_position, start_orientation,
@@ -181,7 +182,7 @@ class RobotBase:
             start_position (np.array): a 3 dimensional position
             start_orientation (np.array): a 4 dimensional quaternion representing
                                           the desired orientation
-            joint_values (list): Allows to reset the joint state of the robot given 
+            joint_values (list): Allows to reset the joint state of the robot given
                                  a list of positions.
                                  Defaults to None in which case the joints remain in their current
                                  configuration.
@@ -209,7 +210,7 @@ class RobotBase:
         """Returns the position and orientation of the robot relative to the world
 
         Returns:
-            list: the 3 dimensional position vector of the robot base 
+            list: the 3 dimensional position vector of the robot base
             list: a 4 dimensional quaternion representing the orientation of the robot base
         """
         return p.getBasePositionAndOrientation(self.urdf)

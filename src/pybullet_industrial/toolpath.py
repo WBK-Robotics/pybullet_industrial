@@ -5,27 +5,28 @@ import pybullet_industrial as pi
 
 
 class ToolPath:
+    """A Base object for representing a  toolpaths
+
+    Args:
+        positions (np.array(3,n)): A 3 dimensional array whith each dimension containing
+                                   subsequent positions.
+        orientations (np.array(4,n), optional): A 4 dimensional array where each dimension
+                                                describes a subsequent quaternion.
+                                                Defaults to None in which case
+                                                the orientation [0,0,0,1] is assumed.
+        tool_acivations (np.array(n), optional): A 1 dimensional array with boolean values
+                                                 describing wheter a tool is active
+                                                 at a given path pose.
+                                                 Defaults to None in which case
+                                                 the tool is always inactive.
+
+    Raises:
+        ValueError: If all given input arrays are different lengths.
+    """
 
     def __init__(self, positions: np.array, orientations: np.array = None,
                  tool_acivations: np.array = None):
-        """A Base object for representing an manipulating toolpaths.
 
-        Args:
-            positions (np.array(3,n)): A 3 dimensional array whith each dimension containing
-                                          subsequent positions.
-            orientations (np.array(4,n), optional): A 4 dimensional array where each dimension
-                                                       describes a subsequent quaternion.
-                                                       Defaults to None in which case
-                                                       the orientation [0,0,0,1] is assumed.
-            tool_acivations (np.array(n), optional): A 1 dimensional array with boolean values
-                                                     describing wheter a tool is active
-                                                     at a given path pose.
-                                                     Defaults to None in which case 
-                                                     the tool is always inactive.
-
-        Raises:
-            ValueError: If all given input arrays are different lengths.
-        """
         self.positions = positions
         if orientations is None:
             self.orientations = np.zeros((4, len(self.positions[0])))
@@ -87,7 +88,7 @@ class ToolPath:
 
     def draw(self, pose: bool = False, color: list = [0, 0, 1]):
         """Function which draws the path into the Debugin GUI.
-           The path can either be a line representing the positions 
+           The path can either be a line representing the positions
            or a series of coordinate systems representing the whole pose.
 
         Args:

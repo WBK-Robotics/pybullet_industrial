@@ -314,7 +314,7 @@ To spawn particles or groups of particles directly at a given position the :func
 
 
 #########
-ToolPaths
+Toolpaths
 #########
 
 .. image:: images/robot_paths.PNG

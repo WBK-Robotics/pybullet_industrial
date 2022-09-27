@@ -2,10 +2,10 @@
 Using the Package
 #################
 
-This page describes the general design of the classes and functions in this package to enable users to use the package to its full potential.  The package is designed to be used in a variety of ways, and the following sections describe the different ways in which the package can be used.
+This page describes the general design of the classes and functions in this package to enable users to use the package to its full potential.
 The aim of pybullet_industrial was to merge the worlds of process simulations and multibody robot simulations by providing a combined solution with reasonable performance in both domains.
 The main robot simulation functionality is provided by a dedicated Robot object called :class:`RobotBase`, while the process is simulated by a class called :class:`EndeffectorTool`.
-Speaking plainly, this means that robot tools encapsulate the various manufacturing processes.
+Speaking plainly, this means that the :class:`RobotBase` object discribes the robot simulation while :class:`EndeffectorTool` objects encapsulate the various manufacturing processes.
 
 The following sections will dive deeper into the robot and endeffector objects and detail how they can be used to simulate manufacturing scenarios.
 
@@ -16,7 +16,7 @@ The following sections will dive deeper into the robot and endeffector objects a
 
 Note that the pybullet_industrial package is meant to be used in conjunction with pybullet.
 Its objects are designed to be used within pybullet's simulation loop, and the package is not meant to be used as a standalone simulation package.
-An example of how to use the package can be found in the GitHub repository `example directory <https://github.com/WBK-Robotics/pybullet_industrial/tree/main/examples>`_  and is repeated below:
+Examples of how to use the package can be found in the GitHub repository `example directory <https://github.com/WBK-Robotics/pybullet_industrial/tree/main/examples>`_ one of them can be found below:
 
 .. literalinclude:: ../../examples/orientation_ctr.py
    :language: python
@@ -31,9 +31,9 @@ An example of how to use the package can be found in the GitHub repository `exam
 Robot objects
 #############
 
-Robot objects are one of the main objects in the package. Their main purpose is to load a dynamic robot simulation into a pybullet simulation and provide a set of functions to control the robot and get information about the robot's state.
-The pybullet_industrial package provides a class called :class:`RobotBase` that can be used to load a robot from a UDF (universal robot description file) file and interact with it.
-A robot in this case means a robot manipulator, that is to say, a stationary robot with a fixed base and a number of joints that can be actuated.
+Robot objects are one of the main objects in the package. Their main purpose is to load a dynamic robot simulation into a pybullet simulation and provide a set of interfaces to control the robot and get information about the robot's state.
+The pybullet_industrial package provides a class called :class:`RobotBase` that can be used to load a robot from a URDF (universal robot description file) file and interact with it.
+A robot in this case means a robot manipulator, that is to say, a stationary robot with a fixed base and several serially connected actuated joints.
 
 ****************
 Joint interfaces
@@ -58,7 +58,7 @@ In industrial robotics one often does not care for the joint state of the robot,
 
 The pybullet_industrial package provides interfaces for setting and measuring the state of the endeffector.
 These interfaces make it possible to set the desired position and orientation of the endeffector and to measure the current position and orientation of the endeffector.
-Note that providing the orientation is optional, in this case, the robot assumes an arbitrary rotation at a given position.
+Note that providing the orientation is optional, in this case, the robot assumes an arbitrary orientation at a given position.
 
 .. important::
     The orientation is given as a quaternion, which is a 4-tuple of floats.
@@ -172,7 +172,7 @@ The cone is defined by the following properties:
 
 When calling the :func:`Extruder.extrude` function the :class:`Extruder` will randomly sample rays inside the cone area equal to the number of extruded particles.
 Each ray that hits an object will spawn a particle of the specified material.
-See :ref:`materials_label` for more information about different types of materials and their properties which also have to be supplied to the :class:`Extruder`.
+See :ref:`Materials <Materials>` for more information about different types of materials and their properties which also have to be supplied to the :class:`Extruder`.
 
 Note that the :class:`Extruder` supports dynamic changes of both the extruder pattern as well as the type and properties of materials.
 
@@ -199,7 +199,7 @@ Removing material
 
 Material removal is one of the most important manufacturing processes.
 Since pybullet is by default a multi-body physics simulation, each removal process will delete a full object.
-To accurately simulate material removal a simple voxel engine was added which is  described in the section :ref:`materials_label`
+To accurately simulate material removal a simple voxel engine was added which is  described in the section :ref:`Materials <Materials>`
 pybullet_industrial offers two classes for simulating material removal processes.
 
 
@@ -295,7 +295,7 @@ Other complex sensors can be implemented similarly by subclassing the :class:`En
 Materials
 #########
 
-.. _materials_label:
+
 
 Materials are implemented as particles with certain physical properties.
 This includes their dimensions, mass as well as color.

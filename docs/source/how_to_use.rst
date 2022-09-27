@@ -80,9 +80,11 @@ Endeffector tools
 The endeffector tool is the main object for simulating processes in the pybullet_industrial package.
 In robotic manufacturing, these processes can be grouped into three main categories:
 
-- Adding Material (Such as welding, gluing, 3d printing, etc.)
-- Removing Material (Such as milling, drilling, cutting, etc.)
-- Moving Material (Such as moving a workpiece from one place to another)
+
+.. image:: images/manufacturing_processes.png
+    :width: 100%
+    :align: center
+    :alt: manufacturing_processes
 
 Each of these process types is supported by a dedicated subclass.
 The Base class still provides a lot of functionality common between all three types.
@@ -282,6 +284,9 @@ The second class is called :class:`.SuctionGripper` and simulates suction grippe
     :width: 60%
     :align: center
     :alt: suction_gripper
+
+These grippers are implemeted by constraining whatever object they are in contact with to the gripper upon activation.
+As such they are either completely on ore completely off.
 
 *******
 Sensing

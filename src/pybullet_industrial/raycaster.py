@@ -79,10 +79,10 @@ class RayCaster(EndeffectorTool):
         phi = np.random.uniform(-np.pi, np.pi, number_of_rays)
         theta = np.random.uniform(-0.5*opening_angle,
                                   0.5*opening_angle, number_of_rays)
-        x = np.sin(theta) * np.cos(phi)
-        y = np.sin(theta) * np.sin(phi)
-        z = np.cos(theta)
-        ray_directions = np.array([x, y, z])
+
+        ray_directions = np.array([np.sin(theta) * np.cos(phi),
+                                   np.sin(theta) * np.sin(phi),
+                                   np.cos(theta)])
 
         rot_matrix = p.getMatrixFromQuaternion(orientation)
         rot_matrix = np.array(rot_matrix).reshape(3, 3)

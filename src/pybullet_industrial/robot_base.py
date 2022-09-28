@@ -54,7 +54,7 @@ class RobotBase:
 
         self._kinematic_solver_map = np.array(kinematic_solver_map)
 
-        if default_endeffector == None:
+        if default_endeffector is None:
             last_link = max(self._link_name_to_index)
             self._default_endeffector_id = self._link_name_to_index[last_link]
         else:

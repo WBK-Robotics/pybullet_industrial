@@ -172,5 +172,8 @@ class SuctionGripper(EndeffectorTool):
         return coupled_bodys
 
     def deactivate(self):
-        for sc in self.suction_constraints:
-            p.removeConstraint(sc)
+        """Function to deactivate the suction gripper
+           deleting constraints between gripper and object
+        """
+        for constraint in self.suction_constraints:
+            p.removeConstraint(constraint)

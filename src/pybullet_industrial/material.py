@@ -23,7 +23,6 @@ class Particle():
     def __init__(self, ray_cast_result: list, material_properties: Dict):
 
         self.properties = {}
-        pass
 
     def get_position(self):
         """Returns the position of a particle in the world frame
@@ -163,6 +162,18 @@ class Paint(Particle):
 
     @staticmethod
     def get_target_pose(target_id: int, target_link_id: int):
+        """Returns the pose of a target objects link.
+
+        This function is used to calculate the relative position
+        of the paint particle to the object it sticks to.
+
+        Args:
+            target_id (int): The unique id of the target object
+            target_link_id (int): The link id of the target object
+
+        Returns:
+            np.array, np.array: The position and orientation of the target object
+        """
         if target_link_id == -1:
             target_position, target_orientation = p.getBasePositionAndOrientation(
                 target_id)

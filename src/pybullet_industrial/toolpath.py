@@ -1,7 +1,7 @@
 import numpy as np
 import pybullet as p
 
-import pybullet_industrial as pi
+from pybullet_industrial.utility import draw_path, draw_coordinate_system
 
 
 class ToolPath:
@@ -98,12 +98,12 @@ class ToolPath:
                                     Defaults to [0, 0, 1].
         """
         if pose is False:
-            pi.draw_path(self.positions, color)
+            draw_path(self.positions, color)
         else:
             path_positions = np.transpose(self.positions)
             path_orientations = np.transpose(self.orientations)
             for i in range(len(self)):
-                pi.draw_coordinate_system(
+                draw_coordinate_system(
                     path_positions[i], path_orientations[i])
 
     def append(self, tool_path):

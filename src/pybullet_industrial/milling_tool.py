@@ -3,10 +3,12 @@ from typing import Dict
 import numpy as np
 import pybullet as p
 
-import pybullet_industrial as pi
+
+from pybullet_industrial.endeffector_tool import EndeffectorTool
+from pybullet_industrial.robot_base import RobotBase
 
 
-class MillingTool(pi.EndeffectorTool):
+class MillingTool(EndeffectorTool):
     """A class implementing a milling tool.
     The tool is modeled as a set of teeth that remove material
     and apply forces on the tcp frame according to the kienzle model.
@@ -33,8 +35,9 @@ class MillingTool(pi.EndeffectorTool):
 
 
     """
+
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
-                 milling_properties: Dict, coupled_robot: pi.RobotBase = None,
+                 milling_properties: Dict, coupled_robot: RobotBase = None,
                  tcp_frame: str = None, connector_frame: str = None):
 
         super().__init__(urdf_model, start_position, start_orientation,

@@ -20,7 +20,7 @@ sys.setrecursionlimit(1500)
 # -- Project information -----------------------------------------------------
 
 project = 'pybullet industrial'
-copyright = '2022, Jan Baumgärtner, Malte Hansjosten'
+copyright = '2022, Jan Baumgärtner, Malte Hansjosten, Dominik Schönhofen'
 author = 'Jan Baumgärtner, Malte Hansjosten'
 
 # The full version, including alpha/beta/rc tags

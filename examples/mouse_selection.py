@@ -21,15 +21,15 @@ if __name__ == "__main__":
     p.setRealTimeSimulation(1)
 
     colors = [[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1], [1, 1, 1, 1]]
-    currentColor = 0
+    current_color = 0
 
     p.getCameraImage(64, 64, renderer=p.ER_BULLET_HARDWARE_OPENGL)
 
     while True:
         objectUid, object_index = pi.get_object_id_from_mouse()
-        if (objectUid >= 0):
+        if objectUid >= 0:
             p.changeVisualShape(objectUid, object_index,
-                                rgbaColor=colors[currentColor])
-            currentColor += 1
-            if currentColor >= len(colors):
-                currentColor = 0
+                                rgbaColor=colors[current_color])
+            current_color += 1
+            if current_color >= len(colors):
+                current_color = 0

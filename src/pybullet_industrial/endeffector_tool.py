@@ -23,7 +23,8 @@ class EndeffectorTool:
     """
 
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
-                 coupled_robot: RobotBase = None, tcp_frame: str = None, connector_frame: str = None):
+                 coupled_robot: RobotBase = None, tcp_frame: str = None,
+                 connector_frame: str = None):
 
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,
@@ -135,7 +136,6 @@ class EndeffectorTool:
                                                        position,
                                                        None,
                                                        orientation)
-        pass
 
     def get_tool_pose(self, tcp_frame: str = None):
         """Returns the pose of the tool center point.

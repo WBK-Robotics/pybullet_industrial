@@ -123,11 +123,11 @@ def get_object_id_from_mouse():
         int: The Id of the object
         int: The Id of its link
     """
-    mouseEvents = p.getMouseEvents()
-    for e in mouseEvents:
-        if ((e[0] == 2) and (e[3] == 0) and (e[4] & p.KEY_WAS_TRIGGERED)):
-            mouseX = e[1]
-            mouseY = e[2]
+    mouse_events = p.getMouseEvents()
+    for event in mouse_events:
+        if ((event[0] == 2) and (event[3] == 0) and (event[4] & p.KEY_WAS_TRIGGERED)):
+            mouse_x = event[1]
+            mouse_y = event[2]
 
             debug_camera = p.getDebugVisualizerCamera()
             width = debug_camera[0]
@@ -144,12 +144,12 @@ def get_object_id_from_mouse():
             ray_forward = camera_target-camera_position
             ray_forward = far_plane*ray_forward / np.linalg.norm(ray_forward)
 
-            dHor = horizontal/width
-            dVer = vertical/height
+            horizontal_distance = horizontal/width
+            vertical_distance = vertical/height
 
             ray_end_pos = ray_start_pos + ray_forward - 0.5*horizontal + \
-                0.5*vertical+float(mouseX) * dHor - float(mouseY)*dVer
-            rayInfo = p.rayTest(ray_start_pos, ray_end_pos)
-            hit = rayInfo[0]
+                0.5*vertical+float(mouse_x) * horizontal_distance - float(mouse_y)*vertical_distance
+            ray_info = p.rayTest(ray_start_pos, ray_end_pos)
+            hit = ray_info[0]
             return hit[0], hit[1]
     return -1, -1

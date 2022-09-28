@@ -5,21 +5,24 @@ import pybullet as p
 
 
 class Particle():
-    def __init__(self, ray_cast_result: list, material_properties: Dict):
-        """A template class for material particles extruded by a extruder endeffector tool
+    """A template class for material particles extruded by a extruder endeffector tool.
 
-        Args:
-            ray_cast_result (list): The result of a pybullet ray_cast
-                                    as performed by the Extruder class.
-                                    It is made up of: [objectUniqueId,
-                                                       linkIndex,
-                                                       hit fraction,
-                                                       hit position,
-                                                       hit normal]
-            material_properties (Dict): A dictionary containing the properties of the material
-        """
+    All materials should inherit from this class and implement its methods.
+
+    Args:
+        ray_cast_result (list): The result of a pybullet ray_cast
+                                as performed by the Extruder class.
+                                It is made up of: [objectUniqueId,
+                                                    linkIndex,
+                                                    hit fraction,
+                                                    hit position,
+                                                    hit normal]
+        material_properties (Dict): A dictionary containing the properties of the material
+    """
+
+    def __init__(self, ray_cast_result: list, material_properties: Dict):
+
         self.properties = {}
-        pass
 
     def get_position(self):
         """Returns the position of a particle in the world frame
@@ -51,23 +54,24 @@ class Particle():
 
 
 class Plastic(Particle):
+    """A class for simple particles which can be used for additive manufacturing.
+        The particles are infinitely rigid and stick to each other.
+
+    Args:
+        ray_cast_result (list): The result of a pybullet ray_cast
+                                as performed by the Extruder class.
+                                It is made up of: [objectUniqueId,
+                                                    linkIndex,
+                                                    hit fraction,
+                                                    hit position,
+                                                    hit normal]
+        material_properties (Dict): A dictionary containing the properties of the material.
+                                    The default properties for Plastic are:
+                                    'particle size': 0.3, 'color': [1, 0, 0, 1]
+    """
 
     def __init__(self, ray_cast_result: list,  material_properties: Dict):
-        """A class for simple particles which can be used for additive manufacturing.
-           The particles are infinitely rigid and stick to each other.
 
-        Args:
-            ray_cast_result (list): The result of a pybullet ray_cast
-                                    as performed by the Extruder class.
-                                    It is made up of: [objectUniqueId,
-                                                       linkIndex,
-                                                       hit fraction,
-                                                       hit position,
-                                                       hit normal]
-            material_properties (Dict): A dictionary containing the properties of the material.
-                                        The default properties for Plastic are:
-                                        'particle size': 0.3, 'color': [1, 0, 0, 1]
-        """
         self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
         self.set_material_properties(material_properties)
         particle_size = self.properties['particle size']
@@ -98,17 +102,18 @@ class Plastic(Particle):
 
 
 class Paint(Particle):
+    """A class for simple Paint particles which stick to objects and move with them.
+        The Paint particles are purely visible and have neither mass nor a collision mesh
+
+    Args:
+        ray_cast_result (list): The result of a pybullet ray_cast as performed by the extruder
+        material_properties (Dict): A dictionary containing the properties of the material.
+                                    The default properties for Paint are:
+                                    'particle size': 0.3, 'color': [1, 0, 0, 1]
+    """
 
     def __init__(self, ray_cast_result: list, material_properties: Dict):
-        """A class for simple Paint particles which stick to objects and move with them.
-           The Paint particles are purely visible and have neither mass nor a collision mesh
 
-        Args:
-            ray_cast_result (list): The result of a pybullet ray_cast as performed by the extruder
-            material_properties (Dict): A dictionary containing the properties of the material.
-                                        The default properties for Paint are:
-                                        'particle size': 0.3, 'color': [1, 0, 0, 1]
-        """
         self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
         self.set_material_properties(material_properties)
         particle_size = self.properties['particle size']
@@ -157,6 +162,18 @@ class Paint(Particle):
 
     @staticmethod
     def get_target_pose(target_id: int, target_link_id: int):
+        """Returns the pose of a target objects link.
+
+        This function is used to calculate the relative position
+        of the paint particle to the object it sticks to.
+
+        Args:
+            target_id (int): The unique id of the target object
+            target_link_id (int): The link id of the target object
+
+        Returns:
+            np.array, np.array: The position and orientation of the target object
+        """
         if target_link_id == -1:
             target_position, target_orientation = p.getBasePositionAndOrientation(
                 target_id)
@@ -196,16 +213,18 @@ class Paint(Particle):
 
 
 class MetalVoxel(Particle):
-    def __init__(self, ray_cast_result: list,  material_properties: Dict):
-        """A simple voxel class for cutting and milling simulations
+    """A simple voxel class for cutting and milling simulations
 
-        Args:
-            ray_cast_result (list): The result of a pybullet ray_cast
-                                    as performed by the Extruder class.
-            material_properties (Dict): A dictionary containing the properties of the material.
-                                        The default properties for a Metal Voxel are:
-                                        'particle size': 0.3, 'color': [1, 0, 0, 1]
-        """
+    Args:
+        ray_cast_result (list): The result of a pybullet ray_cast
+                                as performed by the Extruder class.
+        material_properties (Dict): A dictionary containing the properties of the material.
+                                    The default properties for a Metal Voxel are:
+                                    'particle size': 0.3, 'color': [1, 0, 0, 1]
+    """
+
+    def __init__(self, ray_cast_result: list,  material_properties: Dict):
+
         self.properties = {'particle size': 0.3, 'color': [1, 0, 0, 1]}
         self.set_material_properties(material_properties)
         particle_size = self.properties['particle size']
@@ -261,18 +280,18 @@ def spawn_material_block(base_position: list, dimensions: list,
     particle_size = material_properties['particle size']
     half_extents = particle_size*0.5
 
-    batchPositions = []
+    batch_positions = []
 
     for x in range(int(dimensions[0]/particle_size)):
         for y in range(int(dimensions[1]/particle_size)):
             for z in range(int(dimensions[2]/particle_size)):
-                batchPositions.append(
+                batch_positions.append(
                     [x * particle_size+base_position[0]+half_extents,
                      y * particle_size+base_position[1]+half_extents,
                      z * particle_size+base_position[2]+half_extents])
 
     objects = []
-    for positions in batchPositions:
+    for positions in batch_positions:
         particle = material([0, 0, 0, positions], material_properties)
         objects.append(particle)
 

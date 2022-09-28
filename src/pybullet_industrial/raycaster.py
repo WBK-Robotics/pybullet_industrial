@@ -8,31 +8,32 @@ from pybullet_industrial.robot_base import RobotBase
 
 
 class RayCaster(EndeffectorTool):
+    """Special Endeffector Tool which can cast rays. Base for Extruder and Remover classes.
+
+    Args:
+        urdf_model (str): A valid path to a urdf file describint the tool geometry
+        start_position (np.array): the position at which the tool should be spawned
+        start_orientation (np.array): the orientation at which the tool should be spawned
+        raycast_properties(Dict): A dictionary containing the properties of the extrusion head.
+                                  During initialization only 'material' has to be set.
+                                  Default Values are:
+                                  'opening angle':0,'number of rays':1,
+                                  'maximum distance':1
+        coupled_robot (RobotBase, optional): A pybullet_industrial.RobotBase object if
+                                             the robot is coupled from the start.
+                                             Defaults to None.
+        tcp_frame (str, optional): The name of the urdf_link
+                                   describing the tool center point.
+                                   Defaults to None in which case the last link is used.
+        connector_frame (str, optional): The name of the urdf_link
+                                         at which a robot connects.
+                                         Defaults to None in which case the base link is used.
+        """
 
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
                  raycast_properties: Dict, coupled_robot: RobotBase = None,
                  tcp_frame: str = None, connector_frame: str = None):
-        """Special Endeffector Tool which can cast rays. Base for Extruder and Remover classes.
 
-        Args:
-            urdf_model (str): A valid path to a urdf file describint the tool geometry
-            start_position (np.array): the position at which the tool should be spawned
-            start_orientation (np.array): the orientation at which the tool should be spawned
-            raycast_properties(Dict): A dictionary containing the properties of the extrusion head.
-                                      During initialization only 'material' has to be set.
-                                      Default Values are:
-                                      'opening angle':0,'number of rays':1,
-                                      'maximum distance':1
-            coupled_robot (RobotBase, optional): A pybullet_industrial.RobotBase object if
-                                                 the robot is coupled from the start.
-                                                 Defaults to None.
-            tcp_frame (str, optional): The name of the urdf_link
-                                       describing the tool center point.
-                                       Defaults to None in which case the last link is used.
-            connector_frame (str, optional): The name of the urdf_link
-                                             at which a robot connects.
-                                             Defaults to None in which case the base link is used.
-        """
         super().__init__(urdf_model, start_position, start_orientation,
                          coupled_robot, tcp_frame, connector_frame)
 
@@ -78,10 +79,10 @@ class RayCaster(EndeffectorTool):
         phi = np.random.uniform(-np.pi, np.pi, number_of_rays)
         theta = np.random.uniform(-0.5*opening_angle,
                                   0.5*opening_angle, number_of_rays)
-        x = np.sin(theta) * np.cos(phi)
-        y = np.sin(theta) * np.sin(phi)
-        z = np.cos(theta)
-        ray_directions = np.array([x, y, z])
+
+        ray_directions = np.array([np.sin(theta) * np.cos(phi),
+                                   np.sin(theta) * np.sin(phi),
+                                   np.cos(theta)])
 
         rot_matrix = p.getMatrixFromQuaternion(orientation)
         rot_matrix = np.array(rot_matrix).reshape(3, 3)

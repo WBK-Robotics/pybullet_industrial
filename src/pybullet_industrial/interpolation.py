@@ -50,6 +50,19 @@ def linear_interpolation(start_point: np.array, end_point: np.array, samples: in
 
 def planar_circular_interpolation(start_point: np.array, end_point: np.array,
                                   radius: float, samples: int, clockwise: bool = True):
+    """Helper function which performs a circular interpolation in the x-y plane
+
+    Args:
+        start_point (np.array): The start point of the interpolation
+        end_point (np.array): The end point of the interpolation
+        radius (float): The radius of the circle
+        samples (int): The number of samples used to interpolate
+        clockwise (bool): boolean value indicating if the interpolation is performed clockwise
+                            or anticlockwise
+
+    Returns:
+        np.array: The interpolated path
+    """
     connecting_line = end_point-start_point
     distance_between_points = np.linalg.norm(connecting_line)
     if radius <= distance_between_points/2:

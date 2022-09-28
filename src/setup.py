@@ -12,7 +12,7 @@ setuptools.setup(
     author='Jan Baumgärtner, Malte Hansjosten, Dominik Schönhofen',
     description='Pybullet_industrial is a process-aware robot simulation framework for pybullet.',
     url='https://pybullet-industrial.readthedocs.io/en/latest/',
-    long_description=open('README.md').read(),
+    license='MIT',
     install_requires=[req for req in requirements if req[:2] != "# "],
     packages=setuptools.find_packages(),
 

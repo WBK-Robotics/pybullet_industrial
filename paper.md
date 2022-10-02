@@ -85,8 +85,14 @@ Removing of material is either done using the MillingTool which uses the kienzle
 
 The moving of material is achieved using grippers. Pybullet industrial supports both finger grippers and suction grippers for this purpose.
 
+For camera based applications the library also contains a camera sensor tool that can be used to simulate process inspection tasks.
+
 ## Utility
-To make development easier,
+To make development easier, the library has a number of utility functionality.
+This includes the ToolPath class which its own custom iterator making it easy for tools and robots to follow predetermined paths. These paths can be build using different interpolation functions such as linear interpolation, spline interpolation or circular interpolation.
+Path positions and orientations can be visualized using drawing functions.
+These underlying functions can also be used to visualize arbitrary coordinate system or robot link poses.
+
 
 
 # References

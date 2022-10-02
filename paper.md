@@ -31,7 +31,7 @@ The development of this field is hampered by a toolchain gap: While there are a 
 
 Pybullet Industrial extends the open source library Pybullet with several process models to simulate manufacturing applications that add material, remove material or simply move material. A sample of concrete manufacturing applications in each category can be seen down below:
 
-%TODO add image of three categories
+%TODO add list of example applications which accompanying pybullet industrial screenshots
 
 The package not only simulates the environmental effect of the processes but also the forces emparted on the robot. It also allows the dynamic switching of processes with the same robot corresponding to tool changes during the manufacturing process. The package also contains utility functionality such as path builder classes which are based on G-code interpolation schemes or a variety of drawing and visualisation functions.
 
@@ -55,6 +55,38 @@ Example applications could be:
 
 # Overview
 
+Robot simulations typically end at the endeffector while process simulations typically end where the tool is connected to the machine. Pybullet industrial divides functionality similarly by employing a Robot class simulating the multibody dynamics of a Robot manipulator and an Endeffector Tool class capable of simulating processes.
+
+These objects can be deployed into a standart pybullet simulation environment and used to build manufacturing scenarios.
+
+## Robot objects
+
+The RobotBase class build upon pybullets urdf import feature which allows the loading of dynamic multibody robot models. The class adds a number of convenient interfaces which allow the setting and meaturing of joint and endeffector states. This latter allows the user to reposition the robots endeffector without worrying about the underlying kinematics.
+
+## Endeffector Tools
+
+Endeffector Tools are the main novelty of this library and implement various process models.
+An EndeffectorTool object can be coupled with a robot attaching it at the flange of the endeffector.
+The tool provides its own positioning interface wich automatically calls the endeffector interface of a coupled robot making it easy to reposition the tool center point in space.
+
+Note that coupling and decoupling of tools can be done during runtime to simulate tool quickchanges common in complex manufacturing cells.
+
+While the base object implements the main interfaces and structure of the class, different proccess models are implemented as children of the EndeffectorTool object. These proccess models can be grouped into three different categories:
+
+% Todo hier bild der 3 kategorien hin
+
+The adding of material is done using an extruder which uses raycasts to spawn objects either on the surface of another objects or at the end of the raycast.
+These objects are implemented as Materials which can have different properties from masslessly sticking to surfaces (such as paint) to physical bodies like 3D printing plastic.
+By default no force is emparted during such processes though custom force models can be added by implementing the calculate_process_force function.
+
+Removing of material is either done using the MillingTool which uses the kienzle force model for planar milling or the Remover which is the twin of the remover and can be used to simulate procceses such as sandblasting or waterjet cutting.
+
+% Add image of kienzle model and properly reference it
+
+The moving of material is achieved using grippers. Pybullet industrial supports both finger grippers and suction grippers for this purpose.
+
+## Utility
+To make development easier,
 
 
 # References

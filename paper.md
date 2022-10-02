@@ -25,7 +25,7 @@ date: 22 September 2022
 bibliography: paper.bib
 ---
 
-#Summary
+# Summary
 The trend towards individualized products and the increasing demand for a greater number of variants require a rethinking in the production engineering environment. In the context of this transformation we see robots taking on more and more manufacturing tasks.
 The development of this field is hampered by a toolchain gap: While there are a large number of robot simultions and process simulations there is not yet a simple simulation environment that combines the two and allows the user to investigate the interplay of both.
 
@@ -37,15 +37,24 @@ The package not only simulates the environmental effect of the processes but als
 
 
 
-#Statement of need
-Pybullet industrial was developed in order to model both the production processes and the robot behaviour.
-The currently available software on the market does not offer both aspects in an easy to use fashion while being open source.
-Some popular products like Gazebo, CoppeliaSim or Webots can model some aspects of production lines, e.g. a robot gripping an object, but lack the simulation of milling or 3D-printing.
-Machining processes are usually simulated with FE software.
-The problem with this approach is, that it is not comprehensive enough.
-Its level of detail is very focussed and does not include the greater frame of the robot or the production line.
-Softwares that covers both, like Siemens NX is usually not open source.
-Pybullet industrial fulfills this demand while being available for free and easy to use.
+# Statement of need
+Pybullet industrial was developed for the inderdiscplinary field of robot manufacturing.
+While there are a large number of simulation tools for robotics reserch such as Gazebo, CoppeliaSim or webots, their capabilties all end at the robot endeffector as they are unable to simulate manufacturing processes.
+In the same veine there are several popular FE simulation tools capable of simulating process behavior.
+These however end at the tool as they are not meant to simulate the sytems that actually move the tool.
+
+Pybullet_industrial closes this gap by taking classical multibody simulations that end at the endeffector and then deploying simple process simulations which impact the environment.
+Pybullet_industrial is thus the first process aware robot simulation plattform build for research.
+Note that pybullet industrial neither aims to develop perfect process simulations nor robot simulations, it focusses on the interplay of both.
+Example applications could be:
+
+* Designing joint controllers that compensate for the large process forces during milling
+* Design path planning algorithms for 3D printing that can detect if a robot combines with a previously printed object.
+* Check the coating of an object in  complex scenarios where the object is moved by a robot while another one is spraying paint.
 
 
-#References
+# Overview
+
+
+
+# References

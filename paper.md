@@ -93,6 +93,6 @@ This includes the ToolPath class which its own custom iterator making it easy fo
 Path positions and orientations can be visualized using drawing functions.
 These underlying functions can also be used to visualize arbitrary coordinate system or robot link poses.
 
-
+% TODO add toopath image
 
 # References

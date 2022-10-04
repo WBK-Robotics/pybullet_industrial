@@ -71,17 +71,18 @@ The tool provides its own positioning interface wich automatically calls the end
 
 Note that coupling and decoupling of tools can be done during runtime to simulate tool quickchanges common in complex manufacturing cells.
 
-While the base object implements the main interfaces and structure of the class, different proccess models are implemented as children of the EndeffectorTool object. These proccess models can be grouped into three different categories:
+While the base object implements the main interfaces and structure of the class, different proccess models are implemented as children of the EndeffectorTool object. These proccess models can be grouped into three different categories as seen in Figure \ref{manu_process}.
 
-% Todo hier bild der 3 kategorien hin
+![Classes of Manufacturing processes that can be simulated using this package \label{manu_process}](manufacturing_processes.png)
 
 The adding of material is done using an extruder which uses raycasts to spawn objects either on the surface of another objects or at the end of the raycast.
 These objects are implemented as Materials which can have different properties from masslessly sticking to surfaces (such as paint) to physical bodies like 3D printing plastic.
 By default no force is emparted during such processes though custom force models can be added by implementing the calculate_process_force function.
 
 Removing of material is either done using the MillingTool which uses the kienzle force model [@kienzle] for planar milling or the Remover which is the twin of the remover and can be used to simulate procceses such as sandblasting or waterjet cutting.
+The process force model for milling can be seen in Figure \ref{kienzle_force}. Here the chip thickness exponent and the material specific force are material dependent.
 
-% Add image of kienzle model and properly reference it
+![Cutting Force calculation as described by the Kienzle Model [@kienzle] \label{kienzle_force}](cutting_force.png)
 
 The moving of material is achieved using grippers. Pybullet industrial supports both finger grippers and suction grippers for this purpose.
 
@@ -90,9 +91,8 @@ For camera based applications the library also contains a camera sensor tool tha
 ## Utility
 To make development easier, the library has a number of utility functionality.
 This includes the ToolPath class which its own custom iterator making it easy for tools and robots to follow predetermined paths. These paths can be build using different interpolation functions such as linear interpolation, spline interpolation or circular interpolation.
-Path positions and orientations can be visualized using drawing functions.
+Path positions and orientations can be visualized using drawing functions as seen in Figure \ref{robot_path}.
 These underlying functions can also be used to visualize arbitrary coordinate system or robot link poses.
 
-% TODO add toopath image
-
+![Sample visualization of a Toolpath \label{robot_path}](robot_paths.png)
 # References

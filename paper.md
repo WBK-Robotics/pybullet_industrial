@@ -1,5 +1,5 @@
 ---
-title: 'Pybullet Industrial: A python package for simulating industrial processes and robots'
+title: 'Pybullet Industrial: A process aware robot simulation'
 tags:
   - Python
   - robotics
@@ -11,15 +11,18 @@ tags:
 authors:
   - name: Jan Baumgärtner
     orcid: 0000-0002-7825-3476
-  - name: Malte (last name?)
-    orcid:
+    affiliation: 1
+  - name: Malte Hansjosten
+    affiliation: 1
   - name: Dominik Schönhofen
+    affiliation: 2
   - name: Prof. Dr.-Ing. Jürgen Fleischer
     orcid: 0000-0003-0961-7675
+    affiliation: 1
 affiliations:
   - name: wbk Institute of Production Science
     index: 1
-  - name: Karlsruhe Institute for Technology
+  - name: Independent Researcher
     index: 2
 date: 22 September 2022
 bibliography: paper.bib
@@ -29,9 +32,7 @@ bibliography: paper.bib
 The trend towards individualized products and the increasing demand for a greater number of variants require a rethinking in the production engineering environment. In the context of this transformation we see robots taking on more and more manufacturing tasks.
 The development of this field is hampered by a toolchain gap: While there are a large number of robot simultions and process simulations there is not yet a simple simulation environment that combines the two and allows the user to investigate the interplay of both.
 
-Pybullet Industrial extends the open source library Pybullet with several process models to simulate manufacturing applications that add material, remove material or simply move material. A sample of concrete manufacturing applications in each category can be seen down below:
-
-%TODO add list of example applications which accompanying pybullet industrial screenshots
+Pybullet Industrial extends the open source library Pybullet with several process models to simulate manufacturing applications that add material, remove material or simply move material. A sample of concrete manufacturing applications in each category can be seen in Figure \ref{manu_process}.
 
 The package not only simulates the environmental effect of the processes but also the forces emparted on the robot. It also allows the dynamic switching of processes with the same robot corresponding to tool changes during the manufacturing process. The package also contains utility functionality such as path builder classes which are based on G-code interpolation schemes or a variety of drawing and visualisation functions.
 
@@ -56,6 +57,9 @@ Example applications could be:
 # Overview
 
 Robot simulations typically end at the endeffector while process simulations typically end where the tool is connected to the machine. Pybullet industrial divides functionality similarly by employing a Robot class simulating the multibody dynamics of a Robot manipulator and an Endeffector Tool class capable of simulating processes.
+A sample simulation view with both objects can be seen in Figure \ref{pybullet_industrial_overview}.
+
+![Overview over the two main Objects \label{pybullet_industrial_overview}](pybullet_industrial_overview.png)
 
 These objects can be deployed into a standart pybullet simulation environment and used to build manufacturing scenarios.
 
@@ -95,4 +99,5 @@ Path positions and orientations can be visualized using drawing functions as see
 These underlying functions can also be used to visualize arbitrary coordinate system or robot link poses.
 
 ![Sample visualization of a Toolpath \label{robot_path}](robot_paths.png)
+
 # References

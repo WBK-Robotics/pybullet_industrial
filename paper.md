@@ -29,7 +29,7 @@ bibliography: paper.bib
 ---
 
 # Summary
-The trend towards individualized products and the increasing demand for a greater number of variants require a rethinking in the production engineering environment. In the context of this transformation we see robots taking on more and more manufacturing tasks.
+The trend towards individualized products and the increasing demand for a greater number of variants require a rethinking in the production engineering environment. In the context of this transformation we see robots taking on more and more manufacturing tasks [@wsk].
 The development of this field is hampered by a toolchain gap: While there are a large number of robot simultions and process simulations there is not yet a simple simulation environment that combines the two and allows the user to investigate the interplay of both.
 
 Pybullet Industrial extends the open source library Pybullet with several process models to simulate manufacturing applications that add material, remove material or simply move material. A sample of concrete manufacturing applications in each category can be seen in Figure \ref{manu_process}.

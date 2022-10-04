@@ -39,8 +39,8 @@ The package not only simulates the environmental effect of the processes but als
 
 # Statement of need
 Pybullet industrial was developed for the inderdiscplinary field of robot manufacturing.
-While there are a large number of simulation tools for robotics reserch such as Gazebo, CoppeliaSim or webots, their capabilties all end at the robot endeffector as they are unable to simulate manufacturing processes.
-In the same veine there are several popular FE simulation tools capable of simulating process behavior.
+While there are a large number of simulation tools for robotics reserch such as Gazebo [@gazebo], CoppeliaSim [@coppeliasim] or webots[@webots], their capabilties all end at the robot endeffector as they are unable to simulate manufacturing processes.
+In the same veine there are several popular FE simulation tools such as Abaqus [@abaqus] capable of simulating process behavior.
 These however end at the tool as they are not meant to simulate the sytems that actually move the tool.
 
 Pybullet_industrial closes this gap by taking classical multibody simulations that end at the endeffector and then deploying simple process simulations which impact the environment.
@@ -79,7 +79,7 @@ The adding of material is done using an extruder which uses raycasts to spawn ob
 These objects are implemented as Materials which can have different properties from masslessly sticking to surfaces (such as paint) to physical bodies like 3D printing plastic.
 By default no force is emparted during such processes though custom force models can be added by implementing the calculate_process_force function.
 
-Removing of material is either done using the MillingTool which uses the kienzle force model for planar milling or the Remover which is the twin of the remover and can be used to simulate procceses such as sandblasting or waterjet cutting.
+Removing of material is either done using the MillingTool which uses the kienzle force model [@kienzle] for planar milling or the Remover which is the twin of the remover and can be used to simulate procceses such as sandblasting or waterjet cutting.
 
 % Add image of kienzle model and properly reference it
 

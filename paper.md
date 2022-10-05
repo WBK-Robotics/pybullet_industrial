@@ -58,7 +58,7 @@ Example applications of Pybullet_industrial are:
 
 # Overview
 
-Robot simulations typically end at the endeffector while process simulations typically end where the tool is connected to the machine. Pybullet_industrial divides functionality similarly by employing a Robot class simulating the multibody dynamics of a Robot manipulator and an Endeffector Tool class capable of simulating processes.
+Robot simulations typically start at the base and end at the endeffector while process simulations typically start at the process and end where the tool is connected to the machine. Pybullet_industrial divides functionality similarly by employing a Robot class simulating the multibody dynamics of a Robot manipulator and an Endeffector Tool class capable of simulating processes.
 A sample simulation view with both objects can be seen in Figure \ref{pybullet_industrial_overview}.
 
 ![Overview over the two main Objects \label{pybullet_industrial_overview}](pybullet_industrial_overview.png)

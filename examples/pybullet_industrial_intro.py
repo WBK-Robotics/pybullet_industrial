@@ -57,6 +57,8 @@ if __name__ == "__main__":
                               'robot_descriptions', 'comau_nj290_robot.urdf')
     urdf_file2 = os.path.join(dirname,
                               'robot_descriptions', 'milling_head.urdf')
+    urdf_file3 = os.path.join(dirname,
+                              'robot_descriptions', '3d_printing_head.urdf')
 
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=5000)
@@ -69,25 +71,40 @@ if __name__ == "__main__":
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
 
-    robot = pi.RobotBase(urdf_file1, [-1, -2, 0], start_orientation)
+    robot1 = pi.RobotBase(urdf_file1, [-1, -2, 0], start_orientation)
     remover_properties = {'maximum distance': height-0.505,
                           'opening angle': 0,
                           'number of rays': 1}
     remover = pi.Remover(
         urdf_file2, [2, 0, 2], start_orientation, remover_properties)
-    remover.couple(robot, 'link6')
+    remover.couple(robot1, 'link6')
+
+    
 
     robot2 = pi.RobotBase(
         urdf_file1, [-1, 2, 0], start_orientation=p.getQuaternionFromEuler([0, 0, 0]))
-    extruder_properties = {'maximum distance': 0.7,
+    extruder1_properties = {'maximum distance': 0.7,
                            'opening angle': np.pi/2,
                            'material': pi.Paint,
                            'number of rays': 6,
                            'material properties': {'particle size': 0.015,
                                                    'color': [0, 0, 1, 1]}}
-    extruder = pi.Extruder(
-        urdf_file2, [1.9, 0, 1.2], [0, 0, 0, 1], extruder_properties)
-    extruder.couple(robot2, 'link6')
+    extruder1 = pi.Extruder(
+        urdf_file2, [1.9, 0, 1.2], [0, 0, 0, 1], extruder1_properties)
+    extruder1.couple(robot2, 'link6')
+
+
+    robot3 = pi.RobotBase(
+        urdf_file1, [2, 2, 0], start_orientation=p.getQuaternionFromEuler([0, 0, np.pi]))
+
+    extruder2_properties = {'maximum distance': 0.5,
+                           'opening angle': 0,
+                           'material': pi.Plastic,
+                           'number of rays': 1}
+    extruder2 = pi.Extruder(
+        urdf_file2, [2.9, 2, 1.2], start_orientation, extruder2_properties)
+    extruder2.couple(robot3, 'printing_coupling_frame')
+
 
     pi.spawn_material_block([0.5, -1, 0], [1, 2, 0.5], pi.MetalVoxel,
                             {'particle size': 0.5, 'color': [0, 1, 0.415686, 1]})
@@ -116,11 +133,13 @@ if __name__ == "__main__":
     p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 
     #path_list += (w_path, b_outer_path, b_inner_path, k_path)
-    path_list = [w_path, b_outer_path]
+    path_list = [w_path, b_outer_path, k_path]
 
     for _ in range(20):
         remover.set_tool_pose(*path_list[0].get_start_pose())
-        extruder.set_tool_pose(*path_list[1].get_start_pose())
+        extruder1.set_tool_pose(*path_list[1].get_start_pose())
+        extruder2.set_tool_pose(*path_list[2].get_start_pose())
+        
         for _ in range(100):
             p.stepSimulation()
 
@@ -128,8 +147,10 @@ if __name__ == "__main__":
     for i in range(max(len(path_list[0]), len(path_list[1]))):
         print(path_list[0].positions[:, i])
         remover.set_tool_pose(path_list[0].positions[:, i], upper_orientation)
-        extruder.set_tool_pose(path_list[1].positions[:, i], upper_orientation)
+        extruder1.set_tool_pose(path_list[1].positions[:, i], upper_orientation)
+        extruder2.set_tool_pose(path_list[2].positions[:, i], upper_orientation)
         for _ in range(50):
             p.stepSimulation()
         remover.remove()
-        extruder.extrude()
+        extruder1.extrude()
+        extruder2.extrude()

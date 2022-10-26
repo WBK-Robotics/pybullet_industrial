@@ -32,7 +32,8 @@ bibliography: paper.bib
 The trend towards individualized products and the increasing demand for a greater number of variants require a rethinking in the production engineering environment. In the context of this transformation, we see robots taking on more and more manufacturing tasks [@wsk].
 The development of this field is hampered by a toolchain gap: While there are a large number of robot simulations and process simulations there is not yet a simple simulation environment that combines the two and allows the user to investigate the interplay of both.
 
-Pybullet_industrial extends the open source library Pybullet with several process models to simulate manufacturing applications that add material, remove material or simply move material. A sample of concrete manufacturing applications in each category can be seen in Figure \ref{manu_process}.
+Pybullet_industrial extends the open source library Pybullet with several process models to simulate manufacturing applications that add material, remove material or simply move material.
+A sample of concrete manufacturing applications in each category can be seen in Figure \ref{manu_process}.
 
 The package not only simulates the environmental effect of the processes but also the forces imparted on the robot. It also allows the dynamic switching of processes with the same robot corresponding to tool changes during the manufacturing process. The package also contains utility functions such as path builder classes which are based on G-code interpolation schemes or a variety of drawing and visualization functions.
 
@@ -46,7 +47,7 @@ These simulations end at the tool as they are not meant to simulate the systems 
 Since robots are now performing more and more manufacturing tasks studying and accounting for the interaction between robots and processes becomes ever more important.
 This requires a simulation that can simulate robots and processes.
 
-Pybullet_industrial closes this gap by taking classical multibody simulations that end at the endeffector and then deploying simple process simulations which impact the environment.
+Pybullet_industrial closes this gap by taking classical robot multibody simulations and extending them using simple process simulations which impact the environment.
 Pybullet_industrial is thus the first process-aware robot simulation platform build for research.
 Note that Pybullet_industrial neither aims to develop perfect process simulations nor robot simulations, it focuses on the interplay of both.
 Example applications of Pybullet_industrial are:
@@ -58,7 +59,7 @@ Example applications of Pybullet_industrial are:
 
 # Overview
 
-Robot simulations typically start at the base and end at the endeffector while process simulations typically start at the process and end where the tool is connected to the machine. Pybullet_industrial divides functionality similarly by employing a `RobotBase` class simulating the multibody dynamics of a Robot manipulator and an `EndeffectorTool` class capable of simulating processes.
+Robot simulations typically start at the base and stop at the endeffector while process simulations typically start at the process and end where the tool is connected to the machine. Pybullet_industrial divides functionality similarly by employing a `RobotBase` class simulating the multibody dynamics of a Robot manipulator and an `EndeffectorTool` class capable of simulating processes.
 A sample simulation view with both objects can be seen in Figure \ref{pybullet_industrial_overview}.
 
 ![Overview over the two main Objects \label{pybullet_industrial_overview}](pybullet_industrial_overview.png)
@@ -77,7 +78,8 @@ The tool provides a positioning interface that automatically calls the endeffect
 
 Note that coupling and decoupling of tools can be done during runtime to simulate tool quick changes common in complex manufacturing cells.
 
-While the base object implements the main interfaces and structure of the class, different process models are implemented as children of the `EndeffectorTool` object. These process models can be grouped into three different categories as seen in Figure \ref{manu_process}.
+While the base object implements the main interfaces and structure of the class, different process models are implemented as children of the `EndeffectorTool` object.
+These models can be grouped into three different categories according to how they interact with material as seen in Figure \ref{manu_process}.
 
 ![Classes of Manufacturing processes that can be simulated using this package \label{manu_process}](manufacturing_processes.png)
 

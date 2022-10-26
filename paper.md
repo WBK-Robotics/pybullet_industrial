@@ -58,7 +58,7 @@ Example applications of Pybullet_industrial are:
 
 # Overview
 
-Robot simulations typically start at the base and end at the endeffector while process simulations typically start at the process and end where the tool is connected to the machine. Pybullet_industrial divides functionality similarly by employing a Robot class simulating the multibody dynamics of a Robot manipulator and an Endeffector Tool class capable of simulating processes.
+Robot simulations typically start at the base and end at the endeffector while process simulations typically start at the process and end where the tool is connected to the machine. Pybullet_industrial divides functionality similarly by employing a `RobotBase` class simulating the multibody dynamics of a Robot manipulator and an `EndeffectorTool` class capable of simulating processes.
 A sample simulation view with both objects can be seen in Figure \ref{pybullet_industrial_overview}.
 
 ![Overview over the two main Objects \label{pybullet_industrial_overview}](pybullet_industrial_overview.png)
@@ -67,25 +67,25 @@ These objects can be deployed into a standard pybullet simulation environment an
 
 ## Robot objects
 
-The RobotBase class builds upon pybullets URDF (Universal Robot Description Format) import feature which allows the loading of dynamic multibody robot models. The class adds several convenient interfaces which allow the setting and measuring of joint and endeffector states. This latter allows the user to reposition the endeffector without worrying about the underlying kinematics.
+The `RobotBase` class builds upon pybullets URDF (Universal Robot Description Format) import feature which allows the loading of dynamic multibody robot models. The class adds several convenient interfaces which allow the setting and measuring of joint and endeffector states. This latter allows the user to reposition the endeffector without worrying about the underlying kinematics.
 
 ## Endeffector Tools
 
-Endeffector Tools are the main novelty of this library and implement various process models.
-An EndeffectorTool object can be coupled with a robot attaching it at the flange of the endeffector.
+Endeffector tools are the main novelty of this library and implement various process models.
+An `EndeffectorTool` object can be coupled with a robot attaching it at the flange of the endeffector.
 The tool provides a positioning interface that automatically calls the endeffector interface of a coupled robot making it easy to reposition the tool center point in space.
 
 Note that coupling and decoupling of tools can be done during runtime to simulate tool quick changes common in complex manufacturing cells.
 
-While the base object implements the main interfaces and structure of the class, different process models are implemented as children of the EndeffectorTool object. These process models can be grouped into three different categories as seen in Figure \ref{manu_process}.
+While the base object implements the main interfaces and structure of the class, different process models are implemented as children of the `EndeffectorTool` object. These process models can be grouped into three different categories as seen in Figure \ref{manu_process}.
 
 ![Classes of Manufacturing processes that can be simulated using this package \label{manu_process}](manufacturing_processes.png)
 
-The adding of material is done using an extruder which uses raycasts to spawn objects either on the surface of another object or at the end of the raycast.
+The adding of material is done using the `Extruder` class which uses raycasts to spawn objects either on the surface of another object or at the end of the raycast.
 These objects are implemented as Materials that can have different properties from massless particles sticking to surfaces (such as paint) to physical bodies like 3D printing plastic.
-By default, no force is imparted during such processes although custom force models can be added by implementing the calculate_process_force function.
+By default, no force is imparted during such processes although custom force models can be added by implementing the `calculate_process_force` function.
 
-Removing of material is either done using the MillingTool which uses the Kienzle force model [@kienzle] for planar milling or the Remover which is the twin of the remover and can be used to simulate processes such as sandblasting or waterjet cutting.
+Removing of material is either done using the `MillingTool` which uses the Kienzle force model [@kienzle] for planar milling or the `Remover` which is the twin of the `Extruder` and can be used to simulate ablative processes such as sandblasting or waterjet cutting.
 The process force model for milling can be seen in Figure \ref{kienzle_force}. Here the chip thickness exponent and the material-specific force are material-dependent.
 
 ![Cutting Force calculation as described by the Kienzle Model [@kienzle] \label{kienzle_force}](cutting_force.png)
@@ -96,7 +96,7 @@ For camera-based applications, the library also contains a camera sensor tool th
 
 ## Utility
 To make development easier, the library has several utility functions.
-This includes the ToolPath class which has a custom iterator making it easy for tools and robots to follow predetermined paths. These paths can be built using different interpolation functions such as linear interpolation, spline interpolation, or circular interpolation.
+This includes the `ToolPath` class which has a custom iterator making it easy for tools and robots to follow predetermined paths. These paths can be built using different interpolation functions such as linear interpolation, spline interpolation, or circular interpolation.
 Path positions and orientations can be visualized using drawing functions as seen in Figure \ref{robot_path}.
 These underlying functions can also be used to visualize arbitrary coordinate systems or robot link poses.
 

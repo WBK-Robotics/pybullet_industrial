@@ -32,7 +32,7 @@ bibliography: paper.bib
 The trend towards individualized products and the increasing demand for a greater number of variants require a rethinking in the production engineering environment. In the context of this transformation, we see robots taking on more and more manufacturing tasks [@wsk].
 The development of this field is hampered by a toolchain gap: While there are a large number of robot simulations and process simulations there is not yet a simple simulation environment that combines the two and allows the user to investigate the interplay of both.
 
-In this paper we present Pybullet_industrial. This python package extends the open source multi body physics package Pybullet with manufacturing process models to simulate manufacturing applications that add material, remove material or simply move material.
+To meet this challenge we developed Pybullet_industrial. This python package extends the open source multi body physics package Pybullet with manufacturing process models to simulate manufacturing applications that add material, remove material or simply move material.
 A sample of concrete manufacturing applications in each category can be seen in Figure \ref{manu_process}.
 
 The package not only simulates the environmental effect of the processes but also the forces imparted on the robot. It also allows the dynamic switching of processes with the same robot corresponding to tool changes during the manufacturing process. The package also contains utility functions such as path builder classes which are based on G-code interpolation schemes or a variety of drawing and visualization functions.

@@ -1,5 +1,6 @@
 
 ![pybullet_industrial_logo](docs/source/logo.png)
+[![DOI](https://zenodo.org/badge/491020827.svg)](https://zenodo.org/badge/latestdoi/491020827)
 [![codecov](https://codecov.io/gh/WBK-Robotics/pybullet_industrial/branch/main/graph/badge.svg?token=CZ9HJY2PKN)](https://codecov.io/gh/WBK-Robotics/pybullet_industrial)
 [![codiga](https://api.codiga.io/project/34121/score/svg)](https://app.codiga.io/project/34121/dashboard)
 [![Documentation Status](https://readthedocs.org/projects/pybullet-industrial/badge/?version=latest)](https://pybullet-industrial.readthedocs.io/en/latest/?badge=latest)

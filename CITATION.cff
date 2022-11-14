@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Baumgärtner"
+  given-names: "Jan"
+  orcid: "https://orcid.org/0000-0002-7825-3476"
+- family-names: "Hansjosten"
+  given-names: "Malte"
+  orcid: "https://orcid.org/0000-0002-0210-3930"
+- family-names: "Schönhofen"
+  given-names: "Dominik"
+title: "pybullet_industrial"
+version: 1.0.1
+doi: 10.5281/zenodo.7318894
+date-released: 2022-09-28
+url: "https://github.com/WBK-Robotics/pybullet_industrial"

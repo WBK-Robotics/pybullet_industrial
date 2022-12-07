@@ -59,19 +59,12 @@ def draw_coordinate_system(position: np.array, orientation: np.array, length: fl
                                      Defaults to 0 in wich case it remains forever.
     """
 
-    euler_angles = p.getEulerFromQuaternion(orientation)
-    roll = euler_angles[0]
-    pitch = -1*euler_angles[1]
-    yaw = euler_angles[2]
+    rotation = p.getMatrixFromQuaternion(orientation)
+    rotation = np.array(rotation).reshape(3, 3)
 
-    x_direction = np.array([np.cos(yaw)*np.cos(pitch),
-                            np.sin(yaw)*np.cos(pitch),
-                            np.sin(pitch)])
-    y_direction = -1*np.array([-np.cos(yaw)*np.sin(pitch)*np.sin(roll)-np.sin(yaw)*np.cos(roll),
-                               -np.sin(yaw)*np.sin(pitch) *
-                               np.sin(roll)+np.cos(yaw)*np.cos(roll),
-                               np.cos(pitch)*np.sin(roll)])
-    z_direction = np.cross(x_direction, y_direction)
+    x_direction = rotation[:, 0]
+    y_direction = rotation[:, 1]
+    z_direction = rotation[:, 2]
 
     p.addUserDebugLine(position,
                        position+length*x_direction,
@@ -148,7 +141,8 @@ def get_object_id_from_mouse():
             vertical_distance = vertical/height
 
             ray_end_pos = ray_start_pos + ray_forward - 0.5*horizontal + \
-                0.5*vertical+float(mouse_x) * horizontal_distance - float(mouse_y)*vertical_distance
+                0.5*vertical+float(mouse_x) * horizontal_distance - \
+                float(mouse_y)*vertical_distance
             ray_info = p.rayTest(ray_start_pos, ray_end_pos)
             hit = ray_info[0]
             return hit[0], hit[1]

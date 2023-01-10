@@ -1,0 +1,2 @@
+%Kommentar
+G0 M1 T2 X3 Y4 Z5 A6 B7 C8 I9 J10 R11 F12

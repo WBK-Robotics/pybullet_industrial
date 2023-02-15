@@ -22,6 +22,8 @@ def accurate_calculate_inverse_kinematics(robot, target_pos, target_ori, thresho
         iter_num += 1
 
     print("Num iter: " + str(iter_num) + " threshold: " + str(dist2))
+    if iter_num <= 10:
+        print("joint state: " + str(robot.get_joint_state()))
     return
 
 
@@ -60,8 +62,17 @@ if __name__ == "__main__":
 
     desired_position = np.array([0, 0, 0.63])
 
+    initial_joint_state = {
+        'shoulder_pan_joint': -1.841800468078536,
+        'shoulder_lift_joint': -0.07888051657301794,
+        'elbow_joint': -0.7281539656326238,
+        'wrist_1_joint': 0.8078408186441666,
+        'wrist_2_joint': -3.474046522564269,
+        'wrist_3_joint': -1.5708191849156867
+        }
+
     for _ in range(100):
-        endeffector.set_tool_pose(desired_position, [0, 0, 0, 1])
+        robot.set_joint_position(initial_joint_state)
         p.stepSimulation()
 
     actual_position, _ = endeffector.get_tool_pose()

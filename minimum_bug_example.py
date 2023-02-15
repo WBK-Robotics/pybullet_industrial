@@ -41,7 +41,7 @@ if __name__ == "__main__":
     file_directory = os.path.dirname(os.path.abspath(__file__))
     sdmbot_urdf_file = os.path.join(file_directory, 'urdf', 'sdmbot.urdf')
     endeffector_file = os.path.join(
-        file_directory, 'examples', 'robot_descriptions', 'milling_head.urdf')
+        file_directory, 'urdf', 'welding_torch.urdf')
 
     physics_client = p.connect(p.GUI)
     p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
@@ -63,17 +63,18 @@ if __name__ == "__main__":
     desired_position = np.array([0, 0, 0.63])
 
     initial_joint_state = {
-        'shoulder_pan_joint': -1.841800468078536,
-        'shoulder_lift_joint': -0.07888051657301794,
-        'elbow_joint': -0.7281539656326238,
-        'wrist_1_joint': 0.8078408186441666,
-        'wrist_2_joint': -3.474046522564269,
-        'wrist_3_joint': -1.5708191849156867
-        }
+    'shoulder_pan_joint': -1.9181956972813736,
+    'shoulder_lift_joint': -0.4114696196023275,
+    'elbow_joint': 0.4516409404760959,
+    'wrist_1_joint': 1.5939744789933905,
+    'wrist_2_joint': -5.203750296431242,
+    'wrist_3_joint': -0.384770715416853
+}
 
     for _ in range(100):
         robot.set_joint_position(initial_joint_state)
         p.stepSimulation()
+        time.sleep(0.01)
 
     actual_position, _ = endeffector.get_tool_pose()
     print(actual_position, desired_position)

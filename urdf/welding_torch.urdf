@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<robot name="welding_torch">
+  <material name="orange">
+    <color rgba="1 0.5 0 1"/>
+  </material>
+
+  
+  <link name="torch_body">
+   <visual>
+    <origin rpy="0 0 0" xyz="0 0 -0.02"/>
+      <geometry>
+        <mesh filename="mesh/visual/endeffector.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="orange"/>
+    </visual>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+
+  <link name="welding_tip">
+  <origin rpy="0 0 0" xyz="0 0 0"/>
+  <inertial>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <mass value="0.1"/>
+    <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+  </inertial>
+  </link>
+
+  <joint name="torch_body_1_joint" type="fixed">
+    <parent link="torch_body"/>
+    <child link="welding_tip"/>
+    <origin rpy="0.000 0.52359877559 0.0" xyz="0.0038031 0 -0.19917"/>
+  </joint>
+
+</robot>

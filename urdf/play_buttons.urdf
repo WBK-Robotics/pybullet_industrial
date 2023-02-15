@@ -1,0 +1,102 @@
+<?xml version="1.0" ?>
+<robot name="buttons">
+  <!-- Define the root link -->
+  <link name="root">
+    <visual>
+      <geometry>
+        <box size="0.4 0.2 0.1"/>
+      </geometry>
+      <material name="grey">
+        <color rgba="0.5 0.5 0.5 1"/>
+      </material>
+    </visual>
+  </link>
+  
+  <!-- Define the buttons -->
+  <link name="record_button">
+    <visual>
+      <geometry>
+        <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+    </collision>
+    <origin xyz="-0.15 0 0" rpy="0 0 0"/>
+  </link>
+  <link name="play_button">
+    <visual>
+      <geometry>
+        <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+    </collision>
+    <origin xyz="-0.05 0 0" rpy="0 0 0"/>
+  </link>
+  <link name="stop_button">
+    <visual>
+      <geometry>
+        <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+      <material name="blue">
+        <color rgba="0 0 1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+    </collision>
+    <origin xyz="0.05 0 0" rpy="0 0 0"/>
+  </link>
+  <link name="pause_button">
+    <visual>
+      <geometry>
+        <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+      <material name="yellow">
+        <color rgba="1 1 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.1" radius="0.05"/>
+      </geometry>
+    </collision>
+    <origin xyz="0.15 0 0" rpy="0 0 0"/>
+  </link>
+
+  <!-- Joints to connect the root link and the buttons -->
+  <joint name="record_to_root" type="fixed">
+    <parent link="root"/>
+    <child link="record_button"/>
+    <origin xyz="-0.15 0 0" rpy="0 0 0"/>
+  </joint>
+    <joint name="play_to_root" type="fixed">
+        <parent link="root"/>
+        <child link="play_button"/>
+        <origin xyz="-0.05 0 0" rpy="0 0 0"/>
+    </joint>
+    <joint name="stop_to_root" type="fixed">
+        <parent link="root"/>
+        <child link="stop_button"/>
+         <origin xyz="0.05 0 0" rpy="0 0 0"/>
+    </joint>
+    <joint name="pause_to_root" type="fixed">
+        <parent link="root"/>
+        <child link="pause_button"/>^
+        <origin xyz="0.15 0 0" rpy="0 0 0"/>
+    </joint>
+</robot>

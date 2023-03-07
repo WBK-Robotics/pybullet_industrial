@@ -80,9 +80,9 @@ The list of interfaces includes:
 
 
 
-## end effector Tools
+## End effector Tools
 
-end effector tools are the main novelty of this library and implement various process models.
+End effector tools are the main novelty of this library and implement various process models.
 An `EndeffectorTool` object can be coupled with a robot attaching it to the flange of the end effector.
 The tool provides a positioning interface that automatically calls the end effector interface of a coupled robot making it easy to reposition the tool center point in space.
 

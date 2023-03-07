@@ -31,8 +31,11 @@ bibliography: paper.bib
 # Summary
 The trend towards individualized products and the increasing demand for a greater number of variants require a rethinking in the production engineering environment. In the context of this transformation, we see robots taking on more and more manufacturing tasks [@wsk].
 The development of this field is hampered by a toolchain gap: While there are a large number of robot simulations and process simulations there is not yet a simple simulation environment that combines the two and allows the user to investigate the interplay of both.
+Process simulation in this case refers to the simulation of manufacturing processes which according to [@process_sim] is defined as the use of one or
+more physical mechanisms to transform the shape and/or form of a workpiece.
+While process simulation is a vast field that studies different levels of detail, we focus on the simulation of how the process affects the environment and the robot.
 
-To meet this challenge we developed PyBullet Industrial. This Python package extends the open source multi body physics package PyBullet with manufacturing process models to simulate manufacturing applications that add material, remove material or simply move material.
+To meet this challenge we developed PyBullet Industrial. This Python package extends the open-source multi-body physics package PyBullet with manufacturing process models to simulate manufacturing applications that add material, remove material or simply move material.
 A sample of concrete manufacturing applications in each category can be seen in Figure \ref{manu_process}.
 
 The package not only simulates the environmental effect of the processes but also the forces imparted on the robot. It also allows the dynamic switching of processes with the same robot corresponding to tool changes during the manufacturing process. The package also contains utility functions such as path builder classes which are based on G-code (also called RS274) interpolation schemes [@g-code] or a variety of drawing and visualization functions.
@@ -41,25 +44,25 @@ The package not only simulates the environmental effect of the processes but als
 
 # Statement of need
 PyBullet Industrial was developed for the interdisciplinary field of robot manufacturing.
-While there are a large number of simulation tools for robotics research such as Gazebo [@gazebo], CoppeliaSim [@coppeliasim], or webots[@webots], their capabilities all end at the robot endeffector as they are unable to simulate manufacturing processes.
+While there are a large number of simulation tools for robotics research such as Gazebo [@gazebo], CoppeliaSim [@coppeliasim], or webots [@webots], their capabilities all end at the robot end effector as they are unable to simulate manufacturing processes.
 In the same vein, there are several popular FE simulation tools such as Abaqus [@abaqus] capable of simulating process behavior.
 These simulations end at the tool as they are not meant to simulate the systems that move the tool.
 Since robots are now performing more and more manufacturing tasks studying and accounting for the interaction between robots and processes becomes ever more important.
 This requires a simulation that can simulate robots and processes.
 
 PyBullet Industrial closes this gap by taking classical robot multibody simulations and extending them using simple process simulations which impact the environment.
-PyBullet Industrial is thus the first process-aware robot simulation platform build for research.
+PyBullet Industrial is thus the first process-aware robot simulation platform built for research.
 Note that PyBullet Industrial neither aims to develop perfect process simulations nor robot simulations, it focuses on the interplay of both.
 Example applications of PyBullet Industrial are:
 
 * Designing joint controllers that compensate for the large process forces during milling
-* Design path planning algorithms for 3D printing that can detect if a robot combines with a previously printed object.
-* Check the coating of an object in complex scenarios where the object is moved by a robot while another one is spraying paint.
+* Designing path planning algorithms for 3D printing that can detect if a robot combines with a previously printed object.
+* Checking the coating of an object in complex scenarios where the object is moved by a robot while another one is spraying paint.
 
 
 # Overview
 
-Robot simulations typically start at the base and stop at the endeffector while process simulations typically start at the process and end where the tool is connected to the machine. PyBullet Industrial divides functionality similarly by employing a `RobotBase` class simulating the multibody dynamics of a Robot manipulator and an `EndeffectorTool` class capable of simulating processes.
+Robot simulations typically start at the base and stop at the end effector while process simulations typically start at the process and end where the tool is connected to the machine. PyBullet Industrial divides functionality similarly by employing a `RobotBase` class simulating the multibody dynamics of a Robot manipulator and an `EndeffectorTool` class capable of simulating processes.
 A sample simulation view with both objects can be seen in Figure \ref{PyBullet_industrial_overview}.
 
 ![Overview over the two main Objects \label{PyBullet_industrial_overview}](PyBullet_industrial_overview.png)
@@ -68,20 +71,20 @@ These objects can be deployed into a standard PyBullet simulation environment an
 
 ## Robot objects
 
-The `RobotBase` class builds upon PyBullets URDF (Universal Robot Description Format) import feature which allows the loading of dynamic multibody robot models. The class adds several convenient interfaces which allow the setting and measuring of joint and endeffector states. This latter allows the user to reposition the endeffector without worrying about the underlying kinematics.
+The `RobotBase` class builds upon PyBullets URDF (Universal Robot Description Format) [@urdf] import feature which allows the loading of dynamic multibody robot models. The class adds several convenient interfaces which allow the setting and measuring of joint and end effector states. This latter allows the user to reposition the end effector without worrying about the underlying kinematics.
 The list of interfaces includes:
 
-- A joint state interface that allows the user to set and read joint positions, velocities and torques.
-- A endeffector state interface that allows the user to set and read the endeffector position, orientation and velocity.
+- A joint state interface that allows the user to set and read joint positions, velocities, and torques.
+- A end effector state interface that allows the user to set and read the end effector position, orientation, and velocity. The inverse kinematics is in this case calculated using PyBullets built-in inverse kinematics solver.
 - A world state interface that allows the user to set and read the world position and orientation of the robot base.
 
 
 
-## Endeffector Tools
+## end effector Tools
 
-Endeffector tools are the main novelty of this library and implement various process models.
-An `EndeffectorTool` object can be coupled with a robot attaching it at the flange of the endeffector.
-The tool provides a positioning interface that automatically calls the endeffector interface of a coupled robot making it easy to reposition the tool center point in space.
+end effector tools are the main novelty of this library and implement various process models.
+An `EndeffectorTool` object can be coupled with a robot attaching it to the flange of the end effector.
+The tool provides a positioning interface that automatically calls the end effector interface of a coupled robot making it easy to reposition the tool center point in space.
 
 Note that coupling and decoupling of tools can be done during runtime to simulate tool quick changes common in complex manufacturing cells.
 
@@ -118,8 +121,8 @@ PyBullet Industrial is a novel simulation platform for robot manufacturing resea
 It allows the simulation of robots and processes in a single environment.
 While the library offers the basic functionality to simulate robots and processes, these blocks need to be parameterized and combined to create a meaningful simulation.
 Future work will focus on the development of such parameterization and combination methods.
-For deployment on real robots the library will also be extended to directly parse g-code files and convert them into tool paths.
-For direct control a ROS interface will be added to allow the use of ROS controllers.
+For deployment on real robots, the library will also be extended to directly parse g-code files and convert them into tool paths.
+For direct control, a ROS interface will be added to allow the use of ROS controllers.
 
 
 
@@ -170,7 +173,7 @@ for positions, orientations, _ in test_path:
 
 ```
 
-In this simple example, a `RobotBase` is coupled to an `Extruder` tool and a `ToolPath` path is built to print a a box wih rounded corners.
+In this simple example, a `RobotBase` is coupled to an `Extruder` tool and a `ToolPath` path is built to print a box with rounded corners.
 The path is iterated using the built-in iterator and the extruder is moved along the path extruding particles.
 More examples can be found in the [examples folder](https://github.com/WBK-Robotics/PyBullet_industrial/tree/main/examples) of the repository.
 

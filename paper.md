@@ -109,7 +109,7 @@ These underlying functions can also be used to visualize arbitrary coordinate sy
 # Conclusion:
 
 
-# References
+
 
 # Example
 A simple example highlighting how the library can be used can be seen in the following code snippet.
@@ -136,7 +136,8 @@ p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=True)
 
 robot = pi.RobotBase(urdf_file1, [0, 0, 0], [0,0,0,1])
 
-extruder_properties = {'maximum distance': 0.5,'opening angle': 0,'material': pi.Plastic,'number of rays': 1}
+extruder_properties = {'maximum distance': 0.5,'opening angle': 0,
+                       'material': pi.Plastic,'number of rays': 1}
 extruder = pi.Extruder(
     urdf_file2, [1.9, 0, 1.2], [0,0,0,1], extruder_properties)
 extruder.couple(robot, 'printing_coupling_frame')
@@ -160,3 +161,6 @@ for positions, orientations, _ in test_path:
 In this simple example, a `RobotBase` is coupled to an `Extruder` tool and a `ToolPath` path is built to print a a box wih rounded corners.
 The path is iterated using the built-in iterator and the extruder is moved along the path extruding particles.
 More examples can be found in the [examples folder](https://github.com/WBK-Robotics/pybullet_industrial/tree/main/examples) of the repository.
+
+
+# References

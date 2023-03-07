@@ -20,7 +20,7 @@ A box with rounded corners can be created by the use of build_box_path().
 .. literalinclude:: ../../examples/path_creation.py
    :language: python
    :linenos:
-   :lines: 1-3, 7-21
+   :lines: 1-3, 7-21,73-75
 
 For positioning the path an array for the center position is specified along with the dimensions of the box and the radius of its corners.
 The path is rotated by 90 degrees around the x-axis using the transformation function of pybullet.
@@ -38,7 +38,7 @@ Here the color of the paths is prescribed.
 .. literalinclude:: ../../examples/path_creation.py
    :language: python
    :linenos:
-   :lines: 22-61
+   :lines: 1-3,22-61,,73-75
 
 .. image:: images/path_interpolation.PNG
    :alt: interpolation_example
@@ -54,7 +54,7 @@ Finally, a path can be appended or prepended to another path, as shown here:
 .. literalinclude:: ../../examples/path_creation.py
    :language: python
    :linenos:
-   :lines: 62-69
+   :lines: 1-3,62-69,73-75
 
 
 3d printing and milling

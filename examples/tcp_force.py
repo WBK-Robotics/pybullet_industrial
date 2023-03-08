@@ -1,5 +1,6 @@
 """ Simple Example showing how force can be applied to the end effector.
-    This example uses simple pendulums for this pupose.
+    This example uses the urdf of a simple pendulum as an end effector 
+    where the tip of the pendulum is the tool center point.
     By applying different forces the pendulums will move in different ways.
 """
 import os

@@ -1,4 +1,4 @@
-"""This example demonstrates how gruipping can be done with the pybullet_industrial library.
+"""This example demonstrates how gripping can be done with the pybullet_industrial library.
     It uses the Comau NJ290 robot and a two types of grippers, 
     a vacuum gripper and a parallel gripper.
     The vacuum gripper is used to pick up a cube and move it to a new position.

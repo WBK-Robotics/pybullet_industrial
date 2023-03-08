@@ -20,7 +20,7 @@ A box with rounded corners can be created by the use of build_box_path().
 .. literalinclude:: ../../examples/path_creation.py
    :language: python
    :linenos:
-   :lines: 1-3, 7-21,73-75
+   :lines: 5-18,75-77
 
 For positioning the path an array for the center position is specified along with the dimensions of the box and the radius of its corners.
 The path is rotated by 90 degrees around the x-axis using the transformation function of pybullet.
@@ -38,7 +38,7 @@ Here the color of the paths is prescribed.
 .. literalinclude:: ../../examples/path_creation.py
    :language: python
    :linenos:
-   :lines: 1-3,22-61,,73-75
+   :lines: 5-13,24-62,75-77
 
 .. image:: images/path_interpolation.PNG
    :alt: interpolation_example
@@ -54,7 +54,7 @@ Finally, a path can be appended or prepended to another path, as shown here:
 .. literalinclude:: ../../examples/path_creation.py
    :language: python
    :linenos:
-   :lines: 1-3,62-69,73-75
+   :lines: 5-13,60-77
 
 
 3d printing and milling
@@ -73,14 +73,14 @@ By coupling or decoupling a tool to a link from the robot, it can be attached or
 .. literalinclude:: ../../examples/3d_printing_and_milling.py
    :language: python
    :linenos:
-   :lines: 1-43
+   :lines: 9-49
 
 The next step is defining the path for the tools, as it is done here with a box path.
 
 .. literalinclude:: ../../examples/3d_printing_and_milling.py
    :language: python
    :linenos:
-   :lines: 45-48
+   :lines: 51-55
 
 
 Finally, the tools are translated to follow the path.
@@ -97,4 +97,4 @@ After they reached the end of the path, the tool will be decoupled and the new t
 .. literalinclude:: ../../examples/3d_printing_and_milling.py
    :language: python
    :linenos:
-   :lines: 57-88
+   :lines: 56-95

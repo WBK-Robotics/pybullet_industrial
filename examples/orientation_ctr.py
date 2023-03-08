@@ -1,11 +1,14 @@
+
+"""This example shows how to use the RobotBase class endeffector interface can be used
+   to control the orientation of a robot endeffector.
+"""
+
 import os
 import time
 
 import pybullet as p
 import pybullet_industrial as pi
 
-"""This example shows how to use the RobotBase class 
-   to control the orientation of a robot endeffector."""
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(

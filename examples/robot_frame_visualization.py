@@ -1,3 +1,6 @@
+""" Examlpe of how to visualize robot frames using pybullet_industrial. 
+    Even when the robot is moved by dragging it with the mouse, the frames will move with the robot.
+"""
 import os
 import time
 
@@ -27,7 +30,7 @@ if __name__ == "__main__":
 
     target_position = np.array([0, 0.3, 0.3])
     pi.draw_robot_frames(robot1, life_time=0)
-    pi.draw_robot_frames(robot2, life_time=0, text_size=2,length=0.4)
+    pi.draw_robot_frames(robot2, life_time=0, text_size=2, length=0.4)
     while True:
         connection_info = p.getConnectionInfo()
         if not connection_info['isConnected']:

@@ -1,3 +1,9 @@
+"""This example shows how to use the extruder class to print a 3D object
+
+This example shows how to use the pybullet_industrial package to simulate a 3D printing process.
+The example uses a Comau NJ290 six-axis robot with a 3D printing head.
+The 3D printing head is used to print a large hollowed out box with rounded edges.
+"""
 import os
 
 import numpy as np
@@ -38,7 +44,6 @@ if __name__ == "__main__":
 
     physics_client = p.connect(p.GUI)
     p.setPhysicsEngineParameter(numSolverIterations=5000)
-
 
     fofa_path = os.path.join(dirname,
                              'Objects', 'FoFa', 'FoFa.urdf')

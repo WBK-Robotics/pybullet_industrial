@@ -1,3 +1,7 @@
+""" Simple Example showing how force can be applied to the end effector.
+    This example uses simple pendulums for this pupose.
+    By applying different forces the pendulums will move in different ways.
+"""
 import os
 import pybullet as p
 import pybullet_industrial as pi

@@ -87,6 +87,7 @@ An `EndeffectorTool` object can be coupled with a robot attaching it to the flan
 The tool provides a positioning interface that automatically calls the end effector interface of a coupled robot making it easy to reposition the tool center point in space.
 
 Note that coupling and decoupling of tools can be done during runtime to simulate tool quick changes common in complex manufacturing cells.
+The geometry of a specific tools is defined by a URDF file where the last link is the default tool center point although this can be changed by the user.
 
 While the base object implements the main interfaces and structure of the class, different process models are implemented as children of the `EndeffectorTool` object.
 These models can be grouped into three different categories according to how they interact with material as seen in Figure \ref{manu_process}.
@@ -94,6 +95,10 @@ These models can be grouped into three different categories according to how the
 ![Classes of Manufacturing processes that can be simulated using this package \label{manu_process}](manufacturing_processes.png)
 
 The adding of material is done using the `Extruder` class which uses raycasts [@raycast] to spawn objects either on the surface of another object or at the end of the raycast.
+This is indicated in Figure \ref{extruder}, which also shows the extruder parameters that can be set.
+
+![Extruder parameters visualization \label{extruder}](extruder.png)
+
 These objects are implemented as Materials that can have different properties from massless particles sticking to surfaces (such as paint) to physical bodies like 3D printing plastic.
 By default, no force is imparted during such processes although custom force models can be added by implementing the `calculate_process_force` function.
 

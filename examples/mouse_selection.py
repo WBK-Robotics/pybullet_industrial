@@ -1,3 +1,7 @@
+""" This example shows how to select objects with the mouse using pybullet industrial.
+    To select an object such as the link of a robot, click on the object with the mouse.
+    The selected object will change color.
+"""
 import os
 
 import numpy as np

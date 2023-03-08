@@ -1,3 +1,7 @@
+""" This example demonstrates the voxel engine of pybullet industrial.
+    It creates multiple voxel blocks with different siced voxels and removes the using a remover 
+    tool which accts as a water jet.
+"""
 import os
 
 import pybullet as p

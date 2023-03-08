@@ -1,12 +1,15 @@
+
+""" This example demonstrates how the camera sensor can be used to capture images.
+    Saving the images however requires a external library such as matplotlib
+"""
+
 import os
+import sys
 
 import numpy as np
 import pybullet as p
 import pybullet_industrial as pi
 
-''' This example demonstrates how the camera sensor can be used to capture images.
-    Saving the images however requires a external library such as matplotlib
-'''
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(
@@ -41,8 +44,13 @@ if __name__ == "__main__":
         p.stepSimulation()
 
     img = camera.get_image()
-    # optinal: save the image using matplotlib
-    import matplotlib.image
-    matplotlib.image.imsave('kuka_robot.png', img)
+
+    if 'matplotlib' in sys.modules:
+        import matplotlib.image
+        matplotlib.image.imsave('kuka_robot.png', img)
+    else:
+        print('Matplotlib not installed, cannot save image')
+        print('To install matplotlib, run: pip install matplotlib')
+
     while True:
         p.stepSimulation()

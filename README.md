@@ -17,6 +17,7 @@ With the help of the pybullet_industrial package you will be able to:
 - simulating paint coating scenarios
 - simulate the handling of complex tasks using a variety of grippers
 
+![example_gif](docs/source/images/intro_sim.gif)
 ## Documentation
 
 You can find the documentation [here](https://pybullet-industrial.readthedocs.io/en/latest/).

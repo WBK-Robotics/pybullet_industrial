@@ -39,7 +39,9 @@ To meet this challenge we developed PyBullet Industrial. This Python package ext
 A sample of concrete manufacturing applications in each category can be seen in Figure \ref{manu_process}.
 
 The package not only simulates the environmental effect of the processes but also the forces imparted on the robot. It also allows the dynamic switching of processes with the same robot corresponding to tool changes during the manufacturing process. The package also contains utility functions such as path builder classes which are based on G-code (also called RS274) interpolation schemes [@g-code] or a variety of drawing and visualization functions.
+A sample screenshot of a simulation using PyBullet Industrial can be seen in Figure \ref{pybullet_window}.
 
+![Sample view of Pybullet Industrial \label{pybullet_window}](pybullet_window.png)
 
 
 # Statement of need
@@ -114,12 +116,20 @@ For camera-based applications, the library also contains a camera sensor tool th
 ## Utility
 To make development easier, the library has several utility functions.
 This includes the `ToolPath` class which has a custom iterator making it easy for tools and robots to follow predetermined paths. These paths can be built using different interpolation functions such as linear interpolation, spline interpolation, or circular interpolation.
-Path positions and orientations can be visualized using drawing functions as seen in Figure \ref{robot_path}.
+Path positions and orientations can be visualized using drawing functions.
 These underlying functions can also be used to visualize arbitrary coordinate systems or robot link poses.
 
-![Sample visualization of a Toolpath \label{robot_path}](robot_paths.png)
 
 
+
+
+# Example Research Applications
+
+Apart from the example applications mentioned in the statement of need, the library is also already been used in a number of ongoing research projects.
+These include:
+
+* A study on VR-based robot programming where a welding task was simulated in VR using PyBullet Industrial. The resulting Project Demonstrator can be seen at the Hannover Messe 2023.
+* A project on automated Electromotor disassembly where the simulation is used to validate a given disassembly plan including for example the milling away of rusted screws.
 
 # Conclusion
 PyBullet Industrial is a novel simulation platform for robot manufacturing research.
@@ -131,12 +141,5 @@ For direct control, a ROS interface will be added to allow the use of ROS contro
 
 
 
-# Example Research Applications
-
-Apart from the example applications mentioned in the statement of need, the library is also already been used in a number of ongoing research projects.
-These include:
-
-* A study on VR-based robot programming where a welding task was simulated in VR using PyBullet Industrial. The resulting Project Demonstrator can be seen at the Hannover Messe 2023.
-* A project on automated Electromotor disassembly where the simulation is used to validate a given disassembly plan including for example the milling away of rusted screws.
 
 # References

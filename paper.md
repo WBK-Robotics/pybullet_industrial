@@ -131,12 +131,12 @@ For direct control, a ROS interface will be added to allow the use of ROS contro
 
 
 
-# Example Applications
+# Example Research Applications
 
 Apart from the example applications mentioned in the statement of need, the library is also already been used in a number of ongoing research projects.
 These include:
 
-* A study on VR based robot programming where a welding task was simulated in VR using PyBullet Industrial. The resulting Project Demonstrator can be seen at the Hannover Messe 2023.
-* A project on automated Electromotor dissasembly where the simulation is used to validate a given dissasembly plan including for example the milling away of rusted screws.
+* A study on VR-based robot programming where a welding task was simulated in VR using PyBullet Industrial. The resulting Project Demonstrator can be seen at the Hannover Messe 2023.
+* A project on automated Electromotor disassembly where the simulation is used to validate a given disassembly plan including for example the milling away of rusted screws.
 
 # References

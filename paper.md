@@ -55,7 +55,7 @@ PyBullet Industrial is thus the first process-aware robot simulation platform bu
 Note that PyBullet Industrial neither aims to develop perfect process simulations nor robot simulations, it focuses on the interplay of both.
 Example applications of PyBullet Industrial are:
 
-* Designing joint controllers that compensate for the large process forces during milling
+* Designing joint controllers that compensate for the large process forces during milling.
 * Designing path planning algorithms for 3D printing that can detect if a robot combines with a previously printed object.
 * Checking the coating of an object in complex scenarios where the object is moved by a robot while another one is spraying paint.
 
@@ -65,13 +65,13 @@ Example applications of PyBullet Industrial are:
 Robot simulations typically start at the base and stop at the end effector while process simulations typically start at the process and end where the tool is connected to the machine. PyBullet Industrial divides functionality similarly by employing a `RobotBase` class simulating the multibody dynamics of a Robot manipulator and an `EndeffectorTool` class capable of simulating processes.
 A sample simulation view with both objects can be seen in Figure \ref{PyBullet_industrial_overview}.
 
-![Overview over the two main Objects \label{PyBullet_industrial_overview}](PyBullet_industrial_overview.png)
+![Overview over the two main Objects \label{PyBullet_industrial_overview}](pybullet_industrial_overview.png)
 
 These objects can be deployed into a standard PyBullet simulation environment and used to build manufacturing scenarios.
 
 ## Robot objects
 
-The `RobotBase` class builds upon PyBullets URDF (Universal Robot Description Format) [@urdf] import feature which allows the loading of dynamic multibody robot models. The class adds several convenient interfaces which allow the setting and measuring of joint and end effector states. This latter allows the user to reposition the end effector without worrying about the underlying kinematics.
+The `RobotBase` class builds upon PyBullet's URDF (Universal Robot Description Format) [@urdf] import feature which allows the loading of dynamic multibody robot models. The class adds several convenient interfaces which allow the setting and measuring of joint and end effector states. This latter allows the user to reposition the end effector without worrying about the underlying kinematics.
 The list of interfaces includes:
 
 - A joint state interface that allows the user to set and read joint positions, velocities, and torques.
@@ -121,7 +121,7 @@ These underlying functions can also be used to visualize arbitrary coordinate sy
 
 
 
-# Conclusion:
+# Conclusion
 PyBullet Industrial is a novel simulation platform for robot manufacturing research.
 It allows the simulation of robots and processes in a single environment.
 While the library offers the basic functionality to simulate robots and processes, these blocks need to be parameterized and combined to create a meaningful simulation.

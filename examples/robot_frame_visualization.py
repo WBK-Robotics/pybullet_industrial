@@ -1,4 +1,4 @@
-""" Examlpe of how to visualize robot frames using pybullet_industrial. 
+""" Example of how to visualize robot frames using pybullet_industrial. 
     Even when the robot is moved by dragging it with the mouse, the frames will move with the robot.
 """
 import os

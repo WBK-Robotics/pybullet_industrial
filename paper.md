@@ -41,7 +41,7 @@ A sample of concrete manufacturing applications in each category can be seen in 
 The package not only simulates the environmental effect of the processes but also the forces imparted on the robot. It also allows the dynamic switching of processes with the same robot corresponding to tool changes during the manufacturing process. The package also contains utility functions such as path builder classes which are based on G-code (also called RS274) interpolation schemes [@g-code] or a variety of drawing and visualization functions.
 A sample screenshot of a simulation using PyBullet Industrial can be seen in Figure \ref{pybullet_window}.
 
-![Sample view of Pybullet Industrial \label{pybullet_window}](pybullet_window.png)
+![Sample view of Pybullet Industrial \label{pybullet_window}](pybullet_window.PNG)
 
 
 # Statement of need

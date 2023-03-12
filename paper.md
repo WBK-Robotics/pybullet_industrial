@@ -131,56 +131,12 @@ For direct control, a ROS interface will be added to allow the use of ROS contro
 
 
 
-# Example
-A simple example highlighting how the library can be used can be seen in the following code snippet.
+# Example Applications
 
-```python
+Apart from the example applications mentioned in the statement of need, the library is also already been used in a number of ongoing research projects.
+These include:
 
-import os
-
-import pybullet as p
-import pybullet_data
-import pybullet_industrial as pi
-
-dirname = os.path.dirname(__file__)
-urdf_file1 = os.path.join(dirname,
-                          'robot_descriptions', 'comau_nj290_robot.urdf')
-urdf_file2 = os.path.join(dirname,
-                          'robot_descriptions', '3d_printing_head.urdf')
-
-physics_client = p.connect(p.GUI)
-p.setPhysicsEngineParameter(numSolverIterations=5000)
-
-p.setAdditionalSearchPath(pybullet_data.getDataPath())
-p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=True)
-
-robot = pi.RobotBase(urdf_file1, [0, 0, 0], [0,0,0,1])
-
-extruder_properties = {'maximum distance': 0.5,'opening angle': 0,
-                       'material': pi.Plastic,'number of rays': 1}
-extruder = pi.Extruder(
-    urdf_file2, [1.9, 0, 1.2], [0,0,0,1], extruder_properties)
-extruder.couple(robot, 'printing_coupling_frame')
-
-test_path = pi.build_box_path(
-    [1.9, 0, 1.03], [0.5, 0.6], 0.1, [0, 0, 0, 1], 100)
-
-extruder.set_tool_pose(*test_path.get_start_pose())
-for _ in range(50):
-    p.stepSimulation()
-
-test_path.draw()
-for positions, orientations, _ in test_path:
-    extruder.set_tool_pose(positions, p.getQuaternionFromEuler([0, 0, 0]))
-    particle = extruder.extrude()
-
-    p.stepSimulation()
-
-```
-
-In this simple example, a `RobotBase` is coupled to an `Extruder` tool and a `ToolPath` path is built to print a box with rounded corners.
-The path is iterated using the built-in iterator and the extruder is moved along the path extruding particles.
-More examples can be found in the [examples folder](https://github.com/WBK-Robotics/PyBullet_industrial/tree/main/examples) of the repository.
-
+* A study on VR based robot programming [@vr_robot_programming] where a welding task was simulated in VR using PyBullet Industrial. The resulting Project Demonstrator can be seen at the Hannover Messe 2023.
+* A project on automated Electromotor dissasembly where the simulation is used to validate a given dissasembly plan including for example the milling away of rusted screws.
 
 # References

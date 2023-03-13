@@ -1,7 +1,17 @@
 """ Simple Example showing how force can be applied to the end effector.
     This example uses the urdf of a simple pendulum as an end effector 
     where the tip of the pendulum is the tool center point.
-    By applying different forces the pendulums will move in different ways.
+    
+    Different forces are applied to the pendulum in different ways:
+    1. Apply a force in world coordinates. 
+       This causes the pendulum to rest along the axis of the force
+    2. Apply a force without specifying the coordinate system.
+       This results in the same behavior as 1. since the default is world coordinates.
+    3. Apply a force in tool coordinates.
+       This causes the pendulum to rotate around its axis, since the force vector changes direction
+       with the orientation of the pendulum.
+    4. Apply a torque in world coordinates.
+       This causes the pendulum to rotate around its axis, like the force in tool coordinates.
 """
 import os
 import pybullet as p

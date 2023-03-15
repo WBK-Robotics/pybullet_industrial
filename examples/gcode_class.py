@@ -2,267 +2,307 @@ import pybullet as p
 import pybullet_industrial as pi
 import numpy as np
 import time
-import copy
-
-
-def create_path(p1,p2,or1):
-    path = pi.linear_interpolation(
-                             np.array(p1), np.array(p2), 10)
-    path.orientations = np.transpose(
-                            [or1] * len(path.orientations[0]))
-    return path
 
 def move_along_path(endeffector: pi.EndeffectorTool, path: pi.ToolPath, stop=False):
-    """Moving a designated endeffector along the provided path.
+    """Move a designated robot along the provided path.
+
     Args:
-        endeffector (pi.EndeffectorTool): Endeffector to be moved.
+        robot (pi.RobotBase): Robot to be moved.
         path (pi.ToolPath): Array of points defining the path.
         stop (bool, optional): Whether or not to stop at the end of the movement.
     """
+    
     for positions, orientations, tool_path in path:
-        endeffector.set_tool_pose(positions, orientations)
-        for _ in range(10):
-            p.stepSimulation()
-    if stop:
-        for _ in range(100):
-            p.stepSimulation()
+        for i in range(10):
+            endeffector.set_tool_pose(positions, orientations)
+            for _ in range(10):
+                p.stepSimulation()
+                time.sleep(0.0001)
+            
+            current_position = endeffector.get_tool_pose()[0]
+            current_orientation = np.array(p.getEulerFromQuaternion(endeffector.get_tool_pose()[1]))
+            
+            position_error = np.linalg.norm(current_position-positions)
+            orientation_error = np.linalg.norm(current_orientation-np.array(p.getEulerFromQuaternion(orientations)))
+
+            if position_error < 0.02 and orientation_error<0.004:
+                break       
 
 def move_robot(robot: pi.RobotBase, path: pi.ToolPath, stop=False):
-    """Moving a designated endeffector along the provided path.
+    """Move a designated robot along the provided path.
+
     Args:
-        endeffector (pi.EndeffectorTool): Endeffector to be moved.
+        robot (pi.RobotBase): Robot to be moved.
         path (pi.ToolPath): Array of points defining the path.
         stop (bool, optional): Whether or not to stop at the end of the movement.
     """
     for positions, orientations, tool_path in path:
-        robot.set_endeffector_pose(positions, orientations)
-        for _ in range(10):
-            p.stepSimulation()
-            time.sleep(0.005)
-    if stop:
-        for _ in range(100):
-            p.stepSimulation()      
+        for i in range(10):
+            robot.set_endeffector_pose(positions, orientations)
+            for _ in range(10):
+                p.stepSimulation()
+                time.sleep(0.0001)
+            
+            current_position = robot.get_endeffector_pose()[0]
+            current_orientation = np.array(p.getEulerFromQuaternion(robot.get_endeffector_pose()[1]))
+            position_error = np.linalg.norm(current_position-positions)
+            orientation_error = np.linalg.norm(current_orientation- np.array(p.getEulerFromQuaternion(orientations)))
+
+            if position_error < 0.02 and orientation_error<0.004:
+                break
+
+def get_active_endeffector(endeffector_list: list):
+    """Get the index of the active endeffector in a list of endeffectors.
+
+    Args:
+        endeffector_list (list): List of pi.EndeffectorTool objects.
+
+    Returns:
+        int: Index of the active endeffector, or -1 if no endeffectors are coupled.
+    """
+    n = 0
+    active_endeffector = -1
+    for i in endeffector_list:
+        if i.is_coupled():
+            active_endeffector = n
+            break
+        n = n + 1
+    return active_endeffector
+
 
 class Gcode_class():
+    
+    def __init__(self, filename = None, robot: pi.RobotBase = None, endeffector_list = None, m_befehle = None, t_befehle = None ):
+        if filename is not None and robot is not None:
+            gcode = self.read_gcode(filename)
+            self.run_gcode(gcode, robot, endeffector_list, m_befehle, t_befehle)
 
-
-    def __init__(self, textfile: str= None, robot:pi.RobotBase= None, gripper:pi.Gripper = None):
-        
-        """The class for reading G-Code row by row from a textfile and to safe the processed Data in a Matrix.
-        Every Letter of the G-Code has its own collum which are set NaN by default.
-        After Reading the G-Code it can be played.
+    
+    def read_gcode(self, filename):
+        """Reads G-Code row by row and safes the processed Data in a staked List.
+        Comments that start with % are ignored and all the other data is stored as it get read in.
+        Every Line in the G-Code resembles the same structure as the text file
         
         Args:
-            robot(pi.RobotBase)
-            gripper(array of pi.Gripper)
-        
-        Returns:
-            None
-        """
-       
-        # self.robot = robot
-        # self.gripper = gripper
-        
-        #Spawning the handed grippers in the enviroment
-        if textfile is not None:
-        
-            
-        
-            if gripper is not None:
-                self.gripper_spawn = []
-                self.gripper_appr = []
-                z = 0 
-                for i in gripper:
-                    spawn = i.get_tool_pose()[0]
-                    spawn[2] = spawn[2] + 0.125 
-                    appr = copy.deepcopy(spawn)
-                    appr[2] = appr[2] + 1
-                    self.gripper_spawn.append(spawn)
-                    self.gripper_appr.append(appr)
-                    z = z + 1
-                
-                #Simulation start with no active gripper  
-                self.active_gripper = -1 #THIS NEEDS IMPROVEMENT --> CHECKING IF THERE IS A GRIPPER COUPLED
-                input_array = self.read_gcode(textfile)
-                self.run_gcode(input_array, robot, gripper)
-            elif robot is not None:
-                self.active_gripper = -1
-                input_array = self.read_gcode(textfile)
-                self.run_gcode(input_array, robot)
-        
-
-    def read_gcode(self,textfile:str):
-        """Reads G-Code row by row and safes the processed Data in a Matric.
-        Every Letter of the G-Code has its own collum which are set NaN by default.
-        
-        Args:
-            tesxtfile(str): Source of information
+            filename (str or file-like object): Source of information
 
         Returns:
-            input_array(array)
-        """
-        #Creates the array with the infomation Variables that can be processed from the G-Code textfile
-        #Array Design: ["Kommentar", 'G', 'M', 'T','X','Y','Z','A','B','C', "I", "J", "R", 'F']
-        
-        input_array = np.zeros(14, dtype='O')
-        
-        # Reads in the complete textfile and saves the information in the different collums of the input_array
-        with open(textfile) as f:
+            gcode
+        """        
+        # Open the file
+        with open(filename) as f:
+            # Initialize an empty list for the program lines
+            gcode = []
+
+            # Loop over the lines of the file
             while True:
                 line = f.readline()
-                if not line: 
+                # If the end of the file is reached, break the loop
+                if not line:
                     break
-                
-                new_line = np.zeros(14, dtype='O')
-                new_line[:] = np.NaN
-               
-                
-                if line[0] == "%":
-                    new_line[0] = line
-                    
-                else:
-                    new_line[0] = ""
-                    data = line.split()
-                    for i in data:
-                        id = i[0]
-                        
-                        val2 = float(i[1:])  
-                        
-                        if id == "G" :
-                            new_line[1] = int(val2)
-                            
-                        elif id =="M":
-                            new_line[2] = int(val2)
-                        elif id =="T":
-                            new_line[3] = int(val2)
-                        elif id == "X":
-                            new_line[4] = val2
-                        elif id =="Y":
-                            new_line[5] = val2
-                        elif id =="Z":
-                            new_line[6] = val2
-                        elif id == "A":
-                            new_line[7] = val2
-                        elif id =="B":
-                            new_line[8] = val2
-                        elif id =="C":
-                            new_line[9] = val2
-                        elif id =="I":
-                            new_line[10] = val2
-                        elif id =="J":
-                            new_line[11] = val2
-                        elif id =="R":
-                            new_line[12] = val2
-                        elif id =="F":
-                            new_line[13] = val2    
-                        else:
-                            print(id, ": noch nicht implementiert")
-                
-              
-                input_array = np.vstack((input_array,new_line))
-       
-        input_array = np.delete(input_array,0,0)
-        return input_array
 
-    def run_gcode(self, input_array, robot: pi.RobotBase, gripper: pi.Gripper = None):
-        """Runs G-Code Row by Row. It is necessary to create the input_array with the readGcode(textfile) Method.
+                # Initialize a new line as a list
+                new_line = []
+
+                # If the line starts with "%", it is a comment line
+                if line[0] == "%" or len(line) <= 1:
+                        pass
+
+                # Otherwise, split the line into its components and insert them into the new line
+                else:
+                    # Split the line into its components
+                    data = line.split()
+                    # Loop over the components
+                    for i in data:
+                        # Determine the ID of the component
+                        id = i[0]
+                        # Extract the value of the component
+                        val2 = float(i[1:])
+                        if id in ["G","M","T"]:
+                            # Insert the value into the corresponding column of the new line
+                            new_line.append([id, int(val2)])
+                        else:
+                            new_line.append([id, val2])
+
+                    # Add the finished line to the list
+                    gcode.append(new_line)
+
+            return gcode
+
+    def run_gcode(self, gcode: list, robot: pi.RobotBase, endeffector_list: list = None, m_commands: list = None, t_commands: list = None):
+        """Runs G-Code Row by Row. It is necessary to create the gcode with the same structure as the readGcode(textfile) Method.
         
         Args:
-           input_array(array)
-
+            gcode(list): G-Code created from read_Gcode()
+            robot(pi.Robotbase): Operating Robot
+            endeffector_list(list): Exisitng endeffector Tools
+            m_commands(list): List which holds methods with all kind of actions
+            t_commands(list): List which holds methods with the corresponding tool to change
+           
         Returns:
             None
         """ 
+        if m_commands is not None:
+            self.m_commands = m_commands
+        if t_commands is not None:    
+            self.t_commands = t_commands       
         
-        #Current Postion of the simulation in order enable path building
-        last_point =  robot.get_endeffector_pose()[0] 
-        last_or = robot.get_endeffector_pose()[1]
-        last_or = p.getEulerFromQuaternion(last_or) #Conversion in order to adjust the orientation
-        
+        if endeffector_list is not None:
+            self.active_endeffector = get_active_endeffector(endeffector_list)
+        else:
+            self.active_endeffector = -1
+
         #Default Values for Running the G-Code
         plane = 2 #X-Y Plane for the circular interpolation -G2 & -G3
-        offset = [0,0,0,0,0,0] #Offset for the zero offset -G54
-       
+        offset = np.array([[0.0,0.0,0.0],[0.0,0.0,0.0]]) #Offset for the zero offset -G54
+        
+                  
         #Runs the infomation out of the input_array       
-        for i in input_array:
+        for cmd in gcode:
             
-            #Ignoring Comments
-            comment = i[0]
-            if comment != "":
-                continue
+            g_com, m_com, t_com = np.nan, np.nan, np.nan
             
-            #Variables for using G-Code information
-            g_com = i[1]
-            m_com = i[2]
-            t_com = i[3]
-            f_val = i[7]
-            r_val = i[12]
+            #Checking for the command and advising it to the value
+            if cmd[0][0] == "G":
+                g_com = cmd[0][1]
+            elif cmd[0][0] == "M":
+                m_com = cmd[0][1]
+            elif cmd[0][0] == "T":
+                t_com = cmd[0][1]
+            
+            
+            x_val, y_val , z_val = np.nan, np.nan, np.nan
+            a_val , b_val , c_val = np.nan, np.nan, np.nan
+            i_val, j_val, r_val = np.nan, np.nan, np.nan
+            f_val = np.nan
 
-            #Checking system for the different commands
+            for val in cmd:
+                if val[0] == "X":
+                    x_val = val[1]
+                elif val[0] == "Y":
+                    y_val = val[1]
+                elif val[0] == "Z":
+                    z_val = val[1]
+                elif val[0] == "A":
+                    a_val = val[1]
+                elif val[0] == "B":
+                    b_val = val[1]
+                elif val[0] == "C":
+                    c_val = val[1]
+                elif val[0] == "I":
+                    i_val = val[1]
+                elif val[0] == "J":
+                    j_val = val[1]
+                elif val[0] == "R":
+                    r_val = val[1]
+                elif val[0] == "F":
+                    f_val = val[1]
+            
+            xyz_val = np.array([x_val, y_val, z_val])
+            abc_val = np.array([a_val, b_val, c_val])
+            ijr_val = np.array([i_val, j_val])
 
             #Checking for a G-command
             if not np.isnan(g_com): 
                 
+                if self.active_endeffector == -1:
+                    last_point = robot.get_endeffector_pose()[0]
+                    last_or = robot.get_endeffector_pose()[1]
+                    last_or = p.getEulerFromQuaternion(last_or)
+                     
+                else:
+                    last_point = endeffector_list[self.active_endeffector].get_tool_pose()[0]
+                    last_or = endeffector_list[self.active_endeffector].get_tool_pose()[1]
+                    last_or = p.getEulerFromQuaternion(last_or)
+
                 #Checking for interpolation commands
                 if g_com == 1 or g_com == 0 or g_com == 2 or g_com == 3: 
-                    
+                
                     #Setting the new point with the consideration of the offset
-                    new_point = [0,0,0]
+                    new_point = np.array([0.0,0.0,0.0])
                     counter = 0
-                    for n in i[4:7]: 
+                    for n in xyz_val: 
                         if np.isnan(n):
                             new_point[counter] = last_point[counter]
                         else:
-                            new_point[counter] = n + offset[counter]
+                            new_point[counter] = n + offset[0][counter]
                         counter = counter + 1  
                     
                     #Setting the new orientation with the consideration of the offset
-                    new_or = [0,0,0]
+                    new_or = np.array([0.0,0.0,0.0])
                     counter = 0
-                    for n in i[7:10]:
+                    for n in abc_val:
                         if np.isnan(n):
                             new_or[counter] = last_or[counter]
                         else:
-                            new_or[counter] = n + offset[counter+3]
+                            new_or[counter] = n + offset[1][counter]
                         counter = counter + 1 
-                    orientation = p.getQuaternionFromEuler(new_or) 
+                    orientation = p.getQuaternionFromEuler(new_or)
                     
-                    #Building the path if there is a linear interpolation
-                    if g_com == 1 or g_com == 0:
-                        path = pi.linear_interpolation(
-                                np.array(last_point), np.array(new_point), 10)
-                        path.orientations = np.transpose(
-                                [orientation] * len(path.orientations[0]))
+                    #Moving the endeffector if there is a G0 Interpolation
+                    if g_com ==0:
+                        if not self.active_endeffector == -1:
+                            for i in range(15):
+                                endeffector_list[self.active_endeffector].set_tool_pose(new_point,orientation)
+                                for _ in range(10):
+                                    p.stepSimulation()
+                                    time.sleep(0.0001)
+                                
+                                current_position = endeffector_list[self.active_endeffector].get_tool_pose()[0]
+                                current_orientation = np.array(p.getEulerFromQuaternion(
+                                    endeffector_list[self.active_endeffector].get_tool_pose()[1]))
+                                
+                                position_error = np.linalg.norm(current_position-new_point)
+                                orientation_error = np.linalg.norm( current_orientation- new_or)
+                            
+                                if position_error < 0.02 and orientation_error<0.004:
+                                    break
                     
-                    #Building the path if there is a circular interpolation
-                    elif g_com ==2:
-                        path = pi.circular_interpolation( np.array(last_point), np.array(new_point),r_val,10,plane,True)
-                    elif g_com ==3:
-                        path = pi.circular_interpolation( np.array(last_point), np.array(new_point),r_val,10,plane,False)
-                    if g_com == 2 or g_com == 3 :    
-                        path.orientations = np.transpose(
-                                [orientation] * len(path.orientations[0]))
+                        else:
+                            for i in range(20):
+                                robot.set_endeffector_pose(new_point, orientation)
+                                for _ in range(10):
+                                    p.stepSimulation()
+                                    time.sleep(0.0001)
+                                
+                                current_position = robot.get_endeffector_pose()[0]
+                                current_orientation = np.array(p.getEulerFromQuaternion(robot.get_endeffector_pose()[1]))
+                                
+                                position_error = np.linalg.norm(current_position-new_point)
+                                orientation_error = np.linalg.norm( current_orientation- new_or)
+                            
+                                if position_error < 0.02 and orientation_error<0.004:
+                                    break
 
-                    #Moving the Gripper if activated
-                    if not self.active_gripper == -1:
-                        move_along_path(gripper[self.active_gripper], path)
-                        last_point = new_point
-                        last_or = new_or
                     
-                    #Moving the Robot if activated
-                    else:
-                        move_robot(robot, path)
-                        last_point = new_point
-                        last_or = new_or
-              
+                    elif g_com == 1 or g_com == 2 or g_com ==3 : 
+                        #Building the Path if there is a linear G1 interpolation
+                        if g_com == 1:
+                            path = pi.linear_interpolation(np.array(last_point), np.array(new_point), 10)
+                            path.orientations = np.transpose([orientation] * len(path.orientations[0]))
+                    
+                        #Building the path if there is a circular interpolation
+                        elif g_com == 2 or g_com == 3 : 
+                            if g_com ==2:
+                                path = pi.circular_interpolation( np.array(last_point), np.array(new_point),r_val,10,plane,True)
+                            else:
+                                path = pi.circular_interpolation( np.array(last_point), np.array(new_point),r_val,10,plane,False)
+                            
+                            path.orientations = np.transpose([orientation] * len(path.orientations[0]))
 
+                        #Moving the endeffector of the coupled tool else the endeffector of the robot
+                        if not self.active_endeffector == -1:
+                            move_along_path(endeffector_list[self.active_endeffector], path)
+                        else:
+                            move_robot(robot, path)
+                        
     	        #Activation of the zero offset
                 elif g_com ==54:
-                    offset = last_point + last_or
-                
+                    offset = np.array([last_point, last_or])
+                    
                 #Deactivation of the zero offset
                 elif g_com ==500:
-                    offset = [0,0,0,0,0,0]
+                    offset = np.array([[0.0,0.0,0.0],[0.0,0.0,0.0]])
                 
                 #Plane selelection for circular interpolation 
                 elif g_com == 17:
@@ -274,74 +314,16 @@ class Gcode_class():
             
             #Checking for a M-command        
             elif not np.isnan(m_com):
+                self.m_commands[m_com][0]()
                 
-                #Close Gripper
-                if m_com==10:
-                    gripper[self.active_gripper].actuate(1.0)
-                    for _ in range(25):
-                        p.stepSimulation()
-                        time.sleep(0.01)
-                
-                #Open Grippper
-                elif m_com==11:
-                    gripper[self.active_gripper].actuate(0.0)
-                    for _ in range(25):
-                        p.stepSimulation()
-                        time.sleep(0.01)
-            
             #Checking for a T-command
-            elif not np.isnan(t_com):
+            elif not np.isnan(t_com):  
+                self.t_commands[t_com][0]()
+                self.active_endeffector = get_active_endeffector(endeffector_list)
+               
                 
-                #Running a tool change logic
-                or1 = p.getQuaternionFromEuler([-np.pi/2, 0, 0]) 
                 
-                #Checking for Decoupling
-                if t_com == 0 and not self.active_gripper == -1:
-                    
-                    #Move in
-                    path = create_path(last_point, self.gripper_appr[self.active_gripper], or1)
-                    move_robot(robot,path)                    
-                    last_point = self.gripper_appr[self.active_gripper]
-
-                    #Move to span
-                    path = create_path(last_point, self.gripper_spawn[self.active_gripper], or1)
-                    move_robot(robot,path)
-                    last_point = self.gripper_spawn[self.active_gripper]
-
-                    #Decouple
-                    gripper[self.active_gripper].decouple()
-                    
-                    #Move out
-                    path = create_path(last_point, self.gripper_appr[self.active_gripper], or1)
-                    move_robot(robot,path)                    
-                    last_point = self.gripper_appr[self.active_gripper]
-                    self.active_gripper = -1
-
-                #Checking for Decoupling   
-                else:
-                    
-                    #Checking if same Gripper is already used
-                    if not self.active_gripper == (t_com - 1):
-                        
-                        #Move to approach
-                        self.active_gripper = t_com - 1
-                        path = create_path(last_point, self.gripper_appr[self.active_gripper], or1)
-                        move_robot(robot,path)                    
-                        last_point = self.gripper_appr[self.active_gripper]
-                        
-                        #Move to spawn-point
-                        path = create_path(last_point, self.gripper_spawn[self.active_gripper], or1)
-                        move_robot(robot,path)
-                        last_point = self.gripper_spawn[self.active_gripper]                    
-                        
-                        #Couple
-                        gripper[self.active_gripper].couple(robot, 'link6')
-                        gripper[self.active_gripper].actuate(0.0)
-                
-                        #Move out
-                        path = create_path(last_point, self.gripper_appr[self.active_gripper], or1)
-                        move_robot(robot,path)                    
-                        last_point = self.gripper_appr[self.active_gripper]
+    
                     
                         
 

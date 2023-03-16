@@ -1,7 +1,7 @@
 % with "%" it is possible to place comments in the G-Code
 
 %Go to default position and adjust the orientation
-G0 X1.9 Y-0.5 Z1.5 A-1.5707 B0 C0
+G0 X1.9 Y-0.5 Z1.7 A-1.5708 B0 C0
 
 %Approach Gripper
 G0 X2.7 
@@ -28,7 +28,7 @@ G0 Z0.7
 T0
 
 %Move up and adjust orientation
-G0 Z1.9  A-1.5707 B0 C0
+G0 Z1.9  A-1.57 B0 C0
 %Go to default position
 G0 X1.9 Y-0.5
 
@@ -37,8 +37,6 @@ G0 X1.9 Y-0.5
 %Zero Offset - Activation
 G54
 %Square movement and orientation flip
-G0 A3.1416
-G0 Z0 A0
 G0 X0.2
 G0 Y0.2
 G0 X0

@@ -1,4 +1,0 @@
-% This is a comment
-G0 X1.0 Y2.0
-G1 X2.0 Y3.0
-G2 X3.0 Y4.0 Z5.0

@@ -36,8 +36,6 @@ G1 X1.9 Y-0.5
 %Zero Offset - Activation
 G54
 %Square movement and orientation flip
-G1 A3.1416
-G1 Z0 A0
 G1 X0.2
 G1 Y0.2
 G1 X0

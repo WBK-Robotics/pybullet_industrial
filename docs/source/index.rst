@@ -25,6 +25,11 @@ With the help of the pybullet_industrial package you will be able to:
 - simulating paint coating scenarios
 - simulate the handling of complex tasks using a variety of grippers
 
+.. image:: images/intro_sim.gif
+    :width: 80%
+    :align: center
+    :alt: Example_simulation
+
 
 What pybullet_industrial is not
 -------------------------------

@@ -1,9 +1,11 @@
+""" Simple example showcasing the creation of a path
+    using various interpolation and path builder functions.
+"""
+
 import numpy as np
 import pybullet as p
 import pybullet_industrial as pi
 
-""" Simple example showcasing the creation of a path
-    using various interpolation and path builder functions."""
 if __name__ == "__main__":
 
     p.connect(p.GUI)

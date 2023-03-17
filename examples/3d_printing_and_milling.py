@@ -1,3 +1,11 @@
+"""Example of 3D printing and milling with pybullet_industrial.
+
+This example shows how to use the pybullet_industrial package to simulate two different manufacturing
+processes: 3D printing and milling. The example uses a KUKA KR 6 R900 six-axis robot with two different tools:
+an extruder and a remover. The extruder is used to print a single layer of a 3D object, while the remover
+is used to remove the printed layer.
+"""
+
 import os
 
 import numpy as np

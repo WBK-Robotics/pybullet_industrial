@@ -1,3 +1,11 @@
+
+"""Example demonstraining how the paint particle can be used to color an object.
+   Either wait for the robot to coat the upper side of the cube,
+   or move it around using the mouse to coat the other sides.
+
+   Carefull this simulation can be compute intensive.
+"""
+
 import os
 
 import numpy as np
@@ -5,12 +13,6 @@ import pybullet as p
 import pybullet_data
 import pybullet_industrial as pi
 
-"""Example demonstraining how the paint particle can be used to color an object.
-   Either wait for the robot to coat the upper side of the cube,
-   or move it around to color different areas.
-
-   Carefull this simulation can be compute intensive.
-"""
 if __name__ == "__main__":
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(dirname,

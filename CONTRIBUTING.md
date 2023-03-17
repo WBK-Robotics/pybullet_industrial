@@ -9,7 +9,7 @@ We love your input! We want to make contributing to this project as easy and tra
 or just spotting spelling mistakes in the documentation.
 
 ## Report bugs using Github's [issues](https://github.com/briandk/transcriptase-atom/issues)
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](); it's that easy!
+We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/WBK-Robotics/pybullet_industrial/issues/new/choose); it's that easy!
 
 ## Making changes 
 In order to avoid multiple people working on the same problem please first discuss the change you wish to make via GitHub issue,
@@ -30,6 +30,14 @@ If he is satisfied the code will be merged with the main branch.
 Otherwise the maintainer might suggest changes that should be made to the code before it is accepted.
 These changes might include, deleting unnecessairy comments, deleting unused files or refractoring overly complicated code passages.
 These suggestions are generally designed to ensure the continued usability and maintainability of the code base.
+
+## Seeking support
+If you have questions about how to use this project, please open a GitHub issue using the [question template](https://github.com/WBK-Robotics/pybullet_industrial/issues/new/choose).
+This will help us keep track of how people are using the project, and help us improve the documentation.
+Please dont contact the maintainers directly with questions about how to use the project.
+
+If you dont have a question but something is not working as expected, please open a GitHub issue using the [bug report template](https://github.com/WBK-Robotics/pybullet_industrial/issues/new/choose).
+This will not only help keep track of bugs but only prevents you from wasting time on a bug that is already known.
 
 ## Any contributions you make will be under the MIT Software License
 In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.

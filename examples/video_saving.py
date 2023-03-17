@@ -1,14 +1,14 @@
+"""Example of a igus robot following a lemniscate path 
+   with the current GUI view saved as a mp4 file.
+   This functionality requires ffmpeg to be installed. Otherwise no video is saved.
+"""
+
 import os
 import time
 
 import numpy as np
 import pybullet as p
 import pybullet_industrial as pi
-
-
-"""Example of a igus robot following a lemniscate path 
-   with the current GUI view saved as a mp4 file.
-   This functionality requires ffmpeg to be installed. Otherwise no video is saved."""
 
 
 def build_lemniscate_path(midpoint, steps, height, length):

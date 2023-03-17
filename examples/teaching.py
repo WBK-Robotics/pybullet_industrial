@@ -1,3 +1,12 @@
+""" This example shows a sample application of pyubllet industrial.
+    In this case a teaching application has ben set up. 
+    By sliding the teaching slider to the right, the robot will
+    record the joint positions of the robot.
+    The robot can now be moved by dragging it with the mouse.
+
+    The recorded joint positions can be played back by sliding the teaching slider to the left.
+    The playback speed can be adjusted with the playback speed slider. 
+"""
 import os
 import time
 

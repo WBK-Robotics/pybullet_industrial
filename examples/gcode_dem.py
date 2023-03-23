@@ -7,6 +7,7 @@ import numpy as np
 
 
 def actuate_gripper(gripper: pi.Gripper, val: int):
+
     gripper.actuate(val)
     for _ in range(25):
         p.stepSimulation()
@@ -14,13 +15,15 @@ def actuate_gripper(gripper: pi.Gripper, val: int):
 
 
 def couple_endeffector(gripper: pi.Gripper, robot: pi.RobotBase, link: chr):
-    gripper.couple(robot, 'link6')
+
+    gripper.couple(robot, link)
     for _ in range(25):
         p.stepSimulation()
         time.sleep(0.01)
 
 
 def decouple_endeffector(gripper: pi.Gripper):
+
     gripper.decouple()
     for _ in range(25):
         p.stepSimulation()
@@ -28,16 +31,13 @@ def decouple_endeffector(gripper: pi.Gripper):
 
 
 if __name__ == "__main__":
+
     dirname = os.path.dirname(__file__)
     urdf_file1 = os.path.join(dirname,
                               'robot_descriptions', 'comau_nj290_robot.urdf')
     urdf_file2 = os.path.join(dirname,
                               'robot_descriptions', 'gripper_cad.urdf')
-    urdf_file3 = os.path.join(dirname,
-                              'robot_descriptions', 'gripper_cylinder.urdf')
-    urdf_file4 = os.path.join(dirname,
-                              'robot_descriptions', 'gripper.urdf')
-    urdf_files = [urdf_file2, urdf_file3, urdf_file4]
+
     pysics_client = p.connect(p.GUI, options='--background_color_red=1 ' +
                                              '--background_color_green=1 ' +
                                              '--background_color_blue=1')
@@ -47,6 +47,7 @@ if __name__ == "__main__":
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
+
     monastryId = p.createCollisionShape(p.GEOM_MESH,
                                         fileName="samurai_monastry.obj",
                                         flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
@@ -56,6 +57,7 @@ if __name__ == "__main__":
 
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+
     robot.set_joint_position(({'q2': np.deg2rad(-15.0),
                                'q3': np.deg2rad(-90.0)}))
     for _ in range(100):
@@ -67,19 +69,27 @@ if __name__ == "__main__":
     endeffector_list.append(test_gripper)
 
     # Erstellung von M-Befehlen
-    m_befehle = [[] for _ in range(100)]
-    m_befehle[10].append(lambda: actuate_gripper(test_gripper, 1))
-    m_befehle[11].append(lambda: actuate_gripper(test_gripper, 0))
+    m_commands = [[] for _ in range(100)]
+    m_commands[10].append(lambda: actuate_gripper(test_gripper, 1))
+    m_commands[11].append(lambda: actuate_gripper(test_gripper, 0))
 
     # Erstellung von T-Befehlen
-    t_befehle = [[] for _ in range(100)]
-    t_befehle[0].append(lambda: decouple_endeffector(test_gripper))
-    t_befehle[1].append(lambda: couple_endeffector(test_gripper,
-                                                   robot, 'link6'))
+    t_commands = [[] for _ in range(100)]
+    t_commands[0].append(lambda: decouple_endeffector(test_gripper))
+    t_commands[1].append(lambda: couple_endeffector(test_gripper,
+                                                    robot, 'link6'))
     dirname = os.path.dirname(__file__)
+
+    gcode_obj_1 = pi.Gcode_class(robot, endeffector_list,
+                                 m_commands, t_commands)
+
     textfile = os.path.join(dirname, 'Gcodes', 'gcode_G0.txt')
-    gcode_obj = pi.Gcode_class(textfile, robot, endeffector_list,
-                               m_befehle, t_befehle)
+    gcode = gcode_obj_1.read_gcode(textfile)
+    gcode_obj_1.run_gcode(gcode)
+
+    gcode_obj_2 = pi.Gcode_class(robot, endeffector_list,
+                                 m_commands, t_commands)
+
     textfile = os.path.join(dirname, 'Gcodes', 'gcode_G123.txt')
-    gcode_obj = pi.Gcode_class(textfile, robot, endeffector_list,
-                               m_befehle, t_befehle)
+    gcode = gcode_obj_1.read_gcode(textfile)
+    gcode_obj_1.run_gcode(gcode)

@@ -23,7 +23,7 @@ def decouple_endeffector(gripper: pi.Gripper):
         time.sleep(0.01)
 
 
-def test_robot_position(robot: pi.RobotBase, target_position,
+def check_robot_position(robot: pi.RobotBase, target_position,
                         target_orientation,  pos_tol, ori_tol):
 
     within_precision = True
@@ -42,7 +42,7 @@ def test_robot_position(robot: pi.RobotBase, target_position,
     return within_precision
 
 
-def test_tool_position(endeffetor: pi.EndeffectorTool, target_position,
+def check_tool_position(endeffetor: pi.EndeffectorTool, target_position,
                        target_orientation,  pos_tol, ori_tol):
     within_precision = True
 
@@ -154,7 +154,7 @@ class Test_Gcode_class(unittest.TestCase):
         commands = [cmd1]
         g_code = create_command(test_object, commands)
         test_object.run_gcode(g_code)
-        self.assertTrue(test_robot_position(
+        self.assertTrue(check_robot_position(
             robot, pos1, ori1, pos_precision, ori_precision))
 
         # Test 2: G1 without coupled tool
@@ -162,7 +162,7 @@ class Test_Gcode_class(unittest.TestCase):
         commands = [cmd1]
         g_code = create_command(test_object, commands)
         test_object.run_gcode(g_code)
-        self.assertTrue(test_robot_position(
+        self.assertTrue(check_robot_position(
             robot, pos2, ori2, pos_precision, ori_precision))
 
         # Test 3: G54
@@ -171,7 +171,7 @@ class Test_Gcode_class(unittest.TestCase):
         commands = [cmd1, cmd2]
         g_code = create_command(test_object, commands)
         test_object.run_gcode(g_code)
-        self.assertTrue(test_robot_position(
+        self.assertTrue(check_robot_position(
             robot, pos1, ori1, pos_precision, ori_precision))
 
         ori2 = np.array([-1.5079, 0.0, 0.0])
@@ -182,7 +182,7 @@ class Test_Gcode_class(unittest.TestCase):
         commands = [cmd1, cmd2]
         g_code = create_command(test_object, commands)
         test_object.run_gcode(g_code)
-        self.assertTrue(test_robot_position(
+        self.assertTrue(check_robot_position(
             robot, pos2, ori2, pos_precision, ori_precision))
 
         # Lower precision for circular interpolation
@@ -195,7 +195,7 @@ class Test_Gcode_class(unittest.TestCase):
         commands = [cmd1, cmd2]
         g_code = create_command(test_object, commands)
         test_object.run_gcode(g_code)
-        self.assertTrue(test_robot_position(
+        self.assertTrue(check_robot_position(
             robot, pos1, ori1, pos_precision, ori_precision))
 
         # Test 6: G3 with G18
@@ -205,7 +205,7 @@ class Test_Gcode_class(unittest.TestCase):
         commands = [cmd1, cmd2, cmd3]
         g_code = create_command(test_object, commands)
         test_object.run_gcode(g_code)
-        self.assertTrue(test_robot_position(
+        self.assertTrue(check_robot_position(
             robot, pos2, ori2, pos_precision, ori_precision))
 
         # Create Tool for testing
@@ -242,7 +242,7 @@ class Test_Gcode_class(unittest.TestCase):
         g_code = create_command(test_object, commands)
         test_object.run_gcode(g_code)
         self.assertTrue(test_gripper.is_coupled())
-        self.assertTrue(test_tool_position(test_gripper, pos1,
+        self.assertTrue(check_tool_position(test_gripper, pos1,
                         ori1, pos_precision, ori_precision))
         self.assertTrue(len(test_var) == 1)
 
@@ -253,7 +253,7 @@ class Test_Gcode_class(unittest.TestCase):
         g_code = create_command(test_object, commands)
         test_object.run_gcode(g_code)
         self.assertTrue(not test_gripper.is_coupled())
-        self.assertTrue(test_tool_position(test_gripper, pos2,
+        self.assertTrue(check_tool_position(test_gripper, pos2,
                         ori2, pos_precision, ori_precision))
 
 

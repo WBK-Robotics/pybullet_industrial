@@ -87,9 +87,6 @@ if __name__ == "__main__":
     gcode = gcode_obj_1.read_gcode(textfile)
     gcode_obj_1.run_gcode(gcode)
 
-    gcode_obj_2 = pi.Gcode_class(robot, endeffector_list,
-                                 m_commands, t_commands)
-
     textfile = os.path.join(dirname, 'Gcodes', 'gcode_G123.txt')
     gcode = gcode_obj_1.read_gcode(textfile)
     gcode_obj_1.run_gcode(gcode)

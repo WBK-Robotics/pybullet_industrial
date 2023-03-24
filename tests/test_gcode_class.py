@@ -24,7 +24,7 @@ def decouple_endeffector(gripper: pi.Gripper):
 
 
 def check_robot_position(robot: pi.RobotBase, target_position,
-                        target_orientation,  pos_tol, ori_tol):
+                         target_orientation,  pos_tol, ori_tol):
 
     within_precision = True
 
@@ -43,7 +43,7 @@ def check_robot_position(robot: pi.RobotBase, target_position,
 
 
 def check_tool_position(endeffetor: pi.EndeffectorTool, target_position,
-                       target_orientation,  pos_tol, ori_tol):
+                        target_orientation,  pos_tol, ori_tol):
     within_precision = True
 
     current_position, current_orientation = endeffetor.get_tool_pose()
@@ -64,7 +64,7 @@ def create_command(gcode_object: pi.Gcode_class, commands):
 
     text_gcode = "text_gcode.txt"
 
-    with open(text_gcode, "w") as f:
+    with open(text_gcode, "w", encoding="utf-8") as f:
         f.writelines(commands)
 
     gcode = gcode_object.read_gcode(text_gcode)
@@ -158,8 +158,9 @@ class Test_Gcode_class(unittest.TestCase):
             robot, pos1, ori1, pos_precision, ori_precision))
 
         # Test 2: G1 without coupled tool
-        cmd1 = "G1 X2.2 Y-0.3 Z1.6 A-1.403"
-        commands = [cmd1]
+        cmd1 = "G1 X2.2\n"
+        cmd2 = "G1 Y-0.3 Z1.6 A-1.403"
+        commands = [cmd1, cmd2]
         g_code = create_command(test_object, commands)
         test_object.run_gcode(g_code)
         self.assertTrue(check_robot_position(
@@ -231,8 +232,11 @@ class Test_Gcode_class(unittest.TestCase):
             test_gripper, robot, 'link6'))
 
         # Adapt Test Object
+        offset = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
+        plane = 2
+        sleep = 0.0001
         test_object = pi.Gcode_class(robot, endeffector_list, m_commands,
-                                     t_commands)
+                                     t_commands, offset, plane, None, sleep)
 
         # Test 7: T1/M command and G0 command with tool coupled
         cmd1 = "T1\n"

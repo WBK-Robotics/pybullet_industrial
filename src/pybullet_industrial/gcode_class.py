@@ -1,7 +1,7 @@
+import time
 import pybullet as p
 import pybullet_industrial as pi
 import numpy as np
-import time
 
 
 class Gcode_class():
@@ -29,6 +29,8 @@ class Gcode_class():
         """
         self.new_point = []
         self.new_or = []
+        self.last_point = []
+        self.last_or = []
 
         if m_commands is not None:
             self.m_commands = m_commands
@@ -80,7 +82,7 @@ class Gcode_class():
         Returns:
             gcode
         """
-        with open(filename) as f:
+        with open(filename, encoding='utf-8') as f:
             gcode = []
 
             # Loop over the lines of the file
@@ -107,17 +109,17 @@ class Gcode_class():
                     # Loop over the components
                     for i in data:
                         # Determine the ID of the component
-                        id = i[0]
+                        id_val = i[0]
 
                         # Extract the value of the component
                         val2 = float(i[1:])
 
-                        if id in ["G", "M", "T"]:
+                        if id_val in ["G", "M", "T"]:
                             # Insert the value into the corresponding
                             # column of the new line
-                            new_line.append([id, int(val2)])
+                            new_line.append([id_val, int(val2)])
                         else:
-                            new_line.append([id, val2])
+                            new_line.append([id_val, val2])
 
                     # Add the finished line to the list
                     gcode.append(new_line)
@@ -176,7 +178,7 @@ class Gcode_class():
                 self.last_or = np.array(self.new_or)
 
                 # Checking for interpolation commands
-                if g_com == 1 or g_com == 0 or g_com == 2 or g_com == 3:
+                if g_com in [0, 1, 2, 3]:
 
                     # Setting the new point considering offset
                     self.new_point = np.array([0.0, 0.0, 0.0])
@@ -211,7 +213,7 @@ class Gcode_class():
                         self.g0_interpolation()
 
                     # Moving the endeffector if ther is a G1 Interpolation
-                    elif g_com == 1 or g_com == 2 or g_com == 3:
+                    elif g_com in [1, 2, 3]:
                         self.g123_interpolation(g_com, r_val)
 
                 # Activation of the zero offset
@@ -257,7 +259,7 @@ class Gcode_class():
 
         if not self.active_endeffector == -1:
 
-            for i in range(15):
+            for _ in range(15):
                 self.endeffector_list[e].set_tool_pose(self.new_point,
                                                        orientation)
                 for _ in range(10):
@@ -279,7 +281,7 @@ class Gcode_class():
                     break
         else:
 
-            for i in range(20):
+            for _ in range(20):
                 self.robot.set_endeffector_pose(self.new_point, orientation)
                 for _ in range(10):
                     p.stepSimulation()
@@ -319,7 +321,7 @@ class Gcode_class():
                                            self.interpolation_steps)
 
         # Building the path if there is a circular interpolation
-        elif g_com == 2 or g_com == 3:
+        elif g_com in [2, 3]:
             if g_com == 2:
                 path = pi.circular_interpolation(self.last_point,
                                                  self.new_point, r_val,
@@ -352,7 +354,7 @@ class Gcode_class():
 
         for positions, orientations, tool_path in path:
 
-            for i in range(10):
+            for _ in range(10):
 
                 self.endeffector_list[e].set_tool_pose(positions, orientations)
                 for _ in range(10):
@@ -382,7 +384,7 @@ class Gcode_class():
         """
         for positions, orientations, tool_path in path:
 
-            for i in range(20):
+            for _ in range(20):
 
                 self.robot.set_endeffector_pose(positions, orientations)
                 for _ in range(10):

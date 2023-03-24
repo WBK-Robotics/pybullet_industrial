@@ -56,10 +56,10 @@ if __name__ == "__main__":
     p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=True)
 
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-    robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+    test_robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
 
-    robot.set_joint_position(({'q2': np.deg2rad(-15.0),
-                               'q3': np.deg2rad(-90.0)}))
+    test_robot.set_joint_position(({'q2': np.deg2rad(-15.0),
+                                  'q3': np.deg2rad(-90.0)}))
     for _ in range(100):
         p.stepSimulation()
 
@@ -77,10 +77,10 @@ if __name__ == "__main__":
     t_commands = [[] for _ in range(100)]
     t_commands[0].append(lambda: decouple_endeffector(test_gripper))
     t_commands[1].append(lambda: couple_endeffector(test_gripper,
-                                                    robot, 'link6'))
+                                                    test_robot, 'link6'))
     dirname = os.path.dirname(__file__)
 
-    gcode_obj_1 = pi.Gcode_class(robot, endeffector_list,
+    gcode_obj_1 = pi.Gcode_class(test_robot, endeffector_list,
                                  m_commands, t_commands)
 
     textfile = os.path.join(dirname, 'Gcodes', 'gcode_G0.txt')

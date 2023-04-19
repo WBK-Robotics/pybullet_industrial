@@ -61,18 +61,12 @@ class GCodeProcessor:
 
         if axis is not None:
             self.axis = axis
-        else:
-            self.axis = 2  # X-Y Axis for the circular interpolation
 
         if interpolation_steps is not None:
             self.interpolation_steps = interpolation_steps
-        else:
-            self.interpolation_steps = 10
 
         if sleep is not None:
             self.sleep = sleep
-        else:
-            self.sleep = 0.0001
 
     @staticmethod
     def read_gcode(filename: str):

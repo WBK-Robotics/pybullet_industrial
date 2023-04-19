@@ -18,7 +18,7 @@ class GCodeProcessor:
         """Initialize a PathMover object with the provided parameters.
 
         Args:
-            robot (pi.RobotBase, optional: The robot which is controlled.
+            robot (pi.RobotBase, optional): The robot which is controlled.
             filename (str, optional): The name of a G-code file to read.
             endeffector_list (list, optional): List of end effectors to use.
             m_commands (list, optional): M-commands to execute.
@@ -174,15 +174,15 @@ class GCodeProcessor:
             self.offset = np.array([[0.0, 0.0, 0.0],
                                     [0.0, 0.0, 0.0]])
 
-        # Plane selelection for circular interpolation
+        # Axis selelection for circular interpolation
         elif g_cmd_type == 17:
-            self.plane = 2  # X-Y Plane
+            self.axis = 2  # X-Y Axis
 
         elif g_cmd_type == 18:
-            self.plane = 1  # X-Z Plane
+            self.axis = 1  # X-Z Axis
 
         elif g_cmd_type == 19:
-            self.plane = 0  # Y-Z Plane
+            self.axis = 0  # Y-Z Axis
 
         elif g_cmd_type in [0, 1, 2, 3]:
             variables = {'X': np.nan, 'Y': np.nan, 'Z': np.nan, 'A': np.nan,
@@ -303,12 +303,12 @@ class GCodeProcessor:
                 path = circular_interpolation(self.last_point,
                                               self.new_point, r_val,
                                               self.interpolation_steps,
-                                              self.plane, True)
+                                              self.axis, True)
             else:
                 path = circular_interpolation(self.last_point,
                                               self.new_point, r_val,
                                               self.interpolation_steps,
-                                              self.plane, False)
+                                              self.axis, False)
 
         path.orientations = np.transpose([orientation]
                                          * len(path.orientations[0]))
@@ -327,20 +327,22 @@ class GCodeProcessor:
         Returns:
             None
         """
-        e = self.active_endeffector
+        actv = self.active_endeffector  # abbreviation
 
         for positions, orientations, _ in path:
 
             for _ in range(20):
 
-                self.endeffector_list[e].set_tool_pose(positions, orientations)
+                self.endeffector_list[actv].set_tool_pose(
+                    positions, orientations)
                 for _ in range(10):
                     p.stepSimulation()
                     time.sleep(self.sleep)
 
-                current_position = self.endeffector_list[e].get_tool_pose()[0]
+                current_position = self.endeffector_list[actv].get_tool_pose()[
+                    0]
                 current_orientation = np.array(p.getEulerFromQuaternion(
-                    self.endeffector_list[e].get_tool_pose()[1]))
+                    self.endeffector_list[actv].get_tool_pose()[1]))
 
                 position_error = np.linalg.norm(current_position-positions)
                 orientations_euler = np.array(

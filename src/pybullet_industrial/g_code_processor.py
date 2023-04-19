@@ -13,9 +13,9 @@ class GCodeProcessor:
                  endeffector_list: list = None,
                  m_commands: list = None,
                  t_commands: list = None, offset: np.array = None,
-                 axis: int = None, interpolation_steps: int = None,
-                 sleep: int = None):
-        """Initialize a GCodeProcessor object with the provided parameters.
+                 axis: int = 2, interpolation_steps: int = 10,
+                 sleep: int = 0.0001):
+        """Initialize a PathMover object with the provided parameters.
 
         Args:
             robot (pi.RobotBase, optional: The robot which is controlled.
@@ -74,9 +74,10 @@ class GCodeProcessor:
         else:
             self.sleep = 0.0001
 
-    def read_gcode(self, filename: str):
+    @staticmethod
+    def read_gcode(filename: str):
         """Reads G-Code row by row and saves the processed Data in
-        a stacked List.
+        a List.
         Comments that start with % are ignored and all the other data is
         stored as it gets read in.
         Every Line in the G-Code resembles the same structure as the text file
@@ -91,8 +92,7 @@ class GCodeProcessor:
             gcode = []
 
             # Loop over the lines of the file
-            while True:
-                line = f.readline()
+            for line in f.readlines():
 
                 # If the end of the file is reached, break the loop
                 if not line:
@@ -101,13 +101,9 @@ class GCodeProcessor:
                 # Initialize a new line as a list
                 new_line = []
 
-                # If the line starts with "%", it is a comment line
-                if line[0] == "%" or len(line) <= 1:
-                    pass
+                # Read in G-Code if line is not a comment and not empty
+                if line[0] != "%" and len(line) > 1:
 
-                # Otherwise, split the line into its components and insert
-                # them into the new line
-                else:
                     # Split the line into its components
                     data = line.split()
 
@@ -144,115 +140,91 @@ class GCodeProcessor:
         # Runs the information out of the input_array
         for cmd in gcode:
 
-            g_com, m_com, t_com = np.nan, np.nan, np.nan
+            cmd_type = cmd[0][0]
 
-            # Checking for the command and advising it to the value
-            if cmd[0][0] == "G":
-                g_com = cmd[0][1]
-            elif cmd[0][0] == "M":
-                m_com = cmd[0][1]
-            elif cmd[0][0] == "T":
-                t_com = cmd[0][1]
+            if cmd_type == "M":
+                self.excecute_m_cmd(cmd)
 
-            x_val, y_val, z_val = np.nan, np.nan, np.nan
-            a_val, b_val, c_val = np.nan, np.nan, np.nan
-            r_val = np.nan
+            if cmd_type == "T":
+                self.execute_t_cmd(cmd)
+
+            elif cmd_type == "G":
+                self.excecute_g_cmd(cmd)
+
+    def excecute_m_cmd(self, cmd):
+        self.m_commands[cmd[0][1]][0]()
+
+    def execute_t_cmd(self, cmd):
+        self.t_commands[cmd[0][1]][0]()
+        self.calibrate_tool()
+
+    def excecute_g_cmd(self, cmd):
+
+        self.last_point = np.array(self.new_point)
+        self.last_or = np.array(self.new_or)
+
+        g_cmd_type = cmd[0][1]
+
+        # Activation of the zero offset
+        if g_cmd_type == 54:
+            self.offset = np.array([self.last_point, self.last_or])
+
+        # Deactivation of the zero offset
+        elif g_cmd_type == 500:
+            self.offset = np.array([[0.0, 0.0, 0.0],
+                                    [0.0, 0.0, 0.0]])
+
+        # Plane selelection for circular interpolation
+        elif g_cmd_type == 17:
+            self.plane = 2  # X-Y Plane
+
+        elif g_cmd_type == 18:
+            self.plane = 1  # X-Z Plane
+
+        elif g_cmd_type == 19:
+            self.plane = 0  # Y-Z Plane
+
+        elif g_cmd_type in [0, 1, 2, 3]:
+            variables = {'X': np.nan, 'Y': np.nan, 'Z': np.nan, 'A': np.nan,
+                         'B': np.nan, 'C': np.nan, 'R': np.nan}
 
             for val in cmd:
-                if val[0] == "X":
-                    x_val = val[1]
-                elif val[0] == "Y":
-                    y_val = val[1]
-                elif val[0] == "Z":
-                    z_val = val[1]
-                elif val[0] == "A":
-                    a_val = val[1]
-                elif val[0] == "B":
-                    b_val = val[1]
-                elif val[0] == "C":
-                    c_val = val[1]
-                elif val[0] == "R":
-                    r_val = val[1]
+                if val[0] in variables:
+                    variables[val[0]] = val[1]
 
-            xyz_val = np.array([x_val, y_val, z_val])
-            abc_val = np.array([a_val, b_val, c_val])
+            xyz_val = np.array([variables['X'], variables['Y'],
+                                variables['Z']])
+            abc_val = np.array([variables['A'], variables['B'],
+                                variables['C']])
+            r_val = variables['R']
 
-            # Checking for a G-command
-            if not np.isnan(g_com):
-                self.last_point = np.array(self.new_point)
-                self.last_or = np.array(self.new_or)
+            # Setting the new point considering offset
+            self.new_point = np.array([0.0, 0.0, 0.0])
+            for i, value in enumerate(xyz_val):
+                if np.isnan(value):
+                    self.new_point[i] = self.last_point[i]
+                else:
+                    self.new_point[i] = value + self.offset[0][i]
 
-                # Checking for interpolation commands
-                if g_com in [0, 1, 2, 3]:
+            # Setting the new orientation considering offset
+            self.new_or = np.array([0.0, 0.0, 0.0])
+            for i, value in enumerate(abc_val):
+                if np.isnan(value):
+                    self.new_or[i] = self.last_or[i]
+                else:
+                    self.new_or[i] = value + self.offset[1][i]
 
-                    # Setting the new point considering offset
-                    self.new_point = np.array([0.0, 0.0, 0.0])
-                    c = 0
+            # Moving the endeffector if there is a G0 Interpolation
+            if g_cmd_type == 0:
+                self.g0_interpolation()
 
-                    for n in xyz_val:
-
-                        if np.isnan(n):
-                            self.new_point[c] = self.last_point[c]
-
-                        else:
-                            self.new_point[c] = n + self.offset[0][c]
-
-                        c += 1
-
-                    # Setting the new orientation considering offset
-                    self.new_or = np.array([0.0, 0.0, 0.0])
-                    c = 0
-
-                    for n in abc_val:
-
-                        if np.isnan(n):
-                            self.new_or[c] = self.last_or[c]
-
-                        else:
-                            self.new_or[c] = n + self.offset[1][c]
-
-                        c += 1
-
-                    # Moving the endeffector if there is a G0 Interpolation
-                    if g_com == 0:
-                        self.g0_interpolation()
-
-                    # Moving the endeffector if ther is a G1 Interpolation
-                    elif g_com in [1, 2, 3]:
-                        self.g123_interpolation(g_com, r_val)
-
-                # Activation of the zero offset
-                elif g_com == 54:
-                    self.offset = np.array([self.last_point, self.last_or])
-
-                # Deactivation of the zero offset
-                elif g_com == 500:
-                    self.offset = np.array([[0.0, 0.0, 0.0],
-                                           [0.0, 0.0, 0.0]])
-
-                # Axis selelection for circular interpolation
-                elif g_com == 17:
-                    self.axis = 2  # X-Y Axis
-
-                elif g_com == 18:
-                    self.axis = 1  # X-Z Axis
-
-                elif g_com == 19:
-                    self.axis = 0  # Y-Z Axis
-
-            # Checking for a M-command
-            elif not np.isnan(m_com):
-                self.m_commands[m_com][0]()
-
-            # Checking for a T-command
-            elif not np.isnan(t_com):
-                self.t_commands[t_com][0]()
-                self.calibrate_tool()
+            # Moving the endeffector if ther is a G1 Interpolation
+            elif g_cmd_type in [1, 2, 3]:
+                self.g123_interpolation(g_cmd_type, r_val)
 
     def g0_interpolation(self):
-        """This method is used in the run_gcode() Method. The G0-interpolation
-        sets the position of the endeffector or tool without running an
-        Interpolation command
+        """The G0-interpolation sets the position of the endeffector
+        or tool without running an interpolation command
 
         Args:
             None
@@ -260,32 +232,9 @@ class GCodeProcessor:
             None
         """
         orientation = p.getQuaternionFromEuler(self.new_or)
-        e = self.active_endeffector
+        actv = self.active_endeffector  # abbreviation
 
-        if not self.active_endeffector == -1:
-
-            for _ in range(15):
-                self.endeffector_list[e].set_tool_pose(self.new_point,
-                                                       orientation)
-                for _ in range(10):
-                    p.stepSimulation()
-                    time.sleep(self.sleep)
-
-                current_position = self.endeffector_list[e].get_tool_pose()[0]
-                or_euler = p.getEulerFromQuaternion(
-                    self.endeffector_list[e].get_tool_pose()[1])
-                current_orientation = np.array(or_euler)
-
-                position_error = np.linalg.norm(current_position
-                                                - self.new_point)
-
-                orientation_error = np.linalg.norm(current_orientation
-                                                   - self.new_or)
-
-                if position_error < 0.02 and orientation_error < 0.004:
-                    break
-        else:
-
+        if self.active_endeffector == -1:
             for _ in range(20):
                 self.robot.set_endeffector_pose(self.new_point, orientation)
                 for _ in range(10):
@@ -301,6 +250,29 @@ class GCodeProcessor:
                                                 self.new_point)
                 orientation_error = np.linalg.norm(current_orientation -
                                                    self.new_or)
+
+                if position_error < 0.02 and orientation_error < 0.004:
+                    break
+
+        else:
+            for _ in range(20):
+                self.endeffector_list[actv].set_tool_pose(self.new_point,
+                                                          orientation)
+                for _ in range(10):
+                    p.stepSimulation()
+                    time.sleep(self.sleep)
+
+                current_position = self.endeffector_list[actv].get_tool_pose()[
+                    0]
+                or_euler = p.getEulerFromQuaternion(
+                    self.endeffector_list[actv].get_tool_pose()[1])
+                current_orientation = np.array(or_euler)
+
+                position_error = np.linalg.norm(current_position
+                                                - self.new_point)
+
+                orientation_error = np.linalg.norm(current_orientation
+                                                   - self.new_or)
 
                 if position_error < 0.02 and orientation_error < 0.004:
                     break
@@ -331,35 +303,35 @@ class GCodeProcessor:
                 path = circular_interpolation(self.last_point,
                                               self.new_point, r_val,
                                               self.interpolation_steps,
-                                              self.axis, True)
+                                              self.plane, True)
             else:
                 path = circular_interpolation(self.last_point,
                                               self.new_point, r_val,
                                               self.interpolation_steps,
-                                              self.axis, False)
+                                              self.plane, False)
 
         path.orientations = np.transpose([orientation]
                                          * len(path.orientations[0]))
 
         # Moving endeffector or the robot
-        if not self.active_endeffector == -1:
-            self.move_along_path(path)
-        else:
+        if self.active_endeffector == -1:
             self.move_robot(path)
+        else:
+            self.move_endeffector(path)
 
-    def move_along_path(self, path: ToolPath):
+    def move_endeffector(self, path: ToolPath):
         """Moves the active endeffector along a designated Path.
 
         Args:
-            path(pi.ToolPath): Array of points defining the path
+            path(ToolPath): Array of points defining the path
         Returns:
             None
         """
         e = self.active_endeffector
 
-        for positions, orientations, tool_path in path:
+        for positions, orientations, _ in path:
 
-            for _ in range(10):
+            for _ in range(20):
 
                 self.endeffector_list[e].set_tool_pose(positions, orientations)
                 for _ in range(10):
@@ -383,11 +355,11 @@ class GCodeProcessor:
         """Moves the endeffector of the robot along the provided path.
 
         Args:
-            path (pi.ToolPath): Array of points defining the path
+            path (ToolPath): Array of points defining the path
         Returns:
             None
         """
-        for positions, orientations, tool_path in path:
+        for positions, orientations, _ in path:
 
             for _ in range(20):
 
@@ -418,19 +390,14 @@ class GCodeProcessor:
         Returns:
             active_endeffector(int): index of the active endeffector
         """
-        n = 0
+
         active_endeffector = -1
 
         if self.endeffector_list is not None:
-
-            for i in self.endeffector_list:
-
+            for n, i in enumerate(self.endeffector_list):
                 if i.is_coupled():
                     active_endeffector = n
                     break
-
-                n = n + 1
-
         return active_endeffector
 
     def calibrate_tool(self):
@@ -445,16 +412,15 @@ class GCodeProcessor:
             None
         """
         self.active_endeffector = self.get_active_endeffector()
-        e = self.active_endeffector
+        actv = self.active_endeffector  # abbreviation
 
-        if not self.active_endeffector == -1:
-            self.new_point = self.endeffector_list[e].get_tool_pose()[0]
-            or_euler = p.getEulerFromQuaternion(
-                self.endeffector_list[e].get_tool_pose()[1])
-            self.new_or = np.array(or_euler)
-
-        else:
+        if self.active_endeffector == -1:
             self.new_point = self.robot.get_endeffector_pose()[0]
             or_euler = p.getEulerFromQuaternion(
                 self.robot.get_endeffector_pose()[1])
+            self.new_or = np.array(or_euler)
+        else:
+            self.new_point = self.endeffector_list[actv].get_tool_pose()[0]
+            or_euler = p.getEulerFromQuaternion(
+                self.endeffector_list[actv].get_tool_pose()[1])
             self.new_or = np.array(or_euler)

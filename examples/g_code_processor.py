@@ -1,27 +1,32 @@
 import time
 import pybullet as p
-import pybullet_industrial as pi
+from pybullet_industrial import RobotBase
+from pybullet_industrial import ToolPath
+from pybullet_industrial import linear_interpolation
+from pybullet_industrial import circular_interpolation
 import numpy as np
 
 
-class Gcode_class():
+class GCodeProcessor:
 
-    def __init__(self, robot: pi.RobotBase = None,
+    def __init__(self, robot: RobotBase = None,
                  endeffector_list: list = None,
                  m_commands: list = None,
                  t_commands: list = None, offset: np.array = None,
-                 plane: int = None, interpolation_steps: int = None,
+                 axis: int = None, interpolation_steps: int = None,
                  sleep: int = None):
-        """Initialize a PathMover object with the provided parameters.
+        """Initialize a GCodeProcessor object with the provided parameters.
 
         Args:
-            robot (pi.RobotBase): The robot to be moved.
+            robot (pi.RobotBase, optional: The robot which is controlled.
             filename (str, optional): The name of a G-code file to read.
             endeffector_list (list, optional): List of end effectors to use.
             m_commands (list, optional): M-commands to execute.
             t_commands (list, optional): T-commands to execute.
             offset (np.array, optional): The offset for the path points.
-            plane (int, optional): The plane for circular interpolation.
+            axis (int, optional): The axis around which the circle
+                                  is interpolated.Defaults to 2 which
+                                  corresponds to the z-axis (0=x,1=y)
             interpolation_steps (int, optional): Number of interpolation steps.
 
         Returns:
@@ -54,10 +59,10 @@ class Gcode_class():
         else:
             self.offset = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
 
-        if plane is not None:
-            self.plane = plane
+        if axis is not None:
+            self.axis = axis
         else:
-            self.plane = 2  # X-Y Plane for the circular interpolation
+            self.axis = 2  # X-Y Axis for the circular interpolation
 
         if interpolation_steps is not None:
             self.interpolation_steps = interpolation_steps
@@ -225,15 +230,15 @@ class Gcode_class():
                     self.offset = np.array([[0.0, 0.0, 0.0],
                                            [0.0, 0.0, 0.0]])
 
-                # Plane selelection for circular interpolation
+                # Axis selelection for circular interpolation
                 elif g_com == 17:
-                    self.plane = 2  # X-Y Plane
+                    self.axis = 2  # X-Y Axis
 
                 elif g_com == 18:
-                    self.plane = 1  # X-Z Plane
+                    self.axis = 1  # X-Z Axis
 
                 elif g_com == 19:
-                    self.plane = 0  # Y-Z Plane
+                    self.axis = 0  # Y-Z Axis
 
             # Checking for a M-command
             elif not np.isnan(m_com):
@@ -316,22 +321,22 @@ class Gcode_class():
 
         # Building the Path if there is a linear G1 interpolation
         if g_com == 1:
-            path = pi.linear_interpolation(self.last_point,
-                                           self.new_point,
-                                           self.interpolation_steps)
+            path = linear_interpolation(self.last_point,
+                                        self.new_point,
+                                        self.interpolation_steps)
 
         # Building the path if there is a circular interpolation
         elif g_com in [2, 3]:
             if g_com == 2:
-                path = pi.circular_interpolation(self.last_point,
-                                                 self.new_point, r_val,
-                                                 self.interpolation_steps,
-                                                 self.plane, True)
+                path = circular_interpolation(self.last_point,
+                                              self.new_point, r_val,
+                                              self.interpolation_steps,
+                                              self.axis, True)
             else:
-                path = pi.circular_interpolation(self.last_point,
-                                                 self.new_point, r_val,
-                                                 self.interpolation_steps,
-                                                 self.plane, False)
+                path = circular_interpolation(self.last_point,
+                                              self.new_point, r_val,
+                                              self.interpolation_steps,
+                                              self.axis, False)
 
         path.orientations = np.transpose([orientation]
                                          * len(path.orientations[0]))
@@ -342,7 +347,7 @@ class Gcode_class():
         else:
             self.move_robot(path)
 
-    def move_along_path(self, path: pi.ToolPath):
+    def move_along_path(self, path: ToolPath):
         """Moves the active endeffector along a designated Path.
 
         Args:
@@ -374,7 +379,7 @@ class Gcode_class():
                 if position_error < 0.02 and orientation_error < 0.004:
                     break
 
-    def move_robot(self, path: pi.ToolPath):
+    def move_robot(self, path: ToolPath):
         """Moves the endeffector of the robot along the provided path.
 
         Args:

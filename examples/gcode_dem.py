@@ -80,8 +80,8 @@ if __name__ == "__main__":
                                                     test_robot, 'link6'))
     dirname = os.path.dirname(__file__)
 
-    gcode_obj_1 = pi.Gcode_class(test_robot, endeffector_list,
-                                 m_commands, t_commands)
+    gcode_obj_1 = pi.GCodeProcessor(test_robot, endeffector_list,
+                                    m_commands, t_commands)
 
     textfile = os.path.join(dirname, 'Gcodes', 'gcode_G0.txt')
     gcode = gcode_obj_1.read_gcode(textfile)

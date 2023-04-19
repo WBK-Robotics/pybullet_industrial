@@ -60,7 +60,7 @@ def check_tool_position(endeffetor: pi.EndeffectorTool, target_position,
     return within_precision
 
 
-def create_command(gcode_object: pi.Gcode_class, commands):
+def create_command(gcode_object: pi.GCodeProcessor, commands):
 
     text_gcode = "text_gcode.txt"
 
@@ -85,7 +85,7 @@ class Test_Gcode_class(unittest.TestCase):
         commands = [cmd1, cmd2, cmd3, cmd4]
 
         # Creating the G-Code Object
-        gcode_object = pi.Gcode_class()
+        gcode_object = pi.GCodeProcessor()
 
         gcode = create_command(gcode_object, commands)
 
@@ -138,7 +138,8 @@ class Test_Gcode_class(unittest.TestCase):
             p.stepSimulation()
 
         dirname = os.path.dirname(__file__)
-        test_object = pi.Gcode_class(robot, None, None, None, None, None, 100)
+        test_object = pi.GCodeProcessor(
+            robot, None, None, None, None, None, 100)
 
         pos1 = np.array([1.9, -0.5, 1.5])
         ori1 = np.array([-1.5079, 0.0, 0.0])

@@ -94,10 +94,6 @@ class GCodeProcessor:
             # Loop over the lines of the file
             for line in f.readlines():
 
-                # If the end of the file is reached, break the loop
-                if not line:
-                    break
-
                 # Initialize a new line as a list
                 new_line = []
 

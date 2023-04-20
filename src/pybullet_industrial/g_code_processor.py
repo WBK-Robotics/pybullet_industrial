@@ -9,10 +9,12 @@ import numpy as np
 
 class GCodeProcessor:
 
+    offset_def = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
+
     def __init__(self, robot: RobotBase = None,
                  endeffector_list: list = None,
                  m_commands: list = None,
-                 t_commands: list = None, offset: np.array = None,
+                 t_commands: list = None, offset: np.array = offset_def,
                  axis: int = 2, interpolation_steps: int = 10,
                  sleep: int = 0.0001):
         """Initialize a PathMover object with the provided parameters.
@@ -36,37 +38,22 @@ class GCodeProcessor:
         self.new_or = []
         self.last_point = []
         self.last_or = []
+        self.active_endeffector = -1
 
-        if m_commands is not None:
-            self.m_commands = m_commands
-
-        if t_commands is not None:
-            self.t_commands = t_commands
-
-        if endeffector_list is not None:
-            self.endeffector_list = endeffector_list
-            self.active_endeffector = self.get_active_endeffector()
-        else:
-            self.endeffector_list = None
-            self.active_endeffector = -1
+        self.robot = robot
+        self.m_commands = m_commands
+        self.t_commands = t_commands
+        self.endeffector_list = endeffector_list
+        self.offset = offset
+        self.axis = axis
+        self.interpolation_steps = interpolation_steps
+        self.sleep = sleep
 
         if robot is not None:
-            self.robot = robot
             self.calibrate_tool()
 
-        if offset is not None:
-            self.offset = offset
-        else:
-            self.offset = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
-
-        if axis is not None:
-            self.axis = axis
-
-        if interpolation_steps is not None:
-            self.interpolation_steps = interpolation_steps
-
-        if sleep is not None:
-            self.sleep = sleep
+        if endeffector_list is not None:
+            self.active_endeffector = self.get_active_endeffector()
 
     @staticmethod
     def read_gcode(filename: str):

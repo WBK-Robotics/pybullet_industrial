@@ -138,8 +138,7 @@ class Test_GCodeProcessor(unittest.TestCase):
             p.stepSimulation()
 
         dirname = os.path.dirname(__file__)
-        test_object = pi.GCodeProcessor(
-            robot, None, None, None, None, None, 100)
+        test_object = pi.GCodeProcessor(robot, interpolation_steps=100)
 
         pos1 = np.array([1.9, -0.5, 1.5])
         ori1 = np.array([-1.5079, 0.0, 0.0])
@@ -233,11 +232,8 @@ class Test_GCodeProcessor(unittest.TestCase):
             test_gripper, robot, 'link6'))
 
         # Adapt Test Object
-        offset = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
-        plane = 2
-        sleep = 0.0001
         test_object = pi.GCodeProcessor(robot, endeffector_list, m_commands,
-                                        t_commands, offset, plane, None, sleep)
+                                        t_commands)
 
         # Test 7: T1/M command and G0 command with tool coupled
         cmd1 = "T1\n"

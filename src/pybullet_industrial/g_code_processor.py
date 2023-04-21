@@ -9,12 +9,12 @@ import numpy as np
 
 class GCodeProcessor:
 
-    offset_def = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
-
     def __init__(self, robot: RobotBase = None,
                  endeffector_list: list = None,
                  m_commands: list = None,
-                 t_commands: list = None, offset: np.array = offset_def,
+                 t_commands: list = None,
+                 offset: np.array = np.array([[0.0, 0.0, 0.0],
+                                              [0.0, 0.0, 0.0]]),
                  axis: int = 2, interpolation_steps: int = 10,
                  sleep: int = 0.0001):
         """Initialize a PathMover object with the provided parameters.

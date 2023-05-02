@@ -4,12 +4,12 @@
 G0 X1.9 Y-0.5 Z1.7 A-1.5708 B0 C0
 
 %Approach Gripper
-G0 X2.7 
+G0 X2.7
 G0 Z1.3
 
 %Toolchange (if programmed)
 T1
-%Move up and adjust orientation 
+%Move up and adjust orientation
 G0 Z1.5 A-3.1415 B0 C0
 %Go back to the default position
 G0 X1.9 Y-0.5

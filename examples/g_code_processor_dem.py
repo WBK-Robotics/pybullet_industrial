@@ -1,33 +1,70 @@
-import time
 import os
 import pybullet as p
 import pybullet_data
 import pybullet_industrial as pi
 import numpy as np
+from g_code_processor import GCodeProcessor
+
+
+def read_gcode(filename: str):
+    """Reads G-Code row by row and saves the processed Data in
+    a List.
+    Comments that start with % are ignored and all the other data is
+    stored as it gets read in.
+    Every Line in the G-Code resembles the same structure as the text file
+
+    Args:
+        filename (str): Source of information
+
+    Returns:
+        gcode
+    """
+    with open(filename, encoding='utf-8') as f:
+        gcode = []
+
+        # Loop over the lines of the file
+        for line in f.readlines():
+
+            # Initialize a new line as a list
+            new_line = []
+
+            # Read in G-Code if line is not a comment and not empty
+            if line[0] != "%" and len(line) > 1:
+
+                # Split the line into its components
+                data = line.split()
+
+                # Loop over the components
+                for i in data:
+                    # Determine the ID of the component
+                    id_val = i[0]
+
+                    # Extract the value of the component
+                    val2 = float(i[1:])
+
+                    if id_val in ["G", "M", "T"]:
+                        # Insert the value into the corresponding
+                        # column of the new line
+                        new_line.append([id_val, int(val2)])
+                    else:
+                        new_line.append([id_val, val2])
+
+                # Add the finished line to the list
+                gcode.append(new_line)
+
+        return gcode
 
 
 def actuate_gripper(gripper: pi.Gripper, val: int):
-
-    gripper.actuate(val)
-    for _ in range(25):
-        p.stepSimulation()
-        time.sleep(0.01)
+    return gripper.actuate(val)
 
 
 def couple_endeffector(gripper: pi.Gripper, robot: pi.RobotBase, link: chr):
-
-    gripper.couple(robot, link)
-    for _ in range(25):
-        p.stepSimulation()
-        time.sleep(0.01)
+    return gripper.couple(robot, link)
 
 
 def decouple_endeffector(gripper: pi.Gripper):
-
-    gripper.decouple()
-    for _ in range(25):
-        p.stepSimulation()
-        time.sleep(0.01)
+    return gripper.decouple()
 
 
 if __name__ == "__main__":
@@ -78,15 +115,15 @@ if __name__ == "__main__":
     t_commands[0].append(lambda: decouple_endeffector(test_gripper))
     t_commands[1].append(lambda: couple_endeffector(test_gripper,
                                                     test_robot, 'link6'))
+
     dirname = os.path.dirname(__file__)
-
-    gcode_obj_1 = pi.GCodeProcessor(test_robot, endeffector_list,
-                                    m_commands, t_commands)
-
-    textfile = os.path.join(dirname, 'Gcodes', 'gcode_G0.txt')
-    gcode = gcode_obj_1.read_gcode(textfile)
-    gcode_obj_1.run_gcode(gcode)
-
     textfile = os.path.join(dirname, 'Gcodes', 'gcode_G123.txt')
-    gcode = gcode_obj_1.read_gcode(textfile)
-    gcode_obj_1.run_gcode(gcode)
+    gcode = read_gcode(textfile)
+    gcode_obj_1 = GCodeProcessor(gcode, test_robot, endeffector_list,
+                                 m_commands, t_commands)
+
+    for gcode_line in gcode_obj_1:
+        for _ in range(20):
+            gcode_line
+            for _ in range(10):
+                p.stepSimulation()

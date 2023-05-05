@@ -35,7 +35,6 @@ class GCodeProcessor:
         """
         # Implemented for the Iteration
         self.gcode = gcode
-        self.index = 0
 
         self.new_point = []
         self.new_or = []
@@ -59,6 +58,10 @@ class GCodeProcessor:
             self.active_endeffector = self.get_active_endeffector()
 
     def __iter__(self):
+        self.index = 0
+        self.wait = True
+        self.tool_path_index = 0
+        self.tool_path = []
         return self
 
     def __next__(self):
@@ -71,19 +74,28 @@ class GCodeProcessor:
         Returns:
             None
         """
+
         if self.index < len(self.gcode):
             cmd_type = self.gcode[self.index][0][0]
+            i = self.index
+
+            if self.wait:
+                self.index += 1
 
             if cmd_type == "M":
-                cmd = self.excecute_m_cmd(self.gcode[self.index])
+                self.excecute_m_cmd(self.gcode[i])
 
             if cmd_type == "T":
-                cmd = self.execute_t_cmd(self.gcode[self.index])
+                self.execute_t_cmd(self.gcode[i])
 
             elif cmd_type == "G":
-                cmd = self.excecute_g_cmd(self.gcode[self.index])
-            self.index += 1
-            return cmd
+                if self.tool_path_index < self.tool_path.__len__():
+                    if self.tool_path_index == self.tool_path.__len__() - 1:
+                        self.wait = True
+                    self.play_toolpath(self.tool_path, self.tool_path_index)
+                else:
+                    self.excecute_g_cmd(self.gcode[i])
+
         else:
             raise StopIteration
 
@@ -213,13 +225,13 @@ class GCodeProcessor:
         path.orientations = np.transpose([orientation]
                                          * len(path.orientations[0]))
 
-        # Moving endeffector or the robot
-        if self.active_endeffector == -1:
-            self.move_robot(path)
-        else:
-            self.move_endeffector(path)
+        self.tool_path = path
+        self.tool_path_index = 0
+        self.wait = False
 
-    def move_endeffector(self, path: ToolPath):
+        self.play_toolpath(self.tool_path, 0)
+
+    def play_toolpath(self, path: ToolPath, index: int):
         """Moves the active endeffector along a designated Path.
 
         Args:
@@ -227,21 +239,15 @@ class GCodeProcessor:
         Returns:
             None
         """
-        actv = self.active_endeffector  # abbreviation
+        positions = path.positions[index]
+        orientations = path.orientations[index]
+        self.tool_path_index += 1
 
-        for positions, orientations, _ in path:
+        if self.active_endeffector == -1:
+            actv = self.active_endeffector  # abbreviation
             return self.endeffector_list[actv].set_tool_pose(
                 positions, orientations)
-
-    def move_robot(self, path: ToolPath):
-        """Moves the endeffector of the robot along the provided path.
-
-        Args:
-            path (ToolPath): Array of points defining the path
-        Returns:
-            None
-        """
-        for positions, orientations, _ in path:
+        else:
             return self.robot.set_endeffector_pose(positions, orientations)
 
     def get_active_endeffector(self):

@@ -1,6 +1,5 @@
 import pybullet as p
 from pybullet_industrial import RobotBase
-from pybullet_industrial import ToolPath
 from pybullet_industrial import linear_interpolation
 from pybullet_industrial import circular_interpolation
 import numpy as np
@@ -59,9 +58,7 @@ class GCodeProcessor:
 
     def __iter__(self):
         self.index = 0
-        self.wait = True
-        self.tool_path_index = 0
-        self.tool_path = []
+        self.simulation = False
         return self
 
     def __next__(self):
@@ -79,8 +76,7 @@ class GCodeProcessor:
             cmd_type = self.gcode[self.index][0][0]
             i = self.index
 
-            if self.wait:
-                self.index += 1
+            self.index += 1
 
             if cmd_type == "M":
                 self.excecute_m_cmd(self.gcode[i])
@@ -89,22 +85,20 @@ class GCodeProcessor:
                 self.execute_t_cmd(self.gcode[i])
 
             elif cmd_type == "G":
-                if self.tool_path_index < self.tool_path.__len__():
-                    if self.tool_path_index == self.tool_path.__len__() - 1:
-                        self.wait = True
-                    self.play_toolpath(self.tool_path, self.tool_path_index)
-                else:
-                    self.excecute_g_cmd(self.gcode[i])
+                self.excecute_g_cmd(self.gcode[i])
+            return self.simulation
 
         else:
             raise StopIteration
 
     def excecute_m_cmd(self, cmd):
         self.m_commands[cmd[0][1]][0]()
+        self.simulation = True
 
     def execute_t_cmd(self, cmd):
         self.t_commands[cmd[0][1]][0]()
         self.calibrate_tool()
+        self.simulation = True
 
     def excecute_g_cmd(self, cmd):
 
@@ -116,21 +110,26 @@ class GCodeProcessor:
         # Activation of the zero offset
         if g_cmd_type == 54:
             self.offset = np.array([self.last_point, self.last_or])
+            self.simulation = False
 
         # Deactivation of the zero offset
         elif g_cmd_type == 500:
             self.offset = np.array([[0.0, 0.0, 0.0],
                                     [0.0, 0.0, 0.0]])
+            self.simulation = False
 
         # Axis selelection for circular interpolation
         elif g_cmd_type == 17:
             self.axis = 2  # X-Y Axis
+            self.simulation = False
 
         elif g_cmd_type == 18:
             self.axis = 1  # X-Z Axis
+            self.simulation = False
 
         elif g_cmd_type == 19:
             self.axis = 0  # Y-Z Axis
+            self.simulation = False
 
         elif g_cmd_type in [0, 1, 2, 3]:
             variables = {'X': np.nan, 'Y': np.nan, 'Z': np.nan, 'A': np.nan,
@@ -183,11 +182,13 @@ class GCodeProcessor:
         actv = self.active_endeffector  # abbreviation
 
         if self.active_endeffector == -1:
-            return self.robot.set_endeffector_pose(self.new_point, orientation)
+            self.robot.set_endeffector_pose(self.new_point, orientation)
+            self.simulation = True
 
         else:
-            return self.endeffector_list[actv].set_tool_pose(self.new_point,
-                                                             orientation)
+            self.endeffector_list[actv].set_tool_pose(self.new_point,
+                                                      orientation)
+            self.simulation = True
 
     def g123_interpolation(self, g_com, r_val):
         """This Mehtod is part of the run_gcode() Method. Depending on the
@@ -224,31 +225,18 @@ class GCodeProcessor:
 
         path.orientations = np.transpose([orientation]
                                          * len(path.orientations[0]))
+        insert_position = self.index
 
-        self.tool_path = path
-        self.tool_path_index = 0
-        self.wait = False
+        for pos, ori, _ in path:
+            ori = p.getEulerFromQuaternion(ori)
+            pos = pos - self.offset[0]
+            ori = ori - self.offset[1]
+            array = [['G', 0], ['X', pos[0]], ['Y', pos[1]], [
+                'Z', pos[2]], ['A', ori[0]], ['B', ori[1]], ['C', ori[2]]]
+            self.gcode.insert(insert_position, array)
+            insert_position += 1
 
-        self.play_toolpath(self.tool_path, 0)
-
-    def play_toolpath(self, path: ToolPath, index: int):
-        """Moves the active endeffector along a designated Path.
-
-        Args:
-            path(ToolPath): Array of points defining the path
-        Returns:
-            None
-        """
-        positions = path.positions[index]
-        orientations = path.orientations[index]
-        self.tool_path_index += 1
-
-        if self.active_endeffector == -1:
-            actv = self.active_endeffector  # abbreviation
-            return self.endeffector_list[actv].set_tool_pose(
-                positions, orientations)
-        else:
-            return self.robot.set_endeffector_pose(positions, orientations)
+        self.simulation = False
 
     def get_active_endeffector(self):
         """Returns the index of the active endeffector of self.endeffector_list

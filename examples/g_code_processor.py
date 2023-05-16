@@ -57,8 +57,9 @@ class GCodeProcessor:
             self.active_endeffector = self.get_active_endeffector()
 
     def __iter__(self):
-        self.index = 0
-        self.simulation = False
+        self.operation = []
+        self.index_operation = 0
+        self.index_gcode = 0
         return self
 
     def __next__(self):
@@ -72,11 +73,18 @@ class GCodeProcessor:
             None
         """
 
-        if self.index < len(self.gcode):
-            cmd_type = self.gcode[self.index][0][0]
-            i = self.index
+        if self.index_operation < len(self.operation):
+            i = self.index_operation
+            self.index_operation += 1
+            self.operation[i]()
 
-            self.index += 1
+        elif self.index_gcode < len(self.gcode):
+            self.operation = []
+            self.index_operation = 0
+
+            i = self.index_gcode
+            cmd_type = self.gcode[i][0][0]
+            self.index_gcode += 1
 
             if cmd_type == "M":
                 self.excecute_m_cmd(self.gcode[i])
@@ -86,19 +94,16 @@ class GCodeProcessor:
 
             elif cmd_type == "G":
                 self.excecute_g_cmd(self.gcode[i])
-            return self.simulation
 
         else:
             raise StopIteration
 
     def excecute_m_cmd(self, cmd):
         self.m_commands[cmd[0][1]][0]()
-        self.simulation = True
 
     def execute_t_cmd(self, cmd):
         self.t_commands[cmd[0][1]][0]()
         self.calibrate_tool()
-        self.simulation = True
 
     def excecute_g_cmd(self, cmd):
 
@@ -110,26 +115,21 @@ class GCodeProcessor:
         # Activation of the zero offset
         if g_cmd_type == 54:
             self.offset = np.array([self.last_point, self.last_or])
-            self.simulation = False
 
         # Deactivation of the zero offset
         elif g_cmd_type == 500:
             self.offset = np.array([[0.0, 0.0, 0.0],
                                     [0.0, 0.0, 0.0]])
-            self.simulation = False
 
         # Axis selelection for circular interpolation
         elif g_cmd_type == 17:
             self.axis = 2  # X-Y Axis
-            self.simulation = False
 
         elif g_cmd_type == 18:
             self.axis = 1  # X-Z Axis
-            self.simulation = False
 
         elif g_cmd_type == 19:
             self.axis = 0  # Y-Z Axis
-            self.simulation = False
 
         elif g_cmd_type in [0, 1, 2, 3]:
             variables = {'X': np.nan, 'Y': np.nan, 'Z': np.nan, 'A': np.nan,
@@ -183,12 +183,10 @@ class GCodeProcessor:
 
         if self.active_endeffector == -1:
             self.robot.set_endeffector_pose(self.new_point, orientation)
-            self.simulation = True
 
         else:
             self.endeffector_list[actv].set_tool_pose(self.new_point,
                                                       orientation)
-            self.simulation = True
 
     def g123_interpolation(self, g_com, r_val):
         """This Mehtod is part of the run_gcode() Method. Depending on the
@@ -225,18 +223,17 @@ class GCodeProcessor:
 
         path.orientations = np.transpose([orientation]
                                          * len(path.orientations[0]))
-        insert_position = self.index
 
-        for pos, ori, _ in path:
-            ori = p.getEulerFromQuaternion(ori)
-            pos = pos - self.offset[0]
-            ori = ori - self.offset[1]
-            array = [['G', 0], ['X', pos[0]], ['Y', pos[1]], [
-                'Z', pos[2]], ['A', ori[0]], ['B', ori[1]], ['C', ori[2]]]
-            self.gcode.insert(insert_position, array)
-            insert_position += 1
+        actv = self.active_endeffector  # abbreviation
 
-        self.simulation = False
+        for position, orientation, _ in path:
+            if self.active_endeffector == -1:
+                self.operation.append(
+                    lambda i=position, j=orientation: self.robot.set_endeffector_pose(i, j))
+
+            else:
+                self.operation.append(
+                    lambda i=position, j=orientation: self.endeffector_list[actv].set_tool_pose(i, j))
 
     def get_active_endeffector(self):
         """Returns the index of the active endeffector of self.endeffector_list

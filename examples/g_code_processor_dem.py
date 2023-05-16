@@ -122,11 +122,7 @@ if __name__ == "__main__":
     gcode_obj_1 = GCodeProcessor(gcode, test_robot, endeffector_list,
                                  m_commands, t_commands)
 
-    for gcode in gcode_obj_1:
-        if gcode:
-            for _ in range(20):
-                gcode
-                for _ in range(10):
-                    p.stepSimulation()
-        else:
-            print("No Simulation Operation")
+    for _ in gcode_obj_1:
+        for _ in range(20):
+            for _ in range(10):
+                p.stepSimulation()

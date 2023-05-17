@@ -43,13 +43,22 @@ class GCodeProcessor:
         self.active_endeffector = -1
 
         self.robot = robot
-        self.m_commands = m_commands
-        self.t_commands = t_commands
+
         self.endeffector_list = endeffector_list
         self.offset = offset
         self.axis = axis
         self.interpolation_steps = interpolation_steps
         self.sleep = sleep
+
+        self.m_commands = m_commands
+        self.t_commands = t_commands
+
+        self.g_commands = [[] for _ in range(1000)]
+        self.g_commands[54].append(lambda: self.g_54())
+        self.g_commands[500].append(lambda: self.g_500())
+        self.g_commands[17].append(lambda: self.g_17())
+        self.g_commands[17].append(lambda: self.g_18())
+        self.g_commands[17].append(lambda: self.g_19())
 
         if robot is not None:
             self.calibrate_tool()
@@ -61,6 +70,7 @@ class GCodeProcessor:
         self.operation = []
         self.index_operation = 0
         self.index_gcode = 0
+        self.path = []
         return self
 
     def __next__(self):
@@ -85,120 +95,101 @@ class GCodeProcessor:
 
             i = self.index_gcode
             cmd_type = self.gcode[i][0][0]
-            self.index_gcode += 1
+            cmd_int = self.gcode[i][0][1]
+
+            self.last_point = np.array(self.new_point)
+            self.last_or = np.array(self.new_or)
 
             if cmd_type == "M":
-                m_int = self.gcode[i][0][1]
                 self.create_elementary_actions(
-                    m_commands=self.m_commands[m_int])
+                    m_commands=self.m_commands[cmd_int])
 
             if cmd_type == "T":
-                t_int = self.gcode[i][0][1]
                 self.create_elementary_actions(
-                    t_commands=self.t_commands[t_int])
+                    t_commands=self.t_commands[cmd_int])
 
-            elif cmd_type == "G":
-                self.excecute_g_cmd(self.gcode[i])
+            elif cmd_type == "G" and cmd_int > 3:
+
+                self.create_elementary_actions(
+                    g_commands=cmd_int)
+
+            self.index_gcode += 1
 
         else:
             raise StopIteration
 
-    def create_elementary_actions(self, path: ToolPath = None, m_commands=None, t_commands=None):
+    def create_elementary_actions(self, g_int=None, m_int=None, t_int=None):
 
-        if path is not None:
+        if g_int is not None:
+            if g_int > 3:
+                for actions in self.g_commands[g_int]:
+                    self.operation.append(lambda: actions())
+            else:
+                path = self.create_path(self)
+                self.set_path(self, path)
 
-            active = self.active_endeffector  # abbreviation
-
-            for position, orientation, _ in path:
-                if self.active_endeffector == -1:
-                    self.operation.append(
-                        lambda i=position, j=orientation: self.robot.set_endeffector_pose(i, j))
-
-                else:
-                    self.operation.append(
-                        lambda i=position, j=orientation: self.endeffector_list[active].set_tool_pose(i, j))
-
-        if m_commands is not None:
-            for actions in m_commands:
+        elif m_int is not None:
+            for actions in self.m_commands[m_int]:
                 self.operation.append(lambda: actions())
 
-        if t_commands is not None:
-            for actions in t_commands:
+        elif t_int is not None:
+            for actions in self.t_commands[t_int]:
                 self.operation.append(lambda: actions())
 
             self.operation.append(lambda: self.calibrate_tool())
 
-    def excecute_g_cmd(self, cmd):
-
-        self.last_point = np.array(self.new_point)
-        self.last_or = np.array(self.new_or)
-
-        g_cmd_type = cmd[0][1]
-
         # Activation of the zero offset
-        if g_cmd_type == 54:
-            self.offset = np.array([self.last_point, self.last_or])
+    def g_54(self):
+        self.offset = np.array([self.last_point, self.last_or])
 
         # Deactivation of the zero offset
-        elif g_cmd_type == 500:
-            self.offset = np.array([[0.0, 0.0, 0.0],
-                                    [0.0, 0.0, 0.0]])
+    def g_500(self):
+        self.offset = np.array([[0.0, 0.0, 0.0],
+                                [0.0, 0.0, 0.0]])
 
         # Axis selelection for circular interpolation
-        elif g_cmd_type == 17:
-            self.axis = 2  # X-Y Axis
+    def g_17(self):
+        self.axis = 2  # X-Y Axis
 
-        elif g_cmd_type == 18:
-            self.axis = 1  # X-Z Axis
+    def g_18(self):
+        self.axis = 1  # X-Z Axis
 
-        elif g_cmd_type == 19:
-            self.axis = 0  # Y-Z Axis
+    def g_19(self):
+        self.axis = 0  # Y-Z Axis
 
-        elif g_cmd_type in [0, 1, 2, 3]:
-            variables = {'X': np.nan, 'Y': np.nan, 'Z': np.nan, 'A': np.nan,
-                         'B': np.nan, 'C': np.nan, 'R': np.nan}
+    def create_path(self):
 
-            for val in cmd:
-                if val[0] in variables:
-                    variables[val[0]] = val[1]
+        cmd = self.gcode[self.index_gcode]
+        g_com = cmd[0][1]
 
-            xyz_val = np.array([variables['X'], variables['Y'],
-                                variables['Z']])
-            abc_val = np.array([variables['A'], variables['B'],
-                                variables['C']])
-            r_val = variables['R']
+        variables = {'X': np.nan, 'Y': np.nan, 'Z': np.nan, 'A': np.nan,
+                     'B': np.nan, 'C': np.nan, 'R': np.nan}
 
-            # Setting the new point considering offset
-            self.new_point = np.array([0.0, 0.0, 0.0])
-            for i, value in enumerate(xyz_val):
-                if np.isnan(value):
-                    self.new_point[i] = self.last_point[i]
-                else:
-                    self.new_point[i] = value + self.offset[0][i]
+        for val in cmd:
+            if val[0] in variables:
+                variables[val[0]] = val[1]
 
-            # Setting the new orientation considering offset
-            self.new_or = np.array([0.0, 0.0, 0.0])
-            for i, value in enumerate(abc_val):
-                if np.isnan(value):
-                    self.new_or[i] = self.last_or[i]
-                else:
-                    self.new_or[i] = value + self.offset[1][i]
+        xyz_val = np.array([variables['X'], variables['Y'],
+                            variables['Z']])
+        abc_val = np.array([variables['A'], variables['B'],
+                            variables['C']])
+        r_val = variables['R']
 
-            self.create_path(g_cmd_type, r_val)
+        # Setting the new point considering offset
+        self.new_point = np.array([0.0, 0.0, 0.0])
+        for i, value in enumerate(xyz_val):
+            if np.isnan(value):
+                self.new_point[i] = self.last_point[i]
+            else:
+                self.new_point[i] = value + self.offset[0][i]
 
-    def create_path(self, g_com, r_val):
-        """This Mehtod is part of the run_gcode() Method. Depending on the
-        G-Command it either runs a linear or circular interpolation and calls
-        the move-methods depending if a tool is activated or not.
-
-        Args:
-            g_com: G-Command from the g_code File
-            r_val: Radius for the circular interpolation
-
-        Returns:
-            None
-        """
-        orientation = p.getQuaternionFromEuler(self.new_or)
+        # Setting the new orientation considering offset
+        self.new_or = np.array([0.0, 0.0, 0.0])
+        for i, value in enumerate(abc_val):
+            if np.isnan(value):
+                self.new_or[i] = self.last_or[i]
+            else:
+                self.new_or[i] = value + self.offset[1][i]
 
         # Building the Path if there is a linear G1 interpolation
         if g_com == 0:
@@ -225,10 +216,23 @@ class GCodeProcessor:
                                               self.interpolation_steps,
                                               self.axis, False)
 
+        orientation = p.getQuaternionFromEuler(self.new_or)
         path.orientations = np.transpose([orientation]
                                          * len(path.orientations[0]))
 
-        self.create_elementary_actions(path=path)
+        return path
+
+    def set_path(self):
+        active = self.active_endeffector  # abbreviation
+
+        for position, orientation, _ in self.path:
+            if self.active_endeffector == -1:
+                self.operation.append(
+                    lambda i=position, j=orientation: self.robot.set_endeffector_pose(i, j))
+
+            else:
+                self.operation.append(
+                    lambda i=position, j=orientation: self.endeffector_list[active].set_tool_pose(i, j))
 
     def get_active_endeffector(self):
         """Returns the index of the active endeffector of self.endeffector_list

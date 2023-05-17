@@ -2,6 +2,7 @@ import pybullet as p
 from pybullet_industrial import RobotBase
 from pybullet_industrial import linear_interpolation
 from pybullet_industrial import circular_interpolation
+from pybullet_industrial import ToolPath
 import numpy as np
 
 
@@ -87,10 +88,14 @@ class GCodeProcessor:
             self.index_gcode += 1
 
             if cmd_type == "M":
-                self.excecute_m_cmd(self.gcode[i])
+                m_int = self.gcode[i][0][1]
+                self.create_elementary_actions(
+                    m_commands=self.m_commands[m_int])
 
             if cmd_type == "T":
-                self.execute_t_cmd(self.gcode[i])
+                t_int = self.gcode[i][0][1]
+                self.create_elementary_actions(
+                    t_commands=self.t_commands[t_int])
 
             elif cmd_type == "G":
                 self.excecute_g_cmd(self.gcode[i])
@@ -98,12 +103,30 @@ class GCodeProcessor:
         else:
             raise StopIteration
 
-    def excecute_m_cmd(self, cmd):
-        self.m_commands[cmd[0][1]][0]()
+    def create_elementary_actions(self, path: ToolPath = None, m_commands=None, t_commands=None):
 
-    def execute_t_cmd(self, cmd):
-        self.t_commands[cmd[0][1]][0]()
-        self.calibrate_tool()
+        if path is not None:
+
+            active = self.active_endeffector  # abbreviation
+
+            for position, orientation, _ in path:
+                if self.active_endeffector == -1:
+                    self.operation.append(
+                        lambda i=position, j=orientation: self.robot.set_endeffector_pose(i, j))
+
+                else:
+                    self.operation.append(
+                        lambda i=position, j=orientation: self.endeffector_list[active].set_tool_pose(i, j))
+
+        if m_commands is not None:
+            for actions in m_commands:
+                self.operation.append(lambda: actions())
+
+        if t_commands is not None:
+            for actions in t_commands:
+                self.operation.append(lambda: actions())
+
+            self.operation.append(lambda: self.calibrate_tool())
 
     def excecute_g_cmd(self, cmd):
 
@@ -161,34 +184,9 @@ class GCodeProcessor:
                 else:
                     self.new_or[i] = value + self.offset[1][i]
 
-            # Moving the endeffector if there is a G0 Interpolation
-            if g_cmd_type == 0:
-                self.g0_interpolation()
+            self.create_path(g_cmd_type, r_val)
 
-            # Moving the endeffector if ther is a G1 Interpolation
-            elif g_cmd_type in [1, 2, 3]:
-                self.g123_interpolation(g_cmd_type, r_val)
-
-    def g0_interpolation(self):
-        """The G0-interpolation sets the position of the endeffector
-        or tool without running an interpolation command
-
-        Args:
-            None
-        Returns:
-            None
-        """
-        orientation = p.getQuaternionFromEuler(self.new_or)
-        actv = self.active_endeffector  # abbreviation
-
-        if self.active_endeffector == -1:
-            self.robot.set_endeffector_pose(self.new_point, orientation)
-
-        else:
-            self.endeffector_list[actv].set_tool_pose(self.new_point,
-                                                      orientation)
-
-    def g123_interpolation(self, g_com, r_val):
+    def create_path(self, g_com, r_val):
         """This Mehtod is part of the run_gcode() Method. Depending on the
         G-Command it either runs a linear or circular interpolation and calls
         the move-methods depending if a tool is activated or not.
@@ -201,6 +199,12 @@ class GCodeProcessor:
             None
         """
         orientation = p.getQuaternionFromEuler(self.new_or)
+
+        # Building the Path if there is a linear G1 interpolation
+        if g_com == 0:
+            path = linear_interpolation(self.last_point,
+                                        self.new_point,
+                                        0)
 
         # Building the Path if there is a linear G1 interpolation
         if g_com == 1:
@@ -224,16 +228,7 @@ class GCodeProcessor:
         path.orientations = np.transpose([orientation]
                                          * len(path.orientations[0]))
 
-        actv = self.active_endeffector  # abbreviation
-
-        for position, orientation, _ in path:
-            if self.active_endeffector == -1:
-                self.operation.append(
-                    lambda i=position, j=orientation: self.robot.set_endeffector_pose(i, j))
-
-            else:
-                self.operation.append(
-                    lambda i=position, j=orientation: self.endeffector_list[actv].set_tool_pose(i, j))
+        self.create_elementary_actions(path=path)
 
     def get_active_endeffector(self):
         """Returns the index of the active endeffector of self.endeffector_list

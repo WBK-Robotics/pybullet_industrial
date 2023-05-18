@@ -22,6 +22,7 @@ With the help of the pybullet_industrial package you will be able to:
 
 You can find the documentation [here](https://pybullet-industrial.readthedocs.io/en/latest/).
 
+
 ## Getting Started
 
 There are two ways to get started with the library. The first is to use the newest source version from the repository.
@@ -53,3 +54,6 @@ And depending on how you have installed your python environment, you may need to
 
 
 
+## Citing the Package
+
+If you find the package useful, please consider citing it using the citation information on the right side of this page.

@@ -8,7 +8,7 @@ import numpy as np
 
 class GCodeProcessor:
 
-    def __init__(self, gcode=None, robot: RobotBase = None,
+    def __init__(self, gcode_input: str = None, robot: RobotBase = None,
                  endeffector_list: list = None,
                  m_commands: list = None,
                  t_commands: list = None,
@@ -19,7 +19,7 @@ class GCodeProcessor:
         """Initialize a PathMover object with the provided parameters.
 
         Args:
-            robot (pi.RobotBase, optional): The robot which is controlled.
+            robot (RobotBase, optional): The robot which is controlled.
             filename (str, optional): The name of a G-code file to read.
             endeffector_list (list, optional): List of end effectors to use.
             m_commands (list, optional): M-commands to execute.
@@ -33,8 +33,8 @@ class GCodeProcessor:
         Returns:
             None
         """
-        # Implemented for the Iteration
-        self.gcode = gcode
+        # Converting the gcode_input into a list
+        self.gcode = self.read_gcode(gcode_input)
 
         self.new_point = []
         self.new_or = []
@@ -53,12 +53,13 @@ class GCodeProcessor:
         self.m_commands = m_commands
         self.t_commands = t_commands
 
+        # Setting the default g_commands
         self.g_commands = [[] for _ in range(1000)]
         self.g_commands[54].append(lambda: self.g_54())
         self.g_commands[500].append(lambda: self.g_500())
         self.g_commands[17].append(lambda: self.g_17())
-        self.g_commands[17].append(lambda: self.g_18())
-        self.g_commands[17].append(lambda: self.g_19())
+        self.g_commands[18].append(lambda: self.g_18())
+        self.g_commands[19].append(lambda: self.g_19())
 
         if robot is not None:
             self.calibrate_tool()
@@ -66,8 +67,56 @@ class GCodeProcessor:
         if endeffector_list is not None:
             self.active_endeffector = self.get_active_endeffector()
 
+    @staticmethod
+    def read_gcode(gcode_input: str):
+        """Reads G-Code row by row and saves the processed Data in
+        a List.
+        Comments that start with % are ignored and all the other data is
+        stored as it gets read in.
+        Every Line in the G-Code resembles the same structure as the text file
+
+        Args:
+            filename (str): Source of information
+
+        Returns:
+            gcode
+        """
+        gcode = []
+
+        # Loop over the lines of the file
+        for line in gcode_input:
+
+            # Initialize a new line as a list
+            new_line = []
+
+            # Read in G-Code if line is not a comment and not empty
+            if line[0] != "%" and len(line) > 1:
+
+                # Split the line into its components
+                data = line.split()
+
+                # Loop over the components
+                for i in data:
+                    # Determine the ID of the component
+                    id_val = i[0]
+
+                    # Extract the value of the component
+                    val2 = float(i[1:])
+
+                    if id_val in ["G", "M", "T"]:
+                        # Insert the value into the corresponding
+                        # column of the new line
+                        new_line.append([id_val, int(val2)])
+                    else:
+                        new_line.append([id_val, val2])
+
+                # Add the finished line to the list
+                gcode.append(new_line)
+
+        return gcode
+
     def __iter__(self):
-        self.operation = []
+        self.elementary_operations = []
         self.index_operation = 0
         self.index_gcode = 0
         self.path = []
@@ -83,14 +132,13 @@ class GCodeProcessor:
         Returns:
             None
         """
-
-        if self.index_operation < len(self.operation):
+        if self.index_operation < len(self.elementary_operations):
             i = self.index_operation
             self.index_operation += 1
-            self.operation[i]()
+            self.elementary_operations[i]()
 
         elif self.index_gcode < len(self.gcode):
-            self.operation = []
+            self.elementary_operations = []
             self.index_operation = 0
 
             i = self.index_gcode
@@ -101,64 +149,55 @@ class GCodeProcessor:
             self.last_or = np.array(self.new_or)
 
             if cmd_type == "M":
-                self.create_elementary_actions(
-                    m_commands=self.m_commands[cmd_int])
+                self.create_elementary_operations(
+                    m_int=cmd_int)
 
             if cmd_type == "T":
-                self.create_elementary_actions(
-                    t_commands=self.t_commands[cmd_int])
+                self.create_elementary_operations(
+                    t_int=cmd_int)
 
-            elif cmd_type == "G" and cmd_int > 3:
+            elif cmd_type == "G":
 
-                self.create_elementary_actions(
-                    g_commands=cmd_int)
+                self.create_elementary_operations(
+                    g_int=cmd_int)
 
             self.index_gcode += 1
+
+            return self.gcode[i]
 
         else:
             raise StopIteration
 
-    def create_elementary_actions(self, g_int=None, m_int=None, t_int=None):
+    def create_elementary_operations(self, g_int=None, m_int=None, t_int=None):
 
         if g_int is not None:
             if g_int > 3:
-                for actions in self.g_commands[g_int]:
-                    self.operation.append(lambda: actions())
+                for operation in self.g_commands[g_int]:
+                    self.elementary_operations.append(lambda: operation())
             else:
-                path = self.create_path(self)
-                self.set_path(self, path)
+                path = self.create_path()
+                self.elementary_operations = self.set_path(path)
 
         elif m_int is not None:
-            for actions in self.m_commands[m_int]:
-                self.operation.append(lambda: actions())
+            for operation in self.m_commands[m_int]:
+                self.elementary_operations.append(lambda: operation())
 
         elif t_int is not None:
-            for actions in self.t_commands[t_int]:
-                self.operation.append(lambda: actions())
+            for operation in self.t_commands[t_int]:
+                self.elementary_operations.append(lambda: operation())
 
-            self.operation.append(lambda: self.calibrate_tool())
-
-        # Activation of the zero offset
-    def g_54(self):
-        self.offset = np.array([self.last_point, self.last_or])
-
-        # Deactivation of the zero offset
-    def g_500(self):
-        self.offset = np.array([[0.0, 0.0, 0.0],
-                                [0.0, 0.0, 0.0]])
-
-        # Axis selelection for circular interpolation
-    def g_17(self):
-        self.axis = 2  # X-Y Axis
-
-    def g_18(self):
-        self.axis = 1  # X-Z Axis
-
-    def g_19(self):
-        self.axis = 0  # Y-Z Axis
+            self.elementary_operations.append(lambda: self.calibrate_tool())
 
     def create_path(self):
+        """Build the the new point and new orientation of the current g-code commands
+        and returns a interpolated ToolPath
 
+        Args:
+            None
+
+        Returns:
+            path(ToolPath): ToolPath based on the new point and g-command
+        """
         cmd = self.gcode[self.index_gcode]
         g_com = cmd[0][1]
 
@@ -222,17 +261,30 @@ class GCodeProcessor:
 
         return path
 
-    def set_path(self):
-        active = self.active_endeffector  # abbreviation
+    def set_path(self, path: ToolPath):
+        """Returns a list of elementary operations based on a given Toolpath
+        and active endeffector
 
-        for position, orientation, _ in self.path:
+
+        Args:
+            path(ToolPath): input for elementary operation
+
+        Returns:
+            elementary_operations(list): operations for the simulation
+        """
+        active = self.active_endeffector  # abbreviation
+        elementary_operations = []
+
+        for position, orientation, _ in path:
             if self.active_endeffector == -1:
-                self.operation.append(
+                elementary_operations.append(
                     lambda i=position, j=orientation: self.robot.set_endeffector_pose(i, j))
 
             else:
-                self.operation.append(
+                elementary_operations.append(
                     lambda i=position, j=orientation: self.endeffector_list[active].set_tool_pose(i, j))
+
+        return elementary_operations
 
     def get_active_endeffector(self):
         """Returns the index of the active endeffector of self.endeffector_list
@@ -277,3 +329,24 @@ class GCodeProcessor:
             or_euler = p.getEulerFromQuaternion(
                 self.endeffector_list[actv].get_tool_pose()[1])
             self.new_or = np.array(or_euler)
+
+    def g_54(self):
+        # Activation of the zero offset
+        self.offset = np.array([self.last_point, self.last_or])
+
+    def g_500(self):
+        # Deactivation of the zero offset
+        self.offset = np.array([[0.0, 0.0, 0.0],
+                                [0.0, 0.0, 0.0]])
+
+    def g_17(self):
+        # Axis selelection for circular interpolation
+        self.axis = 2  # X-Y Axis
+
+    def g_18(self):
+        # Axis selelection for circular interpolation
+        self.axis = 1  # X-Z Axis
+
+    def g_19(self):
+        # Axis selelection for circular interpolation
+        self.axis = 0  # Y-Z Axis

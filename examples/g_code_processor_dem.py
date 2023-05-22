@@ -6,55 +6,6 @@ import numpy as np
 from g_code_processor import GCodeProcessor
 
 
-def read_gcode(filename: str):
-    """Reads G-Code row by row and saves the processed Data in
-    a List.
-    Comments that start with % are ignored and all the other data is
-    stored as it gets read in.
-    Every Line in the G-Code resembles the same structure as the text file
-
-    Args:
-        filename (str): Source of information
-
-    Returns:
-        gcode
-    """
-    with open(filename, encoding='utf-8') as f:
-        gcode = []
-
-        # Loop over the lines of the file
-        for line in f.readlines():
-
-            # Initialize a new line as a list
-            new_line = []
-
-            # Read in G-Code if line is not a comment and not empty
-            if line[0] != "%" and len(line) > 1:
-
-                # Split the line into its components
-                data = line.split()
-
-                # Loop over the components
-                for i in data:
-                    # Determine the ID of the component
-                    id_val = i[0]
-
-                    # Extract the value of the component
-                    val2 = float(i[1:])
-
-                    if id_val in ["G", "M", "T"]:
-                        # Insert the value into the corresponding
-                        # column of the new line
-                        new_line.append([id_val, int(val2)])
-                    else:
-                        new_line.append([id_val, val2])
-
-                # Add the finished line to the list
-                gcode.append(new_line)
-
-        return gcode
-
-
 def actuate_gripper(gripper: pi.Gripper, val: int):
     return gripper.actuate(val)
 
@@ -118,11 +69,16 @@ if __name__ == "__main__":
 
     dirname = os.path.dirname(__file__)
     textfile = os.path.join(dirname, 'Gcodes', 'gcode_G123.txt')
-    gcode = read_gcode(textfile)
-    gcode_obj_1 = GCodeProcessor(gcode, test_robot, endeffector_list,
+
+    with open(textfile, encoding='utf-8') as f:
+        gcode_input = f.readlines()
+
+    gcode_obj_1 = GCodeProcessor(gcode_input, test_robot, endeffector_list,
                                  m_commands, t_commands)
 
-    for _ in gcode_obj_1:
+    for gcode in gcode_obj_1:
+        if gcode is not None:
+            print(gcode)
         for _ in range(20):
             for _ in range(10):
                 p.stepSimulation()

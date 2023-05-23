@@ -3,7 +3,6 @@ import pybullet as p
 import pybullet_data
 import pybullet_industrial as pi
 import numpy as np
-from g_code_processor import GCodeProcessor
 
 
 def actuate_gripper(gripper: pi.Gripper, val: int):
@@ -73,10 +72,11 @@ if __name__ == "__main__":
     with open(textfile, encoding='utf-8') as f:
         gcode_input = f.read()
 
-    gcode_obj_1 = GCodeProcessor(gcode_input, test_robot, endeffector_list,
-                                 m_commands, t_commands)
+    demonstration_object = pi.GCodeProcessor(gcode_input, test_robot,
+                                             endeffector_list,
+                                             m_commands, t_commands)
 
-    for _ in gcode_obj_1:
+    for _ in demonstration_object:
         for _ in range(20):
             for _ in range(10):
                 p.stepSimulation()

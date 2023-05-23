@@ -16,44 +16,40 @@ class GCodeProcessor:
                                               [0.0, 0.0, 0.0]]),
                  axis: int = 2, interpolation_steps: int = 10,
                  sleep: int = 0.0001):
-        """Initialize a PathMover object with the provided parameters.
+        """Initialize a GCodeProcessor object with the provided parameters.
 
         Args:
+            gcode_input (str, optional): Simulated input g-code
             robot (RobotBase, optional): The robot which is controlled.
-            filename (str, optional): The name of a G-code file to read.
-            endeffector_list (list, optional): List of end effectors to use.
+            endeffector_list (list, optional): List of endeffectors to use.
             m_commands (list, optional): M-commands to execute.
             t_commands (list, optional): T-commands to execute.
-            offset (np.array, optional): The offset for the path points.
+            offset (np.array, optional): Point which defines the origin
             axis (int, optional): The axis around which the circle
                                   is interpolated.Defaults to 2 which
                                   corresponds to the z-axis (0=x,1=y)
-            interpolation_steps (int, optional): Number of interpolation steps.
-
-        Returns:
-            None
+            interpolation_steps (int, optional): Number of interpolation steps
         """
-        # Converting the gcode_input into a list
-        self.gcode = self.read_gcode(gcode_input)
+        if gcode_input is not None:
+            # Converting G-Code into special list format
+            self.gcode = self.read_gcode(gcode_input)
 
+        # Initializing class variables
         self.new_point = []
         self.new_or = []
         self.last_point = []
         self.last_or = []
         self.active_endeffector = -1
-
         self.robot = robot
-
         self.endeffector_list = endeffector_list
         self.offset = offset
         self.axis = axis
         self.interpolation_steps = interpolation_steps
         self.sleep = sleep
-
         self.m_commands = m_commands
         self.t_commands = t_commands
 
-        # Setting the default g_commands
+        # Setting the default G-commands
         self.g_commands = [[] for _ in range(1000)]
         self.g_commands[54].append(lambda: self.g_54())
         self.g_commands[500].append(lambda: self.g_500())
@@ -69,28 +65,33 @@ class GCodeProcessor:
 
     @staticmethod
     def read_gcode(gcode_input: str):
-        """Reads G-Code row by row and saves the processed Data in
-        a List.
+        """Reads g-code row by row and saves the processed data in
+        a list.
         Comments that start with % are ignored and all the other data is
         stored as it gets read in.
-        Every Line in the G-Code resembles the same structure as the text file
+        Every line in the g-code resembles the same structure as the text file
 
         Args:
-            filename (str): Source of information
+            filename (list[str]): Source of information
 
         Returns:
-            gcode
+            gcode (list)
         """
+
+        gcode_input = gcode_input.splitlines()
         gcode = []
 
         # Loop over the lines of the file
         for line in gcode_input:
 
-            # Initialize a new line as a list
-            new_line = []
+            if not line.strip():
+                continue
 
             # Read in G-Code if line is not a comment and not empty
             if line[0] != "%" and len(line) > 1:
+
+                # Initialize a new line as a list
+                new_line = []
 
                 # Split the line into its components
                 data = line.split()
@@ -123,20 +124,14 @@ class GCodeProcessor:
         return self
 
     def __next__(self):
-        """Runs G-Code row by row. It is necessary to create the G-Code with
-        the same structure as the readGcode(textfile) Method.
 
-        Args:
-            gcode (list): G-Code created from read_Gcode()
-
-        Returns:
-            None
-        """
+        # Runs elementary operations
         if self.index_operation < len(self.elementary_operations):
             i = self.index_operation
             self.index_operation += 1
             self.elementary_operations[i]()
 
+        # Reads the G-Code command to create elementary operations
         elif self.index_gcode < len(self.gcode):
             self.elementary_operations = []
             self.index_operation = 0
@@ -169,7 +164,10 @@ class GCodeProcessor:
             raise StopIteration
 
     def create_elementary_operations(self, g_int=None, m_int=None, t_int=None):
-
+        """Appends all the elemenatry operations which are necessary to excute
+        the recent command. All the elementary operations are safed with the
+        help of lambda calls.
+        """
         if g_int is not None:
             if g_int > 3:
                 for operation in self.g_commands[g_int]:
@@ -189,14 +187,12 @@ class GCodeProcessor:
             self.elementary_operations.append(lambda: self.calibrate_tool())
 
     def create_path(self):
-        """Build the the new point and new orientation of the current g-code commands
-        and returns a interpolated ToolPath
-
-        Args:
-            None
+        """Calculates new point and new orientation based on the
+        new coordinates and offset. Based on the g-command type a tool path
+        is returned.
 
         Returns:
-            path(ToolPath): ToolPath based on the new point and g-command
+            path(ToolPath): Interpolated tool path
         """
         cmd = self.gcode[self.index_gcode]
         g_com = cmd[0][1]
@@ -230,11 +226,11 @@ class GCodeProcessor:
             else:
                 self.new_or[i] = value + self.offset[1][i]
 
-        # Building the Path if there is a linear G1 interpolation
+        # Building the Path if there is a linear G0 interpolation
         if g_com == 0:
             path = linear_interpolation(self.last_point,
                                         self.new_point,
-                                        0)
+                                        2)
 
         # Building the Path if there is a linear G1 interpolation
         if g_com == 1:
@@ -262,15 +258,14 @@ class GCodeProcessor:
         return path
 
     def set_path(self, path: ToolPath):
-        """Returns a list of elementary operations based on a given Toolpath
-        and active endeffector
-
+        """Returns a list of elementary operations to move the robot based
+        on a given tool path and active endeffector.
 
         Args:
-            path(ToolPath): input for elementary operation
+            path(ToolPath): input tool path
 
         Returns:
-            elementary_operations(list): operations for the simulation
+            elementary_operations(list): elementary operations to move robot
         """
         active = self.active_endeffector  # abbreviation
         elementary_operations = []
@@ -278,19 +273,18 @@ class GCodeProcessor:
         for position, orientation, _ in path:
             if self.active_endeffector == -1:
                 elementary_operations.append(
-                    lambda i=position, j=orientation: self.robot.set_endeffector_pose(i, j))
+                    lambda i=position, j=orientation:
+                    self.robot.set_endeffector_pose(i, j))
 
             else:
                 elementary_operations.append(
-                    lambda i=position, j=orientation: self.endeffector_list[active].set_tool_pose(i, j))
+                    lambda i=position, j=orientation:
+                    self.endeffector_list[active].set_tool_pose(i, j))
 
         return elementary_operations
 
     def get_active_endeffector(self):
-        """Returns the index of the active endeffector of self.endeffector_list
-
-        Args:
-            None
+        """Returns the index of the active endeffector.
 
         Returns:
             active_endeffector(int): index of the active endeffector
@@ -308,13 +302,6 @@ class GCodeProcessor:
     def calibrate_tool(self):
         """This method sets the current postion of the active Tool. This
         ensures a smooth transition between tool changes or setting the
-        start point after launching the gcode class.
-
-        Args:
-            None
-
-        Returns:
-            None
         """
         self.active_endeffector = self.get_active_endeffector()
         actv = self.active_endeffector  # abbreviation

@@ -71,14 +71,12 @@ if __name__ == "__main__":
     textfile = os.path.join(dirname, 'Gcodes', 'gcode_G123.txt')
 
     with open(textfile, encoding='utf-8') as f:
-        gcode_input = f.readlines()
+        gcode_input = f.read()
 
     gcode_obj_1 = GCodeProcessor(gcode_input, test_robot, endeffector_list,
                                  m_commands, t_commands)
 
-    for gcode in gcode_obj_1:
-        if gcode is not None:
-            print(gcode)
+    for _ in gcode_obj_1:
         for _ in range(20):
             for _ in range(10):
                 p.stepSimulation()

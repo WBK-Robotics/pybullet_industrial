@@ -69,7 +69,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd4 = "G2 X3.0 Y4.0 Z5.0"
         g_code_input = cmd1 + cmd2 + cmd3 + cmd4
 
-        # Creating the G-Code Object
+        # Creating the Test Object
         test_object = pi.GCodeProcessor(g_code_input)
 
         # Check that the length of the gcode list is correct

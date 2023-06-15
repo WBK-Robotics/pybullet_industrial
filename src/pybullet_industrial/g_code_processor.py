@@ -10,8 +10,8 @@ class GCodeProcessor:
 
     def __init__(self, gcode_input: str = None, robot: RobotBase = None,
                  endeffector_list: list = None,
-                 m_commands: list = None,
-                 t_commands: list = None,
+                 m_commands: dict = None,
+                 t_commands: dict = None,
                  offset: np.array = np.array([[0.0, 0.0, 0.0],
                                               [0.0, 0.0, 0.0]]),
                  axis: int = 2, interpolation_steps: int = 10,
@@ -50,12 +50,13 @@ class GCodeProcessor:
         self.t_commands = t_commands
 
         # Setting the default G-commands
-        self.g_commands = [[] for _ in range(1000)]
-        self.g_commands[54].append(lambda: self.g_54())
-        self.g_commands[500].append(lambda: self.g_500())
-        self.g_commands[17].append(lambda: self.g_17())
-        self.g_commands[18].append(lambda: self.g_18())
-        self.g_commands[19].append(lambda: self.g_19())
+        self.g_commands = {
+            "54": [lambda: self.g_54()],
+            "500": [lambda: self.g_500()],
+            "17": [lambda: self.g_17()],
+            "18": [lambda: self.g_18()],
+            "19": [lambda: self.g_19()]
+        }
 
         if robot is not None:
             self.calibrate_tool()
@@ -170,18 +171,18 @@ class GCodeProcessor:
         """
         if g_int is not None:
             if g_int > 3:
-                for operation in self.g_commands[g_int]:
+                for operation in self.g_commands[str(g_int)]:
                     self.elementary_operations.append(lambda: operation())
             else:
                 path = self.create_path()
                 self.elementary_operations = self.set_path(path)
 
         elif m_int is not None:
-            for operation in self.m_commands[m_int]:
+            for operation in self.m_commands[str(m_int)]:
                 self.elementary_operations.append(lambda: operation())
 
         elif t_int is not None:
-            for operation in self.t_commands[t_int]:
+            for operation in self.t_commands[str(t_int)]:
                 self.elementary_operations.append(lambda: operation())
 
             self.elementary_operations.append(lambda: self.calibrate_tool())

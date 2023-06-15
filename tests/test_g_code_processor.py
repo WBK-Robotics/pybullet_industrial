@@ -16,9 +16,8 @@ def decouple_endeffector(gripper: pi.Gripper):
 
 def run_simulation(processor: pi.GCodeProcessor):
     for _ in processor:
-        for _ in range(20):
-            for _ in range(10):
-                p.stepSimulation()
+        for _ in range(200):
+            p.stepSimulation()
 
 
 def check_robot_position(robot: pi.RobotBase, target_position,

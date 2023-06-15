@@ -55,16 +55,17 @@ if __name__ == "__main__":
     endeffector_list = []
     endeffector_list.append(test_gripper)
 
-    # Erstellung von M-Befehlen
-    m_commands = [[] for _ in range(100)]
-    m_commands[10].append(lambda: actuate_gripper(test_gripper, 1))
-    m_commands[11].append(lambda: actuate_gripper(test_gripper, 0))
+    # M-Befehlen
+    m_commands = {
+        "10": [lambda: actuate_gripper(test_gripper, 1)],
+        "11": [lambda: actuate_gripper(test_gripper, 0)]
+    }
 
     # Erstellung von T-Befehlen
-    t_commands = [[] for _ in range(100)]
-    t_commands[0].append(lambda: decouple_endeffector(test_gripper))
-    t_commands[1].append(lambda: couple_endeffector(test_gripper,
-                                                    test_robot, 'link6'))
+    t_commands = {
+        "0": [lambda: decouple_endeffector(test_gripper)],
+        "1": [lambda: couple_endeffector(test_gripper, test_robot, 'link6')]
+    }
 
     dirname = os.path.dirname(__file__)
     textfile = os.path.join(dirname, 'Gcodes', 'gcode_G123.txt')
@@ -77,6 +78,5 @@ if __name__ == "__main__":
                                              m_commands, t_commands)
 
     for _ in demonstration_object:
-        for _ in range(20):
-            for _ in range(10):
-                p.stepSimulation()
+        for _ in range(200):
+            p.stepSimulation()

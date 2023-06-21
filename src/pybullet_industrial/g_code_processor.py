@@ -14,7 +14,7 @@ class GCodeProcessor:
                  t_commands: dict = None,
                  offset: np.array = np.array([[0.0, 0.0, 0.0],
                                               [0.0, 0.0, 0.0]]),
-                 axis: int = 2, interpolation_steps: int = 10,
+                 axis: int = 2, interpolation_precision: int = 0.1,
                  sleep: int = 0.0001):
         """Initialize a GCodeProcessor object with the provided parameters.
 
@@ -39,12 +39,13 @@ class GCodeProcessor:
         self.new_or = []
         self.last_point = []
         self.last_or = []
+        self.r_val = 0
         self.active_endeffector = -1
         self.robot = robot
         self.endeffector_list = endeffector_list
         self.offset = offset
         self.axis = axis
-        self.interpolation_steps = interpolation_steps
+        self.interpolation_precision = interpolation_precision
         self.sleep = sleep
         self.m_commands = m_commands
         self.t_commands = t_commands
@@ -174,7 +175,7 @@ class GCodeProcessor:
                 for operation in self.g_commands[str(g_int)]:
                     self.elementary_operations.append(lambda: operation())
             else:
-                path = self.create_path()
+                path = self.build_path()
                 self.elementary_operations = self.set_path(path)
 
         elif m_int is not None:
@@ -187,7 +188,7 @@ class GCodeProcessor:
 
             self.elementary_operations.append(lambda: self.calibrate_tool())
 
-    def create_path(self):
+    def build_path(self):
         """Calculates new point and new orientation based on the
         new coordinates and offset. Based on the g-command type a tool path
         is returned.
@@ -197,6 +198,17 @@ class GCodeProcessor:
         """
         cmd = self.gcode[self.index_gcode]
         g_com = cmd[0][1]
+
+        self.build_new_point(cmd)
+
+        if g_com == 0:
+            path = self.build_simple_path()
+        else:
+            path = self.build_precise_path(g_com)
+
+        return path
+
+    def build_new_point(self, cmd: list):
 
         variables = {'X': np.nan, 'Y': np.nan, 'Z': np.nan, 'A': np.nan,
                      'B': np.nan, 'C': np.nan, 'R': np.nan}
@@ -209,7 +221,7 @@ class GCodeProcessor:
                             variables['Z']])
         abc_val = np.array([variables['A'], variables['B'],
                             variables['C']])
-        r_val = variables['R']
+        self.r_val = variables['R']
 
         # Setting the new point considering offset
         self.new_point = np.array([0.0, 0.0, 0.0])
@@ -227,30 +239,54 @@ class GCodeProcessor:
             else:
                 self.new_or[i] = value + self.offset[1][i]
 
+    def build_simple_path(self):
         # Building the Path if there is a linear G0 interpolation
-        if g_com == 0:
-            path = linear_interpolation(self.last_point,
-                                        self.new_point,
-                                        2)
+        path = linear_interpolation(self.last_point,
+                                    self.new_point,
+                                    2)
+        return path
 
-        # Building the Path if there is a linear G1 interpolation
-        if g_com == 1:
-            path = linear_interpolation(self.last_point,
-                                        self.new_point,
-                                        self.interpolation_steps)
+    def build_precise_path(self, g_com: int):
 
-        # Building the path if there is a circular interpolation
-        elif g_com in [2, 3]:
-            if g_com == 2:
-                path = circular_interpolation(self.last_point,
-                                              self.new_point, r_val,
-                                              self.interpolation_steps,
-                                              self.axis, True)
-            else:
-                path = circular_interpolation(self.last_point,
-                                              self.new_point, r_val,
-                                              self.interpolation_steps,
-                                              self.axis, False)
+        interpolation_steps = 1000
+        percise_path = True
+
+        for _ in range(2):
+            # Building the Path if there is a linear G1 interpolation
+            if g_com == 1:
+                path = linear_interpolation(self.last_point,
+                                            self.new_point,
+                                            interpolation_steps)
+
+            # Building the path if there is a circular interpolation
+            elif g_com in [2, 3]:
+                if g_com == 2:
+                    path = circular_interpolation(self.last_point,
+                                                  self.new_point, self.r_val,
+                                                  interpolation_steps,
+                                                  self.axis, True)
+                else:
+                    path = circular_interpolation(self.last_point,
+                                                  self.new_point, self.r_val,
+                                                  interpolation_steps,
+                                                  self.axis, False)
+            # Calculating the total ditance
+            if percise_path:
+
+                global_distance = 0
+                point_distance = 0
+                previous_postion = path.positions[0]
+
+                for position in path.positions:
+                    # Calculating the point distance
+                    point_distance = np.linalg.norm(
+                        position - previous_postion)
+
+                    # Adding point distnace to global distance
+                    global_distance += point_distance
+                    previous_postion = position
+
+                interpolation_steps = global_distance/self.interpolation_precision
 
         orientation = p.getQuaternionFromEuler(self.new_or)
         path.orientations = np.transpose([orientation]

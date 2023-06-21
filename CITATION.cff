@@ -1,16 +1,40 @@
-cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+cff-version: "1.2.0"
 authors:
-- family-names: "Baumgärtner"
-  given-names: "Jan"
+- family-names: Baumgärtner
+  given-names: Jan
   orcid: "https://orcid.org/0000-0002-7825-3476"
-- family-names: "Hansjosten"
-  given-names: "Malte"
-  orcid: "https://orcid.org/0000-0002-0210-3930"
-- family-names: "Schönhofen"
-  given-names: "Dominik"
-title: "pybullet_industrial"
-version: 1.0.1
-doi: 10.5281/zenodo.7318894
-date-released: 2022-09-28
-url: "https://github.com/WBK-Robotics/pybullet_industrial"
+- family-names: Hansjosten
+  given-names: Malte
+- family-names: Schönhofen
+  given-names: Dominik
+- family-names: Fleischer
+  given-names: Prof. Dr.-Ing. Jürgen
+  orcid: "https://orcid.org/0000-0003-0961-7675"
+doi: 10.5281/zenodo.7833292
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Baumgärtner
+    given-names: Jan
+    orcid: "https://orcid.org/0000-0002-7825-3476"
+  - family-names: Hansjosten
+    given-names: Malte
+  - family-names: Schönhofen
+    given-names: Dominik
+  - family-names: Fleischer
+    given-names: Prof. Dr.-Ing. Jürgen
+    orcid: "https://orcid.org/0000-0003-0961-7675"
+  date-published: 2023-05-18
+  doi: 10.21105/joss.05174
+  issn: 2475-9066
+  issue: 85
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 5174
+  title: "PyBullet Industrial: A process-aware robot simulation"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.05174"
+  volume: 8
+title: "PyBullet Industrial: A process-aware robot simulation"

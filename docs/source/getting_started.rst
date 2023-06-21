@@ -32,3 +32,9 @@ The source version is the most up-to-date version of the library. It is recommen
     pip install src/
 
 .. note:: If you are on windows, you may need to use the command ``pip install src\\`` instead. And depending on how you have installed your python environment, you may need to first install ``wheel`` using ``pip install wheel``.
+
+
+Citing the library
+==================
+
+If you use this library in your research, please cite [this paper](https://joss.theoj.org/papers/10.21105/joss.05174#).

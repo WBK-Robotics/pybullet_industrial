@@ -1,6 +1,6 @@
 
 ![pybullet_industrial_logo](docs/source/logo.png)
-[![DOI](https://zenodo.org/badge/491020827.svg)](https://zenodo.org/badge/latestdoi/491020827)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.05174/status.svg)](https://doi.org/10.21105/joss.05174)
 [![codecov](https://codecov.io/gh/WBK-Robotics/pybullet_industrial/branch/main/graph/badge.svg?token=CZ9HJY2PKN)](https://codecov.io/gh/WBK-Robotics/pybullet_industrial)
 [![codiga](https://api.codiga.io/project/34121/score/svg)](https://app.codiga.io/project/34121/dashboard)
 [![Documentation Status](https://readthedocs.org/projects/pybullet-industrial/badge/?version=latest)](https://pybullet-industrial.readthedocs.io/en/latest/?badge=latest)
@@ -21,6 +21,7 @@ With the help of the pybullet_industrial package you will be able to:
 ## Documentation
 
 You can find the documentation [here](https://pybullet-industrial.readthedocs.io/en/latest/).
+
 
 ## Getting Started
 
@@ -53,3 +54,6 @@ And depending on how you have installed your python environment, you may need to
 
 
 
+## Citing the Package
+
+If you find the package useful, please consider citing it using the citation information on the right side of this page.

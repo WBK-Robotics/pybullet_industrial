@@ -210,15 +210,16 @@ class Test_GCodeProcessor(unittest.TestCase):
         endeffector_list.append(test_gripper)
 
         # Create M-commands for testing
-        m_commands = [[] for _ in range(100)]
         test_var = []
-        m_commands[1].append(lambda: test_var.append(1))
+        m_commands = {
+            "1": [lambda: test_var.append(1)]
+        }
 
-        # Create T-commands for testing
-        t_commands = [[] for _ in range(100)]
-        t_commands[0].append(lambda: decouple_endeffector(test_gripper))
-        t_commands[1].append(lambda: couple_endeffector(
-            test_gripper, robot, 'link6'))
+        # Create T-commands for teting
+        t_commands = {
+            "0": [lambda: decouple_endeffector(test_gripper)],
+            "1": [lambda: couple_endeffector(test_gripper, robot, 'link6')]
+        }
 
         # Adapt Test Object
         test_object.endeffector_list = endeffector_list

@@ -30,7 +30,7 @@ class GCodeProcessor:
                  t_commands: dict = None,
                  offset: np.array = np.array([[0.0, 0.0, 0.0],
                                               [0.0, 0.0, 0.0]]),
-                 axis: int = 2, interpolation_precision: int = 0.005,
+                 axis: int = 2, interpolation_precision: int = 0.01,
                  interpolation_approach: int = 1000):
 
         if gcode_input is not None:

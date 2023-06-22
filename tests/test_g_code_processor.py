@@ -122,7 +122,7 @@ class Test_GCodeProcessor(unittest.TestCase):
             p.stepSimulation()
 
         dirname = os.path.dirname(__file__)
-        test_object = pi.GCodeProcessor(robot=robot, interpolation_steps=100)
+        test_object = pi.GCodeProcessor(robot=robot)
 
         pos1 = np.array([1.9, -0.5, 1.5])
         ori1 = np.array([-1.5079, 0.0, 0.0])

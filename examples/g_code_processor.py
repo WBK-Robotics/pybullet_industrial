@@ -209,6 +209,10 @@ class GCodeProcessor:
         else:
             path = self.build_precise_path(g_com)
 
+        orientation = p.getQuaternionFromEuler(self.new_or)
+        path.orientations = np.transpose([orientation]
+                                         * len(path.orientations[0]))
+
         return path
 
     def build_new_point(self, cmd: list):
@@ -247,6 +251,7 @@ class GCodeProcessor:
         path = linear_interpolation(self.last_point,
                                     self.new_point,
                                     2)
+
         return path
 
     def build_precise_path(self, g_com: int):
@@ -292,10 +297,6 @@ class GCodeProcessor:
 
                 interpolation_steps = total_distance/self.interpolation_precision
                 interpolation_steps = int(np.ceil(interpolation_steps))
-
-        orientation = p.getQuaternionFromEuler(self.new_or)
-        path.orientations = np.transpose([orientation]
-                                         * len(path.orientations[0]))
 
         return path
 

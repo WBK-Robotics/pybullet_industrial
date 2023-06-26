@@ -7,21 +7,21 @@ import numpy as np
 
 
 class GCodeProcessor:
-    """Initialize a GCodeProcessor object with the provided parameters.
+    """Initializes a GCodeProcessor object with the provided parameters.
 
     Args:
         gcode_input (str, optional): Simulated input g-code
-        robot (RobotBase, optional): The robot which is controlled.
-        endeffector_list (list, optional): List of endeffectors to use.
-        m_commands (list, optional): M-commands to execute.
-        t_commands (list, optional): T-commands to execute.
+        robot (RobotBase, optional): The robot which is controlled
+        endeffector_list (list, optional): List of endeffectors to use
+        m_commands (list, optional): M-commands to execute
+        t_commands (list, optional): T-commands to execute
         offset (np.array, optional): Point which defines the origin
         axis (int, optional): The axis around which the circle
-                                is interpolated.Defaults to 2 which
+                                is interpolated .Defaults to 2 which
                                 corresponds to the z-axis (0=x,1=y)
-        interpolation_precision (int, optional): Number of interpolation steps
-        interpolation_approach (int, optional): Number of interpolations to
-                                                determining precision
+        interpolation_precision (int, optional): Precision of interpolation
+        interpolation_approach (int, optional): Number of interpolations
+                                                before determining precision
     """
 
     def __init__(self, gcode_input: str = None, robot: RobotBase = None,
@@ -33,8 +33,8 @@ class GCodeProcessor:
                  axis: int = 2, interpolation_precision: int = 0.01,
                  interpolation_approach: int = 1000):
 
+        #  Converting G-Code into special list format
         if gcode_input is not None:
-            # Converting G-Code into special list format
             self.gcode = self.read_gcode(gcode_input)
 
         # Initializing class variables
@@ -74,7 +74,7 @@ class GCodeProcessor:
         a list.
         Comments that start with % are ignored and all the other data is
         stored as it gets read in.
-        Every line in the g-code resembles the same structure as the text file
+        All the other information is stored in the variable gcode.
 
         Args:
             filename (list[str]): Source of information
@@ -122,6 +122,7 @@ class GCodeProcessor:
         return gcode
 
     def __iter__(self):
+        # Initialization of the new class variables for the iteration
         self.elementary_operations = []
         self.index_operation = 0
         self.index_gcode = 0
@@ -129,6 +130,9 @@ class GCodeProcessor:
         return self
 
     def __next__(self):
+        """Switches betwween running elementary operation and reading
+        in commands from the G-Code to create elementary operations.
+        Every line of the gcode causes the built of new elementary operations"""
 
         # Runs elementary operations
         if self.index_operation < len(self.elementary_operations):
@@ -169,10 +173,11 @@ class GCodeProcessor:
             raise StopIteration
 
     def create_elementary_operations(self, g_int=None, m_int=None, t_int=None):
-        """Appends all the elemenatry operations which are necessary to excute
+        """Appends all the elemenatry operations which are necessary to execute
         the recent command. All the elementary operations are safed with the
         help of lambda calls.
         """
+
         if g_int is not None:
             if g_int > 3:
                 for operation in self.g_commands[str(g_int)]:
@@ -192,9 +197,11 @@ class GCodeProcessor:
             self.elementary_operations.append(lambda: self.calibrate_tool())
 
     def build_path(self):
-        """Calculates new point and new orientation based on the
-        new coordinates and offset. Based on the g-command type a tool path
-        is returned.
+        """Calculates a new point and new orientation based on the new
+        coordinates and offset. Depending on the g-command type, a
+        specific tool path is returned. G0 commands create a path
+        with 2 interpolation steps, while higher G-1-2-3
+        commands generate a path with the chosen precision.
 
         Returns:
             path(ToolPath): Interpolated tool path
@@ -216,7 +223,13 @@ class GCodeProcessor:
         return path
 
     def build_new_point(self, cmd: list):
+        """Calculates the new point of a G-Code command with respect
+        to the current offset.
 
+        Args:
+            cmd(list): Current G-Code command
+
+        """
         variables = {'X': np.nan, 'Y': np.nan, 'Z': np.nan, 'A': np.nan,
                      'B': np.nan, 'C': np.nan, 'R': np.nan}
 
@@ -247,7 +260,8 @@ class GCodeProcessor:
                 self.new_or[i] = value + self.offset[1][i]
 
     def build_simple_path(self):
-        # Building the Path if there is a linear G0 interpolation
+        # Returns the simple path of a G0-Interpolation
+
         path = linear_interpolation(self.last_point,
                                     self.new_point,
                                     2)
@@ -255,11 +269,20 @@ class GCodeProcessor:
         return path
 
     def build_precise_path(self, g_com: int):
+        """Returns the percise path for G-2-3-Interpolations by calculating
+        the neccessary amount of interpolation steps considering the precision
+        of the interpolation.
+
+        Args:
+            g_com(int): Current G-Command type
+
+        """
 
         interpolation_steps = self.interpolation_approach
         percise_path = True
 
         for _ in range(2):
+
             # Building the Path if there is a linear G1 interpolation
             if g_com == 1:
                 path = linear_interpolation(self.last_point,
@@ -280,13 +303,13 @@ class GCodeProcessor:
                                                   self.axis, False)
             # Calculating the total ditance
             if percise_path:
-
                 percise_path = False
                 total_distance = 0
                 point_distance = 0
                 previous_postion = self.last_point
 
                 for position, _, _ in path:
+
                     # Calculating the point distance
                     point_distance = np.linalg.norm(
                         position - previous_postion)
@@ -343,9 +366,10 @@ class GCodeProcessor:
         return active_endeffector
 
     def calibrate_tool(self):
-        """This method sets the current postion of the active Tool. This
-        ensures a smooth transition between tool changes or setting the
+        """This method sets the current postion of the active tool. This
+        ensures a smooth transition between tool changes.
         """
+
         self.active_endeffector = self.get_active_endeffector()
         actv = self.active_endeffector  # abbreviation
 
@@ -362,6 +386,7 @@ class GCodeProcessor:
 
     def g_54(self):
         # Activation of the zero offset
+
         self.offset = np.array([self.last_point, self.last_or])
 
     def g_500(self):

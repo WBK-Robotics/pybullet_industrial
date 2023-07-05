@@ -184,7 +184,8 @@ class GCodeProcessor:
                     self.elementary_operations.append(lambda: operation())
             else:
                 path = self.build_path()
-                self.elementary_operations = self.set_path(path)
+                self.elementary_operations = self.create_movement_operations(
+                    path)
 
         elif m_int is not None:
             for operation in self.m_commands[str(m_int)]:
@@ -323,7 +324,7 @@ class GCodeProcessor:
 
         return path
 
-    def set_path(self, path: ToolPath):
+    def create_movement_operations(self, path: ToolPath):
         """Returns a list of elementary operations to move the robot based
         on a given tool path and active endeffector.
 

@@ -55,13 +55,13 @@ if __name__ == "__main__":
     endeffector_list = []
     endeffector_list.append(test_gripper)
 
-    # M-Befehlen
+    # M-Commands have to be added in this convention
     m_commands = {
         "10": [lambda: actuate_gripper(test_gripper, 1)],
         "11": [lambda: actuate_gripper(test_gripper, 0)]
     }
 
-    # Erstellung von T-Befehlen
+    # T-Commands have to be added in this convention
     t_commands = {
         "0": [lambda: decouple_endeffector(test_gripper)],
         "1": [lambda: couple_endeffector(test_gripper, test_robot, 'link6')]

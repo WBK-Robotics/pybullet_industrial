@@ -33,19 +33,26 @@ def build_circular_path(center: np.array, radius: float,
     return circular_path
 
 
-def linear_interpolation(start_point: np.array, end_point: np.array, samples: int):
+def linear_interpolation(start_point: np.array, end_point: np.array,
+                         samples: int, start_orientation: np.array = None,
+                         end_orientation: np.array = None,
+                         ):
     """Performs a linear interpolation betwenn two points in 3D space
 
     Args:
         start_point (np.array): The start point of the interpolation
         end_point (np.array): The end point of the interpolation
         samples (int): The number of samples used to interpolate
+        start_orientation (np.array): Start orientation as quaternion
+        end_orientation (np.array): End orientation as quaternion
 
     Returns:
         ToolPath: A ToolPath object of the interpolated path
     """
     final_path = np.linspace(start_point, end_point, num=samples)
-    return ToolPath(final_path.transpose())
+    final_orientations = np.linspace(
+        start_orientation, end_orientation, num=samples)
+    return ToolPath(final_path.transpose(), final_orientations.transpose())
 
 
 def planar_circular_interpolation(start_point: np.array, end_point: np.array,

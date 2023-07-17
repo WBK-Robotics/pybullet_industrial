@@ -253,12 +253,21 @@ class GCodeProcessor:
                 self.new_point[i] = value + self.offset[0][i]
 
         # Setting the new orientation considering offset
-        self.new_or = np.array([0.0, 0.0, 0.0])
+        orientation = np.array([0.0, 0.0, 0.0])
         for i, value in enumerate(abc_val):
             if np.isnan(value):
-                self.new_or[i] = self.last_or[i]
+                orientation[i] = self.last_or[i] - self.offset[1][i]
             else:
-                self.new_or[i] = value + self.offset[1][i]
+                orientation[i] = value
+
+        orientation = p.getQuaternionFromEuler(orientation)
+        orientation_offset = p.getQuaternionFromEuler(self.offset[1])
+
+        point = np.array([0.0, 0.0, 0.0])
+        _, self.new_or = p.multiplyTransforms(
+            point, orientation, point, orientation_offset)
+
+        self.new_or = p.getEulerFromQuaternion(self.new_or)
 
     def build_simple_path(self):
         # Returns the simple path of a G0-Interpolation

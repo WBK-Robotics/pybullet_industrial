@@ -10,7 +10,7 @@ class GCodeProcessor:
     """Initializes a GCodeProcessor object with the provided parameters.
 
     Args:
-        gcode_input (str, optional): Simulated input g-code
+        gcode_input (str, optional): Simulated input G-code
         robot (RobotBase, optional): The robot which is controlled
         endeffector_list (list, optional): List of endeffectors to use
         m_commands (list, optional): M-commands to execute
@@ -74,7 +74,6 @@ class GCodeProcessor:
         a list.
         Comments that start with % are ignored and all the other data is
         stored as it gets read in.
-        All the other information is stored in the variable gcode.
 
         Args:
             filename (list[str]): Source of information
@@ -122,7 +121,13 @@ class GCodeProcessor:
         return gcode
 
     def __iter__(self):
-        # Initialization of the new class variables for the iteration
+        """ Initialization of the the class variables which are responsible
+        for the iteration
+
+        Returns:
+        self(GCodeProcessor): Iterator
+        """
+
         self.elementary_operations = []
         self.index_operation = 0
         self.index_gcode = 0
@@ -130,9 +135,10 @@ class GCodeProcessor:
         return self
 
     def __next__(self):
-        """Switches betwween running elementary operation and reading
-        in commands from the G-Code to create elementary operations.
-        Every line of the gcode causes the built of new elementary operations"""
+        """Switches between running elementary operation and reading
+        in commands from the G-code to create elementary operations.
+        Every line of the G-code causes the built
+        of new elementary operations"""
 
         # Runs elementary operations
         if self.index_operation < len(self.elementary_operations):
@@ -172,10 +178,17 @@ class GCodeProcessor:
         else:
             raise StopIteration
 
-    def create_elementary_operations(self, g_int=None, m_int=None, t_int=None):
+    def create_elementary_operations(self, g_int: int = None,
+                                     m_int: int = None,
+                                     t_int: int = None):
         """Appends all the elemenatry operations which are necessary to execute
         the recent command. All the elementary operations are safed with the
         help of lambda calls.
+
+        Args:
+            g_int(int): Current G-command type
+            m_int(int): Current M-command type
+            t_int(int): Current T-command type
         """
 
         if g_int is not None:
@@ -199,7 +212,7 @@ class GCodeProcessor:
 
     def build_path(self):
         """Calculates a new point and new orientation based on the new
-        coordinates and offset. Depending on the g-command type, a
+        coordinates and offset. Depending on the G-command type, a
         specific tool path is returned. G0 commands create a path
         with 2 interpolation steps, while higher G-1-2-3
         commands generate a path with the chosen precision.
@@ -207,6 +220,7 @@ class GCodeProcessor:
         Returns:
             path(ToolPath): Interpolated tool path
         """
+
         cmd = self.gcode[self.index_gcode]
         g_com = cmd[0][1]
 
@@ -228,9 +242,9 @@ class GCodeProcessor:
         to the current offset.
 
         Args:
-            cmd(list): Current G-Code command
-
+            cmd(list): Current command line
         """
+
         variables = {'X': np.nan, 'Y': np.nan, 'Z': np.nan, 'A': np.nan,
                      'B': np.nan, 'C': np.nan, 'R': np.nan}
 
@@ -244,7 +258,7 @@ class GCodeProcessor:
                             variables['C']])
         self.r_val = variables['R']
 
-        # Setting the new point considering offset
+        # Setting the new point considering the offset
         self.new_point = np.array([0.0, 0.0, 0.0])
         for i, value in enumerate(xyz_val):
             if np.isnan(value):
@@ -252,7 +266,7 @@ class GCodeProcessor:
             else:
                 self.new_point[i] = value + self.offset[0][i]
 
-        # Setting the new orientation considering offset
+        # Setting the new orientation
         orientation = np.array([0.0, 0.0, 0.0])
         for i, value in enumerate(abc_val):
             if np.isnan(value):
@@ -263,6 +277,7 @@ class GCodeProcessor:
         orientation = p.getQuaternionFromEuler(orientation)
         orientation_offset = p.getQuaternionFromEuler(self.offset[1])
 
+        # Transforming the oriention considering the offset
         point = np.array([0.0, 0.0, 0.0])
         _, self.new_or = p.multiplyTransforms(
             point, orientation, point, orientation_offset)
@@ -270,7 +285,11 @@ class GCodeProcessor:
         self.new_or = p.getEulerFromQuaternion(self.new_or)
 
     def build_simple_path(self):
-        # Returns the simple path of a G0-Interpolation
+        """ Returns the simple path of a G0-interpolation
+
+        Returns:
+            path(ToolPath): G0-toolpath
+        """
 
         path = linear_interpolation(self.last_point,
                                     self.new_point,
@@ -284,8 +303,7 @@ class GCodeProcessor:
         of the interpolation.
 
         Args:
-            g_com(int): Current G-Command type
-
+            g_com(int): Current G-command type
         """
 
         interpolation_steps = self.interpolation_approach
@@ -293,7 +311,7 @@ class GCodeProcessor:
 
         for _ in range(2):
 
-            # Building the Path if there is a linear G1 interpolation
+            # Building the Path if there is a linear interpolation
             if g_com == 1:
                 path = linear_interpolation(self.last_point,
                                             self.new_point,
@@ -343,6 +361,7 @@ class GCodeProcessor:
         Returns:
             elementary_operations(list): elementary operations to move robot
         """
+
         active = self.active_endeffector  # abbreviation
         elementary_operations = []
 
@@ -396,7 +415,6 @@ class GCodeProcessor:
 
     def g_54(self):
         # Activation of the zero offset
-
         self.offset = np.array([self.last_point, self.last_or])
 
     def g_500(self):

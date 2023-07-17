@@ -15,6 +15,7 @@ def decouple_endeffector(gripper: pi.Gripper):
 
 
 def run_simulation(processor: pi.GCodeProcessor):
+
     for _ in processor:
         for _ in range(200):
             p.stepSimulation()
@@ -41,6 +42,7 @@ def check_robot_position(robot: pi.RobotBase, target_position,
 
 def check_tool_position(endeffetor: pi.EndeffectorTool, target_position,
                         target_orientation,  pos_tol, ori_tol):
+
     within_precision = True
 
     current_position, current_orientation = endeffetor.get_tool_pose()
@@ -173,10 +175,6 @@ class Test_GCodeProcessor(unittest.TestCase):
         self.assertTrue(check_robot_position(
             robot, pos2, ori2, pos_precision, ori_precision))
 
-        # Lower precision for circular interpolation
-
-        pos_precision = 0.05
-
         # Test 5: G2 with G19
         cmd1 = "G19\n"
         cmd2 = "G2 X1.9 Y-0.5 Z1.5 R1"
@@ -215,7 +213,7 @@ class Test_GCodeProcessor(unittest.TestCase):
             "1": [lambda: test_var.append(1)]
         }
 
-        # Create T-commands for teting
+        # Create T-commands for testing
         t_commands = {
             "0": [lambda: decouple_endeffector(test_gripper)],
             "1": [lambda: couple_endeffector(test_gripper, robot, 'link6')]
@@ -226,7 +224,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         test_object.m_commands = m_commands
         test_object.t_commands = t_commands
 
-        # Test 7: T1/M command and G0 command with tool coupled
+        # Test 7: T1-/M- command and G0-command with tool coupled
         cmd1 = "T1\n"
         cmd2 = "G0 X1.9 Y-0.5 Z1.5 A-3.1 B0 C0\n"
         cmd3 = "M1"
@@ -238,7 +236,7 @@ class Test_GCodeProcessor(unittest.TestCase):
                         ori1, pos_precision, ori_precision))
         self.assertTrue(len(test_var) == 1)
 
-        # Test 8: G1 command with tool coupled and T0 command for decoupling
+        # Test 8: G1-command with tool coupled and T0-command for decoupling
         cmd1 = "G1 X2.2 Y-0.3 Z1.6\n"
         cmd2 = "T0 "
         commands = cmd1 + cmd2

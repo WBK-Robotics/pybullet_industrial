@@ -14,9 +14,9 @@ def decouple_endeffector(gripper: pi.Gripper):
     gripper.decouple()
 
 
-def run_simulation(processor: pi.GCodeProcessor):
+def run_simulation(iterator: pi.GCodeProcessor):
 
-    for _ in processor:
+    for _ in iterator:
         for _ in range(200):
             p.stepSimulation()
 
@@ -125,6 +125,7 @@ class Test_GCodeProcessor(unittest.TestCase):
 
         dirname = os.path.dirname(__file__)
         test_object = pi.GCodeProcessor(robot=robot)
+        test_iterator = iter(test_object)
 
         pos1 = np.array([1.9, -0.5, 1.5])
         ori1 = np.array([-1.5079, 0.0, 0.0])
@@ -138,7 +139,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         # Test 1: G0 without coupled tool
         command = "G0 X1.9 Y-0.5 Z1.5 A-1.5079 B0 C0"
         test_object.gcode = test_object.read_gcode(command)
-        run_simulation(test_object)
+        run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
             robot, pos1, ori1, pos_precision, ori_precision))
@@ -148,7 +149,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd2 = "G1 Y-0.3 Z1.6 A-1.403"
         commands = cmd1+cmd2
         test_object.gcode = test_object.read_gcode(commands)
-        run_simulation(test_object)
+        run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
             robot, pos2, ori2, pos_precision, ori_precision))
@@ -158,7 +159,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd2 = "G1 X-0.3 Y-0.2 Z-0.1 A-0.1049"
         commands = cmd1 + cmd2
         test_object.gcode = test_object.read_gcode(commands)
-        run_simulation(test_object)
+        run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
             robot, pos1, ori1, pos_precision, ori_precision))
@@ -170,7 +171,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd2 = "G1 X2.2 Y-0.3 Z1.6"
         commands = cmd1 + cmd2
         test_object.gcode = test_object.read_gcode(commands)
-        run_simulation(test_object)
+        run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
             robot, pos2, ori2, pos_precision, ori_precision))
@@ -180,7 +181,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd2 = "G2 X1.9 Y-0.5 Z1.5 R1"
         commands = cmd1 + cmd2
         test_object.gcode = test_object.read_gcode(commands)
-        run_simulation(test_object)
+        run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
             robot, pos1, ori1, pos_precision, ori_precision))
@@ -191,7 +192,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd3 = "G17"
         commands = cmd1 + cmd2 + cmd3
         test_object.gcode = test_object.read_gcode(commands)
-        run_simulation(test_object)
+        run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
             robot, pos2, ori2, pos_precision, ori_precision))
@@ -230,7 +231,8 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd3 = "M1"
         commands = cmd1 + cmd2 + cmd3
         test_object.gcode = test_object.read_gcode(commands)
-        run_simulation(test_object)
+        run_simulation(test_iterator)
+
         self.assertTrue(test_gripper.is_coupled())
         self.assertTrue(check_tool_position(test_gripper, pos1,
                         ori1, pos_precision, ori_precision))
@@ -241,7 +243,8 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd2 = "T0 "
         commands = cmd1 + cmd2
         test_object.gcode = test_object.read_gcode(commands)
-        run_simulation(test_object)
+        run_simulation(test_iterator)
+
         self.assertTrue(not test_gripper.is_coupled())
         self.assertTrue(check_tool_position(test_gripper, pos2,
                         ori2, pos_precision, ori_precision))

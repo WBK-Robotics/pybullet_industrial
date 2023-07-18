@@ -30,8 +30,6 @@ if __name__ == "__main__":
                                              '--background_color_blue=1')
     p.setPhysicsEngineParameter(numSolverIterations=10000)
     p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-    p.setPhysicsEngineParameter(numSolverIterations=10000)
-    p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
 
@@ -42,8 +40,7 @@ if __name__ == "__main__":
     p.createMultiBody(0, monastryId, baseOrientation=orn)
     p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=True)
 
-    start_orientation = p.getQuaternionFromEuler([0, 0, 0])
-    test_robot = pi.RobotBase(urdf_file1, [0, 0, 0], start_orientation)
+    test_robot = pi.RobotBase(urdf_file1, [0, 0, 0], [0, 0, 0, 1])
 
     test_robot.set_joint_position(({'q2': np.deg2rad(-15.0),
                                   'q3': np.deg2rad(-90.0)}))
@@ -78,5 +75,18 @@ if __name__ == "__main__":
                                              m_commands, t_commands)
 
     for _ in demonstration_object:
+        for _ in range(200):
+            p.stepSimulation()
+
+    demonstration_object = pi.GCodeProcessor(gcode_input, test_robot,
+                                             endeffector_list,
+                                             m_commands, t_commands)
+
+    # Create an iterator from the demonstration object
+    demonstration_iterator = iter(demonstration_object)
+
+    # Iterate over the demonstration object
+    for _ in demonstration_iterator:
+        # Execute the simulation steps
         for _ in range(200):
             p.stepSimulation()

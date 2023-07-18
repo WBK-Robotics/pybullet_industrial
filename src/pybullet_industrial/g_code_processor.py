@@ -43,9 +43,9 @@ class GCodeProcessor:
         self.last_point = []
         self.last_or = []
         self.r_val = 0
-        self.active_endeffector = -1
         self.robot = robot
         self.endeffector_list = endeffector_list
+        self.active_endeffector = self.__get_active_endeffector()
         self.offset = offset
         self.axis = axis
         self.interpolation_precision = interpolation_precision
@@ -55,18 +55,15 @@ class GCodeProcessor:
 
         # Setting the default G-commands
         self.g_commands = {
-            "54": [lambda: self.g_54()],
-            "500": [lambda: self.g_500()],
-            "17": [lambda: self.g_17()],
-            "18": [lambda: self.g_18()],
-            "19": [lambda: self.g_19()]
+            "54": [lambda: self.__g_54()],
+            "500": [lambda: self.__g_500()],
+            "17": [lambda: self.__g_17()],
+            "18": [lambda: self.__g_18()],
+            "19": [lambda: self.__g_19()]
         }
 
         if robot is not None:
-            self.calibrate_tool()
-
-        if endeffector_list is not None:
-            self.active_endeffector = self.get_active_endeffector()
+            self.__calibrate_tool()
 
     @staticmethod
     def read_gcode(gcode_input: str):
@@ -158,18 +155,7 @@ class GCodeProcessor:
             self.last_point = np.array(self.new_point)
             self.last_or = np.array(self.new_or)
 
-            if cmd_type == "M":
-                self.create_elementary_operations(
-                    m_int=cmd_int)
-
-            if cmd_type == "T":
-                self.create_elementary_operations(
-                    t_int=cmd_int)
-
-            elif cmd_type == "G":
-
-                self.create_elementary_operations(
-                    g_int=cmd_int)
+            self.__create_elementary_operations(cmd_type, cmd_int)
 
             self.index_gcode += 1
 
@@ -178,39 +164,36 @@ class GCodeProcessor:
         else:
             raise StopIteration
 
-    def create_elementary_operations(self, g_int: int = None,
-                                     m_int: int = None,
-                                     t_int: int = None):
+    def __create_elementary_operations(self, cmd_type: str, cmd_int: int):
         """Appends all the elemenatry operations which are necessary to execute
         the recent command. All the elementary operations are safed with the
         help of lambda calls.
 
         Args:
-            g_int(int): Current G-command type
-            m_int(int): Current M-command type
-            t_int(int): Current T-command type
+            cmd_type(str): Current G-command type
+            cmd_int(int): Current G-command integer
         """
 
-        if g_int is not None:
-            if g_int > 3:
-                for operation in self.g_commands[str(g_int)]:
+        if cmd_type == "G":
+            if cmd_int > 3:
+                for operation in self.g_commands[str(cmd_int)]:
                     self.elementary_operations.append(lambda: operation())
             else:
-                path = self.build_path()
-                self.elementary_operations = self.create_movement_operations(
+                path = self.__build_path()
+                self.elementary_operations = self.__create_movement_operations(
                     path)
 
-        elif m_int is not None:
-            for operation in self.m_commands[str(m_int)]:
+        elif cmd_type == "M":
+            for operation in self.m_commands[str(cmd_int)]:
                 self.elementary_operations.append(lambda: operation())
 
-        elif t_int is not None:
-            for operation in self.t_commands[str(t_int)]:
+        elif cmd_type == "T":
+            for operation in self.t_commands[str(cmd_int)]:
                 self.elementary_operations.append(lambda: operation())
 
-            self.elementary_operations.append(lambda: self.calibrate_tool())
+            self.elementary_operations.append(lambda: self.__calibrate_tool())
 
-    def build_path(self):
+    def __build_path(self):
         """Calculates a new point and new orientation based on the new
         coordinates and offset. Depending on the G-command type, a
         specific tool path is returned. G0 commands create a path
@@ -224,12 +207,12 @@ class GCodeProcessor:
         cmd = self.gcode[self.index_gcode]
         g_com = cmd[0][1]
 
-        self.build_new_point(cmd)
+        self.__build_new_point(cmd)
 
         if g_com == 0:
-            path = self.build_simple_path()
+            path = self.__build_simple_path()
         else:
-            path = self.build_precise_path(g_com)
+            path = self.__build_precise_path(g_com)
 
         orientation = p.getQuaternionFromEuler(self.new_or)
         path.orientations = np.transpose([orientation]
@@ -237,7 +220,7 @@ class GCodeProcessor:
 
         return path
 
-    def build_new_point(self, cmd: list):
+    def __build_new_point(self, cmd: list):
         """Calculates the new point of a G-Code command with respect
         to the current offset.
 
@@ -245,12 +228,14 @@ class GCodeProcessor:
             cmd(list): Current command line
         """
 
-        variables = {'X': np.nan, 'Y': np.nan, 'Z': np.nan, 'A': np.nan,
-                     'B': np.nan, 'C': np.nan, 'R': np.nan}
+        variables = {'G': np.nan, 'X': np.nan, 'Y': np.nan, 'Z': np.nan,
+                     'A': np.nan, 'B': np.nan, 'C': np.nan, 'R': np.nan}
 
         for val in cmd:
             if val[0] in variables:
                 variables[val[0]] = val[1]
+            else:
+                raise KeyError("Variable '{}' is not defined.".format(val[0]))
 
         xyz_val = np.array([variables['X'], variables['Y'],
                             variables['Z']])
@@ -284,7 +269,7 @@ class GCodeProcessor:
 
         self.new_or = p.getEulerFromQuaternion(self.new_or)
 
-    def build_simple_path(self):
+    def __build_simple_path(self):
         """ Returns the simple path of a G0-interpolation
 
         Returns:
@@ -297,7 +282,7 @@ class GCodeProcessor:
 
         return path
 
-    def build_precise_path(self, g_com: int):
+    def __build_precise_path(self, g_com: int):
         """Returns the percise path for G-2-3-Interpolations by calculating
         the neccessary amount of interpolation steps considering the precision
         of the interpolation.
@@ -351,7 +336,7 @@ class GCodeProcessor:
 
         return path
 
-    def create_movement_operations(self, path: ToolPath):
+    def __create_movement_operations(self, path: ToolPath):
         """Returns a list of elementary operations to move the robot based
         on a given tool path and active endeffector.
 
@@ -378,7 +363,7 @@ class GCodeProcessor:
 
         return elementary_operations
 
-    def get_active_endeffector(self):
+    def __get_active_endeffector(self):
         """Returns the index of the active endeffector.
 
         Returns:
@@ -394,12 +379,12 @@ class GCodeProcessor:
                     break
         return active_endeffector
 
-    def calibrate_tool(self):
+    def __calibrate_tool(self):
         """This method sets the current postion of the active tool. This
         ensures a smooth transition between tool changes.
         """
 
-        self.active_endeffector = self.get_active_endeffector()
+        self.active_endeffector = self.__get_active_endeffector()
         actv = self.active_endeffector  # abbreviation
 
         if self.active_endeffector == -1:
@@ -413,23 +398,23 @@ class GCodeProcessor:
                 self.endeffector_list[actv].get_tool_pose()[1])
             self.new_or = np.array(or_euler)
 
-    def g_54(self):
+    def __g_54(self):
         # Activation of the zero offset
         self.offset = np.array([self.last_point, self.last_or])
 
-    def g_500(self):
+    def __g_500(self):
         # Deactivation of the zero offset
         self.offset = np.array([[0.0, 0.0, 0.0],
                                 [0.0, 0.0, 0.0]])
 
-    def g_17(self):
+    def __g_17(self):
         # Axis selelection for circular interpolation
         self.axis = 2  # X-Y Axis
 
-    def g_18(self):
+    def __g_18(self):
         # Axis selelection for circular interpolation
         self.axis = 1  # X-Z Axis
 
-    def g_19(self):
+    def __g_19(self):
         # Axis selelection for circular interpolation
         self.axis = 0  # Y-Z Axis

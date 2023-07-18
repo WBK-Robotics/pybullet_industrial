@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.interpolate as sci
+from scipy.spatial.transform import Rotation
 
 from pybullet_industrial.toolpath import ToolPath
 
@@ -50,8 +51,14 @@ def linear_interpolation(start_point: np.array, end_point: np.array,
         ToolPath: A ToolPath object of the interpolated path
     """
     final_path = np.linspace(start_point, end_point, num=samples)
-    final_orientations = np.linspace(
-        start_orientation, end_orientation, num=samples)
+
+    start_rotation = Rotation.from_quat(start_orientation)
+    end_rotation = Rotation.from_quat(end_orientation)
+
+    # Perform quaternion interpolation
+    interpolated_rotations = start_rotation.interpolate(
+        end_rotation, samples)
+
     return ToolPath(final_path.transpose(), final_orientations.transpose())
 
 

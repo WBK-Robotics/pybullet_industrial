@@ -24,6 +24,8 @@ if __name__ == "__main__":
                               'robot_descriptions', 'comau_nj290_robot.urdf')
     urdf_file2 = os.path.join(dirname,
                               'robot_descriptions', 'gripper_cad.urdf')
+    urdf_file3 = os.path.join(dirname,
+                              'Objects', 'FoFa', 'FoFa.urdf')
 
     pysics_client = p.connect(p.GUI, options='--background_color_red=1 ' +
                                              '--background_color_green=1 ' +
@@ -33,12 +35,9 @@ if __name__ == "__main__":
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
 
-    monastryId = p.createCollisionShape(p.GEOM_MESH,
-                                        fileName="samurai_monastry.obj",
-                                        flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-    orn = p.getQuaternionFromEuler([1.5707963, 0, 0])
-    p.createMultiBody(0, monastryId, baseOrientation=orn)
     p.loadURDF("cube.urdf", [1.9, 0, 0.5], useFixedBase=True)
+
+    p.loadURDF(urdf_file3, [-2, 5, 0], useFixedBase=True, globalScaling=0.001)
 
     test_robot = pi.RobotBase(urdf_file1, [0, 0, 0], [0, 0, 0, 1])
 
@@ -69,14 +68,6 @@ if __name__ == "__main__":
 
     with open(textfile, encoding='utf-8') as f:
         gcode_input = f.read()
-
-    demonstration_object = pi.GCodeProcessor(gcode_input, test_robot,
-                                             endeffector_list,
-                                             m_commands, t_commands)
-
-    for _ in demonstration_object:
-        for _ in range(200):
-            p.stepSimulation()
 
     demonstration_object = pi.GCodeProcessor(gcode_input, test_robot,
                                              endeffector_list,

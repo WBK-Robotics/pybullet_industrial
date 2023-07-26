@@ -36,8 +36,7 @@ def build_circular_path(center: np.array, radius: float,
 
 def linear_interpolation(start_point: np.array, end_point: np.array,
                          samples: int, start_orientation: np.array = None,
-                         end_orientation: np.array = None,
-                         ):
+                         end_orientation: np.array = None):
     """Performs a linear interpolation betwenn two points in 3D space
 
     Args:
@@ -50,12 +49,16 @@ def linear_interpolation(start_point: np.array, end_point: np.array,
     Returns:
         ToolPath: A ToolPath object of the interpolated path
     """
-    final_path = np.linspace(start_point, end_point, num=samples)
+    positions = np.linspace(start_point, end_point, num=samples)
 
-    final_orientations = np.linspace(start_orientation,
-                                     end_orientation, num=samples)
+    final_path = ToolPath(positions=positions.transpose())
 
-    return ToolPath(final_path.transpose(), final_orientations.transpose())
+    if start_orientation is not None and end_orientation is not None:
+        orientations = np.linspace(start_orientation,
+                                   end_orientation, num=samples)
+        final_path.orientations = orientations.transpose()
+
+    return final_path
 
 
 def planar_circular_interpolation(start_point: np.array, end_point: np.array,
@@ -102,7 +105,8 @@ def planar_circular_interpolation(start_point: np.array, end_point: np.array,
 
 
 def circular_interpolation(start_point: np.array, end_point: np.array,
-                           radius: float, samples: int, axis: int = 2, clockwise: bool = True):
+                           radius: float, samples: int, axis: int = 2, clockwise: bool = True,
+                           start_orientation: np.array = None, end_orientation: np.array = None):
     """AI is creating summary for circular_interpolation
 
     Args:
@@ -128,14 +132,22 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
     planar_path = planar_circular_interpolation(
         planar_start_point, planar_end_point, radius, samples, clockwise)
 
-    path = np.zeros((3, samples))
+    positions = np.zeros((3, samples))
     for i in range(2):
-        path[all_axis[i]] = planar_path[i]
-    path[axis] = np.linspace(start_point[axis], end_point[axis], samples)
-    return ToolPath(path)
+        positions[all_axis[i]] = planar_path[i]
+    positions[axis] = np.linspace(start_point[axis], end_point[axis], samples)
+    final_path = ToolPath(positions=positions)
+
+    if start_orientation is not None and end_orientation is not None:
+        orientations = np.linspace(start_orientation,
+                                   end_orientation, num=samples)
+        final_path.orientations = orientations.transpose()
+
+    return final_path
 
 
-def spline_interpolation(points: np.array, samples: int):
+def spline_interpolation(points: np.array, samples: int, start_orientation: np.array = None,
+                         end_orientation: np.array = None):
     """Interpolates between a number of points in cartesian space.
 
     Args:
@@ -148,14 +160,21 @@ def spline_interpolation(points: np.array, samples: int):
     """
     s = np.linspace(0, 1, len(points[0]))
 
-    path = np.zeros((3, samples))
+    positions = np.zeros((3, samples))
     cs_x = sci.CubicSpline(s, points[0])
     cs_y = sci.CubicSpline(s, points[1])
     cs_z = sci.CubicSpline(s, points[2])
 
     cs_s = np.linspace(0, 1, samples)
-    path[0] = cs_x(cs_s)
-    path[1] = cs_y(cs_s)
-    path[2] = cs_z(cs_s)
+    positions[0] = cs_x(cs_s)
+    positions[1] = cs_y(cs_s)
+    positions[2] = cs_z(cs_s)
 
-    return ToolPath(path)
+    final_path = ToolPath(positions=positions)
+
+    if start_orientation is not None and end_orientation is not None:
+        orientations = np.linspace(start_orientation,
+                                   end_orientation, num=samples)
+        final_path.orientations = orientations.transpose()
+
+    return final_path

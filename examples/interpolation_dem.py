@@ -9,6 +9,38 @@ from interpolation import spline_interpolation
 from pybullet_industrial import ToolPath
 
 
+def simulate_circular_path(robot: pi.RobotBase, end_point,
+                           end_orientation,
+                           color=None, samples=100, axis=2,
+                           clockwise=True, radius=0.6):
+
+    start_point, start_orientation = robot.get_endeffector_pose()
+    path = circular_interpolation(start_point=start_point, end_point=end_point,
+                                  samples=samples, axis=axis,
+                                  clockwise=clockwise, radius=radius,
+                                  start_orientation=start_orientation,
+                                  end_orientation=end_orientation)
+    if color is not None:
+        path.draw(color=color)
+
+    simulate_path(path, robot)
+
+
+def simulate_linear_path(robot: pi.RobotBase, end_point,
+                         end_orientation,
+                         color=None, samples=100):
+
+    start_point, start_orientation = robot.get_endeffector_pose()
+    path = linear_interpolation(start_point=start_point, end_point=end_point,
+                                samples=samples,
+                                start_orientation=start_orientation,
+                                end_orientation=end_orientation)
+    if color is not None:
+        path.draw(color=color)
+
+    simulate_path(path, robot)
+
+
 def simulate_path(path: ToolPath, robot: pi.RobotBase):
     elementary_operations = create_movement_operations(path, robot)
     run_elementary_operations(elementary_operations)
@@ -77,7 +109,7 @@ if __name__ == "__main__":
     orn_1 = p.getQuaternionFromEuler([-np.pi/2, 0, 0])
     orn_2 = p.getQuaternionFromEuler([-3*np.pi/2, 0, 0])
     orn_3 = p.getQuaternionFromEuler([0, np.pi/2, 0])
-    orn_4 = p.getQuaternionFromEuler([0, 0, np.pi/2])
+    orn_4 = p.getQuaternionFromEuler([0, 0, -np.pi/2])
     test_orientations = [orn_2, orn_3, orn_4]
 
     # Setting the colors
@@ -91,124 +123,53 @@ if __name__ == "__main__":
     color_7 = [1, 1, 1]
     color_8 = [0.5, 0.5, 0.5]
 
-    # Seting the interpolation parameters
-    samples = 100
-    clockwise = True  # Circular Direction
-    radius = 0.6
-    axis = 2
-
     # Setting position
-    linear_path = linear_interpolation(start_point=pt_start, end_point=pt_4,
-                                       samples=samples,
-                                       start_orientation=orn_start,
-                                       end_orientation=orn_1)
-    elementary_operations = create_movement_operations(linear_path, test_robot)
-    run_elementary_operations(elementary_operations)
+    simulate_linear_path(test_robot, pt_4, orn_1)
 
     # Test different orientations
     for test_orn in test_orientations:
         i = orn_1
-        j = test_orn
         for _ in range(2):
-            path = linear_interpolation(start_point=pt_4, end_point=pt_4,
-                                        samples=samples,
-                                        start_orientation=i,
-                                        end_orientation=j)
-            simulate_path(path, test_robot)
+            simulate_linear_path(
+                robot=test_robot, end_point=pt_4, end_orientation=i)
             # Come back
             i = test_orn
-            j = orn_1
 
     # Move to point 2
-    path = linear_interpolation(start_point=pt_4, end_point=pt_2,
-                                samples=samples,
-                                start_orientation=orn_1,
-                                end_orientation=orn_2)
-    simulate_path(path, test_robot)
+    simulate_linear_path(
+        robot=test_robot, end_point=pt_2, end_orientation=orn_2)
 
     # Path 1: Linear path
-    path = linear_interpolation(start_point=pt_2, end_point=pt_1,
-                                samples=samples,
-                                start_orientation=orn_2,
-                                end_orientation=orn_1)
-    path.draw(color=color_1)
-    simulate_path(path, test_robot)
+    simulate_linear_path(robot=test_robot, end_point=pt_1,
+                         end_orientation=orn_1, color=color_1)
 
     # Path 2: Circular path
-    path = circular_interpolation(start_point=pt_1, end_point=pt_3,
-                                  samples=samples, axis=axis,
-                                  clockwise=clockwise, radius=radius,
-                                  start_orientation=orn_1,
-                                  end_orientation=orn_1)
-    path.draw(color=color_2)
-    simulate_path(path, test_robot)
+    simulate_circular_path(test_robot, pt_3, orn_1, color=color_2)
 
     # Path 3: Circular path
-    clockwise = False
-    path = circular_interpolation(start_point=pt_3, end_point=pt_2,
-                                  samples=samples, axis=axis,
-                                  clockwise=clockwise, radius=radius,
-                                  start_orientation=orn_1,
-                                  end_orientation=orn_1)
-    path.draw(color=color_3)
-    simulate_path(path, test_robot)
+    simulate_circular_path(test_robot, pt_2, orn_1,
+                           color=color_3, clockwise=False)
 
     # Path 4: Circular path
-    axis = 0
-    path = circular_interpolation(start_point=pt_2, end_point=pt_3,
-                                  samples=samples, axis=axis,
-                                  clockwise=clockwise, radius=radius,
-                                  start_orientation=orn_1,
-                                  end_orientation=orn_1)
-    path.draw(color=color_4)
-    simulate_path(path, test_robot)
+    simulate_circular_path(test_robot, pt_3, orn_1, color=color_4, axis=0)
 
     # Path 5: Circular path
-    axis = 0
-    clockwise = True
-    path = circular_interpolation(start_point=pt_3, end_point=pt_1,
-                                  samples=samples, axis=axis,
-                                  clockwise=clockwise, radius=radius,
-                                  start_orientation=orn_1,
-                                  end_orientation=orn_1)
-    path.draw(color=color_5)
-    simulate_path(path, test_robot)
+    simulate_circular_path(test_robot, pt_1, orn_1,
+                           color=color_5, clockwise=False, axis=0)
 
     # Path 6: Linear path
-    path = linear_interpolation(start_point=pt_1, end_point=pt_3,
-                                samples=samples,
-                                start_orientation=orn_1,
-                                end_orientation=orn_1)
-    simulate_path(path, test_robot)
+    simulate_linear_path(test_robot, pt_3, orn_1)
 
     # Path 7: Circular path
-    axis = 1
-    clockwise = True
-    path = circular_interpolation(start_point=pt_3, end_point=pt_4,
-                                  samples=samples, axis=axis,
-                                  clockwise=clockwise, radius=radius,
-                                  start_orientation=orn_1,
-                                  end_orientation=orn_1)
-    path.draw(color=color_6)
-    simulate_path(path, test_robot)
+    simulate_circular_path(test_robot, pt_4, orn_1,
+                           color=color_6, axis=1)
 
     # Path 8: Circular path
-    axis = 1
-    clockwise = False
-    path = circular_interpolation(start_point=pt_4, end_point=pt_5,
-                                  samples=samples, axis=axis,
-                                  clockwise=clockwise, radius=radius,
-                                  start_orientation=orn_1,
-                                  end_orientation=orn_1)
-    path.draw(color=color_7)
-    simulate_path(path, test_robot)
+    simulate_circular_path(test_robot, pt_5, orn_1,
+                           color=color_7, axis=1, clockwise=False)
 
     # Path 9: Linear path
-    path = linear_interpolation(start_point=pt_5, end_point=pt_1,
-                                samples=samples,
-                                start_orientation=orn_1,
-                                end_orientation=orn_1)
-    simulate_path(path, test_robot)
+    simulate_linear_path(test_robot, pt_1, orn_1)
 
     # Path 1: Spline path
 

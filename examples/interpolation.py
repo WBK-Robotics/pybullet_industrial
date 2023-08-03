@@ -117,6 +117,9 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
         axis (int, optional): The axis around which the circle is interpolated.
                               Defaults to 2 which corresponds to the z-axis (0=x,1=y).
         clockwise (bool, optional): The direction of circular travel. Defaults to True.
+        start_orientation (np.array): Start orientation as quaternion
+        end_orientation (np.array): End orientation as quaternion
+
 
     Returns:
         ToolPath: A ToolPath object of the interpolated path
@@ -154,6 +157,9 @@ def spline_interpolation(points: np.array, samples: int, start_orientation: np.a
         points (np.array(3,n)): A 3 dimensional array whith each dimension containing
                                    subsequent positions.
         samples (int): The number of samples used to interpolate
+        start_orientation (np.array): Start orientation as quaternion
+        end_orientation (np.array): End orientation as quaternion
+
 
     Returns:
         ToolPath: A ToolPath object of the interpolated path

@@ -5,7 +5,6 @@ import pybullet_data
 import pybullet_industrial as pi
 from interpolation import linear_interpolation
 from interpolation import circular_interpolation
-from interpolation import spline_interpolation
 from pybullet_industrial import ToolPath
 
 
@@ -99,18 +98,20 @@ if __name__ == "__main__":
 
     # Setting the points
     pt_start, orn_start = test_robot.get_endeffector_pose()
-    pt_1 = [1.5, -2, 2]
-    pt_2 = [1.5, 0, 2]
-    pt_3 = [1.5, -1, 2]
-    pt_4 = [2, -1, 2]
-    pt_5 = [2.5, -1, 2]
+    pt_1 = [1.8, -2, 2]
+    pt_2 = [1.8, 0, 2]
+    pt_3 = [1.8, -1, 2]
+    pt_4 = [2.1, -1, 2]
+    pt_5 = [2.4, -1, 2]
 
     # Setting the orientations
     orn_1 = p.getQuaternionFromEuler([-np.pi/2, 0, 0])
-    orn_2 = p.getQuaternionFromEuler([-3*np.pi/2, 0, 0])
-    orn_3 = p.getQuaternionFromEuler([0, np.pi/2, 0])
-    orn_4 = p.getQuaternionFromEuler([0, 0, -np.pi/2])
-    test_orientations = [orn_2, orn_3, orn_4]
+    orn_2 = p.getQuaternionFromEuler([-np.pi/2, -np.pi/2, 0])
+    orn_3 = p.getQuaternionFromEuler([-np.pi/2, -np.pi/2, -np.pi/2])
+
+    orn_4 = p.getQuaternionFromEuler([-np.pi/4, 0, -np.pi/2])
+
+    test_orientations = [orn_2, orn_3]
 
     # Setting the colors
 
@@ -124,14 +125,14 @@ if __name__ == "__main__":
     color_8 = [0.5, 0.5, 0.5]
 
     # Setting position
-    simulate_linear_path(test_robot, pt_4, orn_1)
+    simulate_linear_path(test_robot, pt_5, orn_1)
 
     # Test different orientations
     for test_orn in test_orientations:
         i = orn_1
         for _ in range(2):
             simulate_linear_path(
-                robot=test_robot, end_point=pt_4, end_orientation=i)
+                robot=test_robot, end_point=pt_5, end_orientation=i)
             # Come back
             i = test_orn
 
@@ -147,14 +148,14 @@ if __name__ == "__main__":
     simulate_circular_path(test_robot, pt_3, orn_1, color=color_2)
 
     # Path 3: Circular path
-    simulate_circular_path(test_robot, pt_2, orn_1,
+    simulate_circular_path(test_robot, pt_2, orn_2,
                            color=color_3, clockwise=False)
 
     # Path 4: Circular path
     simulate_circular_path(test_robot, pt_3, orn_1, color=color_4, axis=0)
 
     # Path 5: Circular path
-    simulate_circular_path(test_robot, pt_1, orn_1,
+    simulate_circular_path(test_robot, pt_1, orn_2,
                            color=color_5, clockwise=False, axis=0)
 
     # Path 6: Linear path
@@ -169,11 +170,4 @@ if __name__ == "__main__":
                            color=color_7, axis=1, clockwise=False)
 
     # Path 9: Linear path
-    simulate_linear_path(test_robot, pt_1, orn_1)
-
-    # Path 1: Spline path
-
-    path = spline_interpolation(
-        [pt_1, pt_4, pt_2], samples=samples, start_orientation=orn_1, end_orientation=orn_1)
-    path.draw(color=color_8, pose=True)
-    simulate_path(path, test_robot)
+    simulate_linear_path(test_robot, pt_1, orn_2)

@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.interpolate as sci
 from scipy.spatial.transform import Rotation
+import pybullet as p
 
 from pybullet_industrial.toolpath import ToolPath
 
@@ -54,9 +55,17 @@ def linear_interpolation(start_point: np.array, end_point: np.array,
     final_path = ToolPath(positions=positions.transpose())
 
     if start_orientation is not None and end_orientation is not None:
+        start_orientation = p.getEulerFromQuaternion(start_orientation)
+        end_orientation = p.getEulerFromQuaternion(end_orientation)
         orientations = np.linspace(start_orientation,
                                    end_orientation, num=samples)
-        final_path.orientations = orientations.transpose()
+        final_orientations = []
+
+        for orientation in orientations:
+            orientation_quat = p.getQuaternionFromEuler(orientation)
+            final_orientations.append(orientation_quat)
+
+        final_path.orientations = np.array(final_orientations).transpose()
 
     return final_path
 
@@ -142,9 +151,17 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
     final_path = ToolPath(positions=positions)
 
     if start_orientation is not None and end_orientation is not None:
+        start_orientation = p.getEulerFromQuaternion(start_orientation)
+        end_orientation = p.getEulerFromQuaternion(end_orientation)
         orientations = np.linspace(start_orientation,
                                    end_orientation, num=samples)
-        final_path.orientations = orientations.transpose()
+        final_orientations = []
+
+        for orientation in orientations:
+            orientation_quat = p.getQuaternionFromEuler(orientation)
+            final_orientations.append(orientation_quat)
+
+        final_path.orientations = np.array(final_orientations).transpose()
 
     return final_path
 

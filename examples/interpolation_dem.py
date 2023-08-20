@@ -3,16 +3,27 @@ import pybullet as p
 import numpy as np
 import pybullet_data
 import pybullet_industrial as pi
-from interpolation import linear_interpolation
-from interpolation import circular_interpolation
+from pybullet_industrial import linear_interpolation
+from pybullet_industrial import circular_interpolation
 from pybullet_industrial import ToolPath
 
 
-def simulate_circular_path(robot: pi.RobotBase, end_point,
-                           end_orientation,
-                           color=None, samples=100, axis=2,
+def simulate_circular_path(robot: pi.RobotBase, end_point: np.array,
+                           end_orientation: np.array,
+                           color=None, samples=200, axis=2,
                            clockwise=True, radius=0.6):
+    """Creates a linear path and calls the simulate function
 
+    Args:
+        robot (RobotBase): operating robot
+        end_point(np.array): next point
+        end_orientation(np.array): next orientation
+        color: color for drawing the path
+        samples: number of samples used to interpolate
+        axis: The axis around which the circle is interpolated
+        clockwise: direction of the interpolation
+        radius: radius of the interpolation
+    """
     start_point, start_orientation = robot.get_endeffector_pose()
     path = circular_interpolation(start_point=start_point, end_point=end_point,
                                   samples=samples, axis=axis,
@@ -21,14 +32,21 @@ def simulate_circular_path(robot: pi.RobotBase, end_point,
                                   end_orientation=end_orientation)
     if color is not None:
         path.draw(color=color)
-
     simulate_path(path, robot)
 
 
-def simulate_linear_path(robot: pi.RobotBase, end_point,
-                         end_orientation,
-                         color=None, samples=100):
+def simulate_linear_path(robot: pi.RobotBase, end_point: np.array,
+                         end_orientation: np.array,
+                         color=None, samples=200):
+    """Creates a linear path and calls the simulate function
 
+    Args:
+        robot (RobotBase): operating robot
+        end_point(np.array): next point
+        end_orientation(np.array): next orientation
+        color: color for drawing the path
+        samples: number of samples used to interpolate
+    """
     start_point, start_orientation = robot.get_endeffector_pose()
     path = linear_interpolation(start_point=start_point, end_point=end_point,
                                 samples=samples,
@@ -36,19 +54,21 @@ def simulate_linear_path(robot: pi.RobotBase, end_point,
                                 end_orientation=end_orientation)
     if color is not None:
         path.draw(color=color)
-
     simulate_path(path, robot)
 
 
 def simulate_path(path: ToolPath, robot: pi.RobotBase):
+    """Simulates the created path by running the elementary operations
+
+    Args:
+        path (ToolPath): input tool path
+        robot (RobotBase): operating robot
+    """
     elementary_operations = create_movement_operations(path, robot)
-    run_elementary_operations(elementary_operations)
 
-
-def run_elementary_operations(elementary_operations: list):
     for operation in elementary_operations:
         operation()
-        for _ in range(200):
+        for _ in range(100):
             p.stepSimulation()
 
 
@@ -57,7 +77,8 @@ def create_movement_operations(path: ToolPath, robot: pi.RobotBase):
     on a given tool path and active endeffector.
 
     Args:
-        path(ToolPath): input tool path
+        path (ToolPath): input tool path
+        robot (RobotBase): operating Robot
 
     Returns:
         elementary_operations(list): elementary operations to move robot
@@ -108,13 +129,9 @@ if __name__ == "__main__":
     orn_1 = p.getQuaternionFromEuler([-np.pi/2, 0, 0])
     orn_2 = p.getQuaternionFromEuler([-np.pi/2, -np.pi/2, 0])
     orn_3 = p.getQuaternionFromEuler([-np.pi/2, -np.pi/2, -np.pi/2])
-
-    orn_4 = p.getQuaternionFromEuler([-np.pi/4, 0, -np.pi/2])
-
-    test_orientations = [orn_2, orn_3]
+    orn_4 = p.getQuaternionFromEuler([-np.pi, 0, 0])
 
     # Setting the colors
-
     color_1 = [1, 0, 0]
     color_2 = [0, 1, 0]
     color_3 = [0, 0, 1]
@@ -126,15 +143,6 @@ if __name__ == "__main__":
 
     # Setting position
     simulate_linear_path(test_robot, pt_5, orn_1)
-
-    # Test different orientations
-    for test_orn in test_orientations:
-        i = orn_1
-        for _ in range(2):
-            simulate_linear_path(
-                robot=test_robot, end_point=pt_5, end_orientation=i)
-            # Come back
-            i = test_orn
 
     # Move to point 2
     simulate_linear_path(
@@ -148,7 +156,7 @@ if __name__ == "__main__":
     simulate_circular_path(test_robot, pt_3, orn_1, color=color_2)
 
     # Path 3: Circular path
-    simulate_circular_path(test_robot, pt_2, orn_2,
+    simulate_circular_path(test_robot, pt_2, orn_4,
                            color=color_3, clockwise=False)
 
     # Path 4: Circular path
@@ -162,7 +170,7 @@ if __name__ == "__main__":
     simulate_linear_path(test_robot, pt_3, orn_1)
 
     # Path 7: Circular path
-    simulate_circular_path(test_robot, pt_4, orn_1,
+    simulate_circular_path(test_robot, pt_4, orn_2,
                            color=color_6, axis=1)
 
     # Path 8: Circular path

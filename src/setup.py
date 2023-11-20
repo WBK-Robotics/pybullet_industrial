@@ -5,7 +5,7 @@ import setuptools
 
 setuptools.setup(
     name='pybullet_industrial',
-    version='1.0',
+    version='1.0.2',
     author='Jan Baumgärtner, Malte Hansjosten, Dominik Schönhofen',
     description='Pybullet_industrial is a process-aware robot simulation framework for pybullet.',
     long_description='Pybullet_industrial is a process-aware robot simulation framework for pybullet.',

@@ -61,7 +61,7 @@ def check_tool_position(endeffetor: pi.EndeffectorTool, target_position,
 
 class Test_GCodeProcessor(unittest.TestCase):
 
-    def test_read_gcode(self):
+    def test_read_g_code(self):
 
         # Create test textfile
         cmd1 = "% This is a comment\n"
@@ -73,19 +73,19 @@ class Test_GCodeProcessor(unittest.TestCase):
         # Creating the Test Object
         test_object = pi.GCodeProcessor(g_code_input)
 
-        # Check that the length of the gcode list is correct
-        self.assertEqual(len(test_object.gcode), 3)
+        # Check that the length of the g-code list is correct
+        self.assertEqual(len(test_object.g_code), 3)
 
         # Check that the first line is correct
-        self.assertEqual(test_object.gcode[0], [
+        self.assertEqual(test_object.g_code[0], [
                          ['G', 0], ['X', 1.0], ['Y', 2.0]])
 
         # Check that the second line is correct
-        self.assertEqual(test_object.gcode[1], [
+        self.assertEqual(test_object.g_code[1], [
                          ['G', 1], ['X', 2.0], ['Y', 3.0]])
 
         # Check that the third line is correct
-        self.assertEqual(test_object.gcode[2], [['G', 2], [
+        self.assertEqual(test_object.g_code[2], [['G', 2], [
                          'X', 3.0], ['Y', 4.0], ['Z', 5.0]])
 
     def test_simulation(self):
@@ -138,7 +138,7 @@ class Test_GCodeProcessor(unittest.TestCase):
 
         # Test 1: G0 without coupled tool
         command = "G0 X1.9 Y-0.5 Z1.5 A-1.5079 B0 C0"
-        test_object.gcode = test_object.read_gcode(command)
+        test_object.g_code = test_object.read_g_code(command)
         run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
@@ -148,7 +148,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd1 = "G1 X2.2\n"
         cmd2 = "G1 Y-0.3 Z1.6 A-1.403"
         commands = cmd1+cmd2
-        test_object.gcode = test_object.read_gcode(commands)
+        test_object.g_code = test_object.read_g_code(commands)
         run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
@@ -158,7 +158,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd1 = "G54\n"
         cmd2 = "G1 X-0.3 Y-0.2 Z-0.1 A-0.1049"
         commands = cmd1 + cmd2
-        test_object.gcode = test_object.read_gcode(commands)
+        test_object.g_code = test_object.read_g_code(commands)
         run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
@@ -170,7 +170,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd1 = "G500\n"
         cmd2 = "G1 X2.2 Y-0.3 Z1.6"
         commands = cmd1 + cmd2
-        test_object.gcode = test_object.read_gcode(commands)
+        test_object.g_code = test_object.read_g_code(commands)
         run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
@@ -180,7 +180,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd1 = "G19\n"
         cmd2 = "G2 X1.9 Y-0.5 Z1.5 R1"
         commands = cmd1 + cmd2
-        test_object.gcode = test_object.read_gcode(commands)
+        test_object.g_code = test_object.read_g_code(commands)
         run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
@@ -191,7 +191,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd2 = "G3 X2.2 Y-0.3 Z1.6 R1\n"
         cmd3 = "G17"
         commands = cmd1 + cmd2 + cmd3
-        test_object.gcode = test_object.read_gcode(commands)
+        test_object.g_code = test_object.read_g_code(commands)
         run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(
@@ -230,7 +230,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd2 = "G0 X1.9 Y-0.5 Z1.5 A-3.1 B0 C0\n"
         cmd3 = "M1"
         commands = cmd1 + cmd2 + cmd3
-        test_object.gcode = test_object.read_gcode(commands)
+        test_object.g_code = test_object.read_g_code(commands)
         run_simulation(test_iterator)
 
         self.assertTrue(test_gripper.is_coupled())
@@ -242,7 +242,7 @@ class Test_GCodeProcessor(unittest.TestCase):
         cmd1 = "G1 X2.2 Y-0.3 Z1.6\n"
         cmd2 = "T0 "
         commands = cmd1 + cmd2
-        test_object.gcode = test_object.read_gcode(commands)
+        test_object.g_code = test_object.read_g_code(commands)
         run_simulation(test_iterator)
 
         self.assertTrue(not test_gripper.is_coupled())

@@ -96,19 +96,20 @@ class DiffDriveAGV:
 
         #calculate the distance between the current position and the target position
         distance = np.linalg.norm(np.array(target_position) - np.array(current_position))
-
+        print(distance,angle)
         # linear velocity is proportional to the distance smoothed by sigmoid function 
         # to be within the range of -max_linear_velocity and max_linear_velocity
-        if angle > np.pi/2 or angle < -np.pi/2:
-            linear_velocity = -self.max_linear_velocity * (1 / (1 + np.exp(-0.2*distance + 0.5)) - 0.5)
-        else:
-            linear_velocity = self.max_linear_velocity * (1 / (1 + np.exp(-0.2*distance + 0.5)) - 0.5)
+        kp_lin=0.2
+        kp_ang=0.5
+
+        linear_velocity = np.clip(kp_lin*distance, -self.max_linear_velocity, self.max_linear_velocity)
+ 
 
         # angular velocity is proportional to the angle smoothed by sigmoid function
         # to be within the range of -max_angular_velocity and max_angular_velocity
-        angular_velocity = self.max_angular_velocity * (1 / (1 + np.exp(-0.5*angle + 0.5)) - 0.5)
+        angular_velocity = -1*np.clip(kp_ang*angle, -self.max_angular_velocity, self.max_angular_velocity)
 
-        print(angular_velocity, linear_velocity)
+
         self.set_velocity(linear_velocity, angular_velocity)
 
 

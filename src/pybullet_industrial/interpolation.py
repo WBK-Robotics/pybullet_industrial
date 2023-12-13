@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.interpolate as sci
+import pybullet as p
 
 from pybullet_industrial.toolpath import ToolPath
 
@@ -33,19 +34,38 @@ def build_circular_path(center: np.array, radius: float,
     return circular_path
 
 
-def linear_interpolation(start_point: np.array, end_point: np.array, samples: int):
+def linear_interpolation(start_point: np.array, end_point: np.array, samples: int,
+                         start_orientation: np.array = None,
+                         end_orientation: np.array = None):
     """Performs a linear interpolation betwenn two points in 3D space
 
     Args:
         start_point (np.array): The start point of the interpolation
         end_point (np.array): The end point of the interpolation
         samples (int): The number of samples used to interpolate
+        start_orientation (np.array): Start orientation as quaternion
+        end_orientation (np.array): End orientation as quaternion
 
     Returns:
         ToolPath: A ToolPath object of the interpolated path
     """
-    final_path = np.linspace(start_point, end_point, num=samples)
-    return ToolPath(final_path.transpose())
+    positions = np.linspace(start_point, end_point, num=samples)
+    final_path = ToolPath(positions=positions.transpose())
+
+    if start_orientation is not None and end_orientation is not None:
+        start_orientation = p.getEulerFromQuaternion(start_orientation)
+        end_orientation = p.getEulerFromQuaternion(end_orientation)
+        orientations = np.linspace(start_orientation,
+                                   end_orientation, num=samples)
+        final_orientations = []
+
+        for orientation in orientations:
+            orientation_quat = p.getQuaternionFromEuler(orientation)
+            final_orientations.append(orientation_quat)
+
+        final_path.orientations = np.array(final_orientations).transpose()
+
+    return final_path
 
 
 def planar_circular_interpolation(start_point: np.array, end_point: np.array,
@@ -92,7 +112,9 @@ def planar_circular_interpolation(start_point: np.array, end_point: np.array,
 
 
 def circular_interpolation(start_point: np.array, end_point: np.array,
-                           radius: float, samples: int, axis: int = 2, clockwise: bool = True):
+                           radius: float, samples: int, axis: int = 2,
+                           clockwise: bool = True, start_orientation: np.array = None,
+                           end_orientation: np.array = None):
     """AI is creating summary for circular_interpolation
 
     Args:
@@ -103,6 +125,8 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
         axis (int, optional): The axis around which the circle is interpolated.
                               Defaults to 2 which corresponds to the z-axis (0=x,1=y).
         clockwise (bool, optional): The direction of circular travel. Defaults to True.
+        start_orientation (np.array): Start orientation as quaternion
+        end_orientation (np.array): End orientation as quaternion
 
     Returns:
         ToolPath: A ToolPath object of the interpolated path
@@ -118,11 +142,26 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
     planar_path = planar_circular_interpolation(
         planar_start_point, planar_end_point, radius, samples, clockwise)
 
-    path = np.zeros((3, samples))
+    positions = np.zeros((3, samples))
     for i in range(2):
-        path[all_axis[i]] = planar_path[i]
-    path[axis] = np.linspace(start_point[axis], end_point[axis], samples)
-    return ToolPath(path)
+        positions[all_axis[i]] = planar_path[i]
+    positions[axis] = np.linspace(start_point[axis], end_point[axis], samples)
+    final_path = ToolPath(positions=positions)
+
+    if start_orientation is not None and end_orientation is not None:
+        start_orientation = p.getEulerFromQuaternion(start_orientation)
+        end_orientation = p.getEulerFromQuaternion(end_orientation)
+        orientations = np.linspace(start_orientation,
+                                   end_orientation, num=samples)
+        final_orientations = []
+
+        for orientation in orientations:
+            orientation_quat = p.getQuaternionFromEuler(orientation)
+            final_orientations.append(orientation_quat)
+
+        final_path.orientations = np.array(final_orientations).transpose()
+
+    return final_path
 
 
 def spline_interpolation(points: np.array, samples: int):

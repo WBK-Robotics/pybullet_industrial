@@ -101,7 +101,6 @@ class DiffDriveAGV:
 
         #calculate the distance between the current position and the target position
         distance = np.linalg.norm(np.array(target_position) - np.array(current_position))
-        print(distance,angle)
         # linear velocity is proportional to the distance smoothed by sigmoid function 
         # to be within the range of -max_linear_velocity and max_linear_velocity
         kp_lin=0.4
@@ -110,7 +109,7 @@ class DiffDriveAGV:
         linear_velocity = np.clip(kp_lin*distance, -self.max_linear_velocity, self.max_linear_velocity)
 
         # scale linear velocity so that it it becomes smaller the larger the angle is
-        linear_velocity *= np.clip(1 - 2*np.abs(angle)/np.pi, 0, 1)
+        linear_velocity *= np.clip(1 - np.abs(angle)/np.pi, 0, 1)
  
 
         # angular velocity is proportional to the angle smoothed by sigmoid function
@@ -118,8 +117,7 @@ class DiffDriveAGV:
         angular_velocity = -1*np.clip(kp_ang*angle, -self.max_angular_velocity, self.max_angular_velocity)
 
         # scala angular velocity so that it becomes smaller the smaller the distance is to avoid singularity
-        angular_velocity *= np.clip(10*distance, 0, 1)
-
+        angular_velocity *= np.clip(10*(distance-0.1), 0, 1)
 
         self.set_velocity(linear_velocity, angular_velocity)
 
@@ -130,6 +128,7 @@ class DiffDriveAGV:
 
 
 if __name__ == "__main__":
+    import pybullet_industrial as pi
     import pybullet_data
     import time
     import os
@@ -145,19 +144,25 @@ if __name__ == "__main__":
 
     diff_drive_params = {"wheel_radius": 0.2, 
                          "track_width": 0.3,
-                         "max_linear_velocity": 1,
-                         "max_angular_velocity": 0.5}
+                         "max_linear_velocity": 2,
+                         "max_angular_velocity": 1}
     dirname = os.path.dirname(__file__)
     urdf_file = os.path.join(dirname,
                               'robot_descriptions', 'diff_drive_agv.urdf')
     agv = DiffDriveAGV(urdf_file, [0, 0, 0.3], [0, 0, 0, 1], "left_wheel_joint", "right_wheel_joint", diff_drive_params)
 
     print(agv.track_width, agv.wheel_radius)
-    # correct wheel radius is 0.17775
 
+    test_path = pi.build_box_path(
+        [-2.25,0,0], [4.5, 6.6], 0.1, [0, 0, 0, 1], 100)
+
+    test_path.draw()
     while True:
-        p.stepSimulation()
-        agv.set_target_position([0, 4, 0])
+        for positions, orientations, _ in test_path:
+            for _ in range(100):
+                agv.set_target_position(positions)
+                p.stepSimulation()
+            time.sleep(0.01)
 
         
 

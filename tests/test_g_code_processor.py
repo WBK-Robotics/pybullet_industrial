@@ -62,7 +62,6 @@ def check_tool_position(endeffetor: pi.EndeffectorTool, target_position,
 class Test_GCodeProcessor(unittest.TestCase):
 
     def test_read_g_code(self):
-
         # Create test textfile
         cmd1 = "% This is a comment\n"
         cmd2 = "G0 X1.0 Y2.0\n"
@@ -77,16 +76,14 @@ class Test_GCodeProcessor(unittest.TestCase):
         self.assertEqual(len(test_object.g_code), 3)
 
         # Check that the first line is correct
-        self.assertEqual(test_object.g_code[0], [
-                         ['G', 0], ['X', 1.0], ['Y', 2.0]])
+        self.assertEqual(test_object.g_code[0], {'G': 0, 'X': 1.0, 'Y': 2.0})
 
         # Check that the second line is correct
-        self.assertEqual(test_object.g_code[1], [
-                         ['G', 1], ['X', 2.0], ['Y', 3.0]])
+        self.assertEqual(test_object.g_code[1], {'G': 1, 'X': 2.0, 'Y': 3.0})
 
         # Check that the third line is correct
-        self.assertEqual(test_object.g_code[2], [['G', 2], [
-                         'X', 3.0], ['Y', 4.0], ['Z', 5.0]])
+        self.assertEqual(test_object.g_code[2], {
+                         'G': 2, 'X': 3.0, 'Y': 4.0, 'Z': 5.0})
 
     def test_simulation(self):
 

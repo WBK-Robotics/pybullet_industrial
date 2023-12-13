@@ -99,11 +99,14 @@ class DiffDriveAGV:
 
         # linear velocity is proportional to the distance smoothed by sigmoid function 
         # to be within the range of -max_linear_velocity and max_linear_velocity
-        linear_velocity = self.max_linear_velocity * (1 / (1 + np.exp(-distance + 0.5)) - 0.5)
+        if angle > np.pi/2 or angle < -np.pi/2:
+            linear_velocity = -self.max_linear_velocity * (1 / (1 + np.exp(-0.2*distance + 0.5)) - 0.5)
+        else:
+            linear_velocity = self.max_linear_velocity * (1 / (1 + np.exp(-0.2*distance + 0.5)) - 0.5)
 
         # angular velocity is proportional to the angle smoothed by sigmoid function
         # to be within the range of -max_angular_velocity and max_angular_velocity
-        angular_velocity = self.max_angular_velocity * (1 / (1 + np.exp(-angle + 0.5)) - 0.5)
+        angular_velocity = self.max_angular_velocity * (1 / (1 + np.exp(-0.5*angle + 0.5)) - 0.5)
 
         print(angular_velocity, linear_velocity)
         self.set_velocity(linear_velocity, angular_velocity)

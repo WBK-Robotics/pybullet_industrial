@@ -7,7 +7,7 @@ class DiffDriveAGV:
 
 
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
-                 left_wheel_name: str, right_wheel_name: str,diff_drive_params: dict = None):
+                 left_wheel_name: str, right_wheel_name: str,diff_drive_params: dict):
         
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,
@@ -32,11 +32,11 @@ class DiffDriveAGV:
             raise ValueError("Wheel names not found in URDF.")
         
         
-        if diff_drive_params is None:
-            self.__estimate_diff_drive_params(left_wheel_name, right_wheel_name)
-        else:
-            self.wheel_radius = diff_drive_params["wheel_radius"]
-            self.track_width = diff_drive_params["track_width"]
+ 
+        self.wheel_radius = diff_drive_params["wheel_radius"]
+        self.track_width = diff_drive_params["track_width"]
+        self.max_linear_velocity = diff_drive_params["max_linear_velocity"]
+        self.max_angular_velocity = diff_drive_params["max_angular_velocity"]
         
 
         # set the control mode of the wheels to VELOCITY_CONTROL
@@ -44,28 +44,7 @@ class DiffDriveAGV:
         p.setJointMotorControl2(self.urdf, self.right_wheel_index, p.VELOCITY_CONTROL)
 
 
-    def __estimate_diff_drive_params(self,left_wheel_name,right_wheel_name):
-        """Tries to estimate the diff drive parameters of the robot.
-           Often not very accurate and requires manual tuning.
-        
-        Returns:
-            np.array: The kinematic dimensions of the robot.
-        """
 
-        # Extract kinematic parameters
-        # Assuming the wheel radius is the same for both wheels
-        left_wheel_info = p.getJointInfo(self.urdf, self.left_wheel_index)
-        right_wheel_info = p.getJointInfo(self.urdf, self.right_wheel_index)
-        wheel_radius = left_wheel_info[8]  # This is a simplification, usually requires more detailed extraction
-
-        # To calculate the track width, we need the positions of the wheels
-        # This is a simplification and assumes the wheels are directly opposite each other
-        left_wheel_position = p.getLinkState(self.urdf, self.left_wheel_index)[0]
-        right_wheel_position = p.getLinkState(self.urdf, self.right_wheel_index)[0]
-        track_width = abs(left_wheel_position[1] - right_wheel_position[1])  # Assuming Y-axis separation
-
-        self.wheel_radius = wheel_radius
-        self.track_width = track_width
 
 
         
@@ -97,10 +76,48 @@ class DiffDriveAGV:
         p.setJointMotorControl2(self.urdf, self.right_wheel_index, p.VELOCITY_CONTROL, targetVelocity=wheel_commands[1])
 
 
+    def set_target_position(self, target_position: np.array):
+        """Sets the target pose of the robot.
+        
+        Args:
+            target_position (np.array): The target position of the robot.
+            target_orientation (np.array): The target orientation of the robot.
+        """
+        
+        #a simple controller that turns the robot towards the target before moving forward
+
+        current_position, current_orientation = p.getBasePositionAndOrientation(self.urdf)
+        current_orientation = np.array(p.getEulerFromQuaternion(current_orientation))
+
+
+        #calculate the angle between the front of the robot and the vector pointing to the target
+        angle = np.arctan2(target_position[1] - current_position[1], target_position[0] - current_position[0]) - current_orientation[2]
+
+
+        #calculate the distance between the current position and the target position
+        distance = np.linalg.norm(np.array(target_position) - np.array(current_position))
+
+        # linear velocity is proportional to the distance smoothed by sigmoid function 
+        # to be within the range of -max_linear_velocity and max_linear_velocity
+        linear_velocity = self.max_linear_velocity * (1 / (1 + np.exp(-distance + 0.5)) - 0.5)
+
+        # angular velocity is proportional to the angle smoothed by sigmoid function
+        # to be within the range of -max_angular_velocity and max_angular_velocity
+        angular_velocity = self.max_angular_velocity * (1 / (1 + np.exp(-angle + 0.5)) - 0.5)
+
+        print(angular_velocity, linear_velocity)
+        self.set_velocity(linear_velocity, angular_velocity)
+
+
+
+        
+
+
 
 if __name__ == "__main__":
     import pybullet_data
     import time
+    import os
     
 
     pysics_client = p.connect(p.GUI, options='--background_color_red=1 ' +
@@ -111,15 +128,21 @@ if __name__ == "__main__":
     p.loadURDF("plane.urdf")
     p.setGravity(0, 0, -10)
 
-    diff_drive_params = {"wheel_radius": 0.17775, "track_width": 0.5}
-    agv = DiffDriveAGV("husky/husky.urdf", [0, 0, 0], [0, 0, 0, 1], "rear_left_wheel", "rear_right_wheel", diff_drive_params)
+    diff_drive_params = {"wheel_radius": 0.2, 
+                         "track_width": 0.3,
+                         "max_linear_velocity": 1,
+                         "max_angular_velocity": 0.5}
+    dirname = os.path.dirname(__file__)
+    urdf_file = os.path.join(dirname,
+                              'robot_descriptions', 'diff_drive_agv.urdf')
+    agv = DiffDriveAGV(urdf_file, [0, 0, 0.3], [0, 0, 0, 1], "left_wheel_joint", "right_wheel_joint", diff_drive_params)
 
     print(agv.track_width, agv.wheel_radius)
     # correct wheel radius is 0.17775
 
     while True:
         p.stepSimulation()
-        agv.set_velocity(0.0, 2.4)
-        time.sleep(0.02)
+        agv.set_target_position([4, 4, 0])
+
         
 

@@ -209,6 +209,15 @@ if __name__ == "__main__":
     import time
     import os
 
+    def trajectory_follower_controller(distance,angle,target_angle_error):
+        kp_lin=1
+        kp_ang=1
+
+        linear_velocity = kp_lin*distance,
+        angular_velocity = -1*kp_ang*angle,
+
+        return linear_velocity[0], angular_velocity[0]
+
 
     pysics_client = p.connect(p.GUI, options='--background_color_red=1 ' +
                                                 '--background_color_green=1 ' +
@@ -229,7 +238,8 @@ if __name__ == "__main__":
     agv = DiffDriveAGV(urdf_file, [0, 0, 0.3], [0, 0, 0, 1],
                        "left_wheel_joint",
                        "right_wheel_joint",
-                       diff_drive_params)
+                       diff_drive_params,
+                       position_controller=trajectory_follower_controller)
 
     agv.set_world_state([2.25,0,1], [0,0,0,1])
     print(agv.track_width, agv.wheel_radius)

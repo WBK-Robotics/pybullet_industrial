@@ -144,7 +144,7 @@ class DiffDriveAGV:
 
 
     def standard_position_controller(self,distance,angle,target_angle_error):
-        kp_lin=0.4
+        kp_lin=0.8
         kp_ang=0.8
 
         linear_velocity = np.clip(kp_lin*distance,
@@ -246,8 +246,7 @@ if __name__ == "__main__":
     agv = DiffDriveAGV(urdf_file, [0, 0, 0.3], [0, 0, 0, 1],
                        "left_wheel_joint",
                        "right_wheel_joint",
-                       diff_drive_params,
-                       position_controller=trajectory_follower_controller)
+                       diff_drive_params)
 
     agv.set_world_state([2.25,0,1], [0,0,0,1])
     print(agv.track_width, agv.wheel_radius)

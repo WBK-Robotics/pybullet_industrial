@@ -95,6 +95,14 @@ class DiffDriveAGV:
             linear_velocity (float): The linear velocity of the robot.
             angular_velocity (float): The angular velocity of the robot.
         """
+        #clip the velocities to the maximum velocities
+        linear_velocity = np.clip(linear_velocity,
+                                    -self.max_linear_velocity,
+                                    self.max_linear_velocity)
+        angular_velocity = np.clip(angular_velocity,
+                                    -self.max_angular_velocity,
+                                    self.max_angular_velocity)
+
         wheel_commands = self.__calculate_wheel_comands(linear_velocity, angular_velocity)
         p.setJointMotorControl2(self.urdf,
                                 self.left_wheel_index,
@@ -229,8 +237,8 @@ if __name__ == "__main__":
 
     diff_drive_params = {"wheel_radius": 0.2,
                          "track_width": 0.3,
-                         "max_linear_velocity": 3,
-                         "max_angular_velocity": 2}
+                         "max_linear_velocity": 0.8,
+                         "max_angular_velocity": 0.6}
     dirname = os.path.dirname(__file__)
     urdf_file = os.path.join(dirname,
                               'robot_descriptions', 'diff_drive_agv.urdf')

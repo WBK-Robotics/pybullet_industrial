@@ -9,6 +9,20 @@ class DiffDriveAGV:
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
                  left_wheel_name: str, right_wheel_name: str,diff_drive_params: dict,
                  position_controller=None):
+        """Initializes the robot.
+
+        Args:
+            urdf_model (str): The path to the URDF file of the robot.
+            start_position (np.array): The start position of the robot.
+            start_orientation (np.array): The start orientation of the robot.
+            left_wheel_name (str): The name of the left wheel joint.
+            right_wheel_name (str): The name of the right wheel joint.
+            diff_drive_params (dict): A dictionary containing the parameters of the robot.
+            position_controller (function, optional): A function that calculates the wheel commands
+                                                      for a given distance and angle to the target.
+                                                      Defaults to None. In this case the standard
+                                                      position controller is used.
+        """
 
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,
@@ -113,7 +127,8 @@ class DiffDriveAGV:
             angle_to_target += 2*np.pi
 
         #calculate the distance between the current position and the target position
-        distance_to_target = np.linalg.norm(np.array(self.target_pose) - np.array(current_position))
+        distance_to_target = np.linalg.norm(np.array(self.target_pose[:2]) -
+                                            np.array(current_position[:2]))
 
         target_angle_error = current_orientation[2] - self.target_pose[2]
 
@@ -148,16 +163,18 @@ class DiffDriveAGV:
         linear_velocity, angular_velocity = self.position_controller(distance,angle,target_angle_error)
         self.set_velocity(linear_velocity, angular_velocity)
 
-    def set_target_position(self, target_position: np.array):
+    def set_target_pose(self, target_position: np.array,target_orientation: np.array):
         """Sets the target posisition of the robot and executes as velocity command to reach it.
 
         Args:
             target_position (np.array): The target position of the robot.
                                         Note that while the target is 3 dimensional,
                                         only the x and y coordinates are used.
+            target_orientation (np.array): The target orientation of the robot as a quaternion.
         """
 
-        self.target_pose[:2] = target_position[:2]
+        yaw_target_orientation = np.array(p.getEulerFromQuaternion(target_orientation))[2]
+        self.target_pose = np.append(target_position[:2],yaw_target_orientation)
 
 
 
@@ -209,7 +226,10 @@ if __name__ == "__main__":
     urdf_file = os.path.join(dirname,
                               'robot_descriptions', 'diff_drive_agv.urdf')
 
-    agv = DiffDriveAGV(urdf_file, [0, 0, 0.3], [0, 0, 0, 1], "left_wheel_joint", "right_wheel_joint", diff_drive_params)
+    agv = DiffDriveAGV(urdf_file, [0, 0, 0.3], [0, 0, 0, 1],
+                       "left_wheel_joint",
+                       "right_wheel_joint",
+                       diff_drive_params)
 
     agv.set_world_state([2.25,0,1], [0,0,0,1])
     print(agv.track_width, agv.wheel_radius)
@@ -220,7 +240,7 @@ if __name__ == "__main__":
     test_path.draw()
     while True:
         for positions, orientations, _ in test_path:
-            agv.set_target_position(positions)
+            agv.set_target_pose(positions,orientations)
             for _ in range(200):
                 agv.update_position_loop()
                 p.stepSimulation()

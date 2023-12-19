@@ -220,8 +220,8 @@ if __name__ == "__main__":
 
     diff_drive_params = {"wheel_radius": 0.2,
                          "track_width": 0.3,
-                         "max_linear_velocity": 2,
-                         "max_angular_velocity": 1}
+                         "max_linear_velocity": 3,
+                         "max_angular_velocity": 2}
     dirname = os.path.dirname(__file__)
     urdf_file = os.path.join(dirname,
                               'robot_descriptions', 'diff_drive_agv.urdf')
@@ -238,12 +238,27 @@ if __name__ == "__main__":
         [0,0,0], [4.5, 6.6], 0.8, [0, 0, 0, 1], 200)
 
     test_path.draw()
+
+    #spawn a sphere mulitbody that highlights the target position
+    sphere_visual = p.createVisualShape(p.GEOM_SPHERE,
+                                        radius=0.1,
+                                        rgbaColor=[1, 0, 0, 1])
+    sphere_collision = p.createCollisionShape(p.GEOM_SPHERE, radius=0.1)
+    sphere = p.createMultiBody(baseMass=0,
+                                baseCollisionShapeIndex=sphere_collision,
+                                baseVisualShapeIndex=sphere_visual,
+                                basePosition=[0, 0, 0.1])
+
     while True:
         for positions, orientations, _ in test_path:
+            p.resetBasePositionAndOrientation(sphere, positions, orientations)
             agv.set_target_pose(positions,orientations)
-            for _ in range(200):
+            for _ in range(100):
                 agv.update_position_loop()
                 p.stepSimulation()
+
+            actual_pos, actual_ori = agv.get_world_state()
+
             time.sleep(0.01)
 
 

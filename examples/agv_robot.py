@@ -7,13 +7,19 @@ class DiffDriveAGV:
 
 
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
-                 left_wheel_name: str, right_wheel_name: str,diff_drive_params: dict):
+                 left_wheel_name: str, right_wheel_name: str,diff_drive_params: dict,
+                 position_controller=None):
 
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
         self.urdf = p.loadURDF(urdf_model,
                                start_position, start_orientation,
                                flags=urdf_flags,
                                useFixedBase=False)
+
+        if position_controller is None:
+            self.position_controller = self.standard_position_controller
+        else:
+            self.position_controller = position_controller
 
         num_joints = p.getNumJoints(self.urdf)
         self.left_wheel_index = None
@@ -114,7 +120,7 @@ class DiffDriveAGV:
         return distance_to_target, angle_to_target, target_angle_error
 
 
-    def position_controller(self,distance,angle,target_angle_error):
+    def standard_position_controller(self,distance,angle,target_angle_error):
         kp_lin=0.4
         kp_ang=0.8
 
@@ -135,11 +141,11 @@ class DiffDriveAGV:
         return linear_velocity, angular_velocity
 
     def update_position_loop(self):
+        """Updates the position of the robot in a loop.
+        """
 
         distance, angle, target_angle_error = self.__calculate_position_error()
-
         linear_velocity, angular_velocity = self.position_controller(distance,angle,target_angle_error)
-
         self.set_velocity(linear_velocity, angular_velocity)
 
     def set_target_position(self, target_position: np.array):

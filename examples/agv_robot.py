@@ -3,6 +3,8 @@ import numpy as np
 import pybullet as p
 
 
+
+
 class DiffDriveAGV:
 
 
@@ -140,27 +142,50 @@ class DiffDriveAGV:
 
         target_angle_error = current_orientation[2] - self.target_pose[2]
 
+        #map angle onto the interval [-pi, pi]
+        if target_angle_error > np.pi:
+            target_angle_error -= 2*np.pi
+        elif target_angle_error < -np.pi:
+            target_angle_error += 2*np.pi
+
         return distance_to_target, angle_to_target, target_angle_error
 
 
     def standard_position_controller(self,distance,angle,target_angle_error):
-        kp_lin=0.8
-        kp_ang=0.8
+        print(distance,angle,target_angle_error)
+        kp_lin=1
+        kp_ang= 0.8
+        kp_target_ang = 0.4
+
+        distance_precision = 0.05
+        angle_precision = 0.01
 
         linear_velocity = np.clip(kp_lin*distance,
                                   -self.max_linear_velocity,
                                   self.max_linear_velocity)
+        
+        
+        
+
         # scale linear velocity so that it it becomes smaller the larger the angle is
-        linear_velocity *= np.clip(1 - np.abs(angle)/np.pi, 0, 1)
+        linear_velocity *= np.clip(1 - 2*np.abs(angle)/np.pi, -1, 1)
 
-
-        angular_velocity = -1*np.clip(kp_ang*angle,
-                                      -self.max_angular_velocity,
-                                      self.max_angular_velocity)
+        angular_velocity = -1*kp_ang*angle
         # scala angular velocity so that it becomes smaller
         # with decreasing distance to avoid singularity
-        angular_velocity *= np.clip(10*(distance-0.1), 0, 1)
+        #angular_velocity *= np.clip(10*(distance-1), 0, 1)
 
+        # add contribution based on target_angle_error
+        angular_velocity +=  -1*kp_target_ang*target_angle_error
+        angular_velocity = np.clip(angular_velocity,
+                                      -self.max_angular_velocity,
+                                      self.max_angular_velocity)
+        
+        if (distance < distance_precision) and (np.abs(target_angle_error) < angle_precision):
+            linear_velocity = 0
+            angular_velocity = 0
+
+        print(linear_velocity,angular_velocity)
         return linear_velocity, angular_velocity
 
     def update_position_loop(self):
@@ -238,7 +263,7 @@ if __name__ == "__main__":
     diff_drive_params = {"wheel_radius": 0.2,
                          "track_width": 0.3,
                          "max_linear_velocity": 0.8,
-                         "max_angular_velocity": 0.6}
+                         "max_angular_velocity": 0.8}
     dirname = os.path.dirname(__file__)
     urdf_file = os.path.join(dirname,
                               'robot_descriptions', 'diff_drive_agv.urdf')
@@ -246,7 +271,8 @@ if __name__ == "__main__":
     agv = DiffDriveAGV(urdf_file, [0, 0, 0.3], [0, 0, 0, 1],
                        "left_wheel_joint",
                        "right_wheel_joint",
-                       diff_drive_params)
+                       diff_drive_params,
+                       position_controller=trajectory_follower_controller)
 
     agv.set_world_state([2.25,0,1], [0,0,0,1])
     print(agv.track_width, agv.wheel_radius)
@@ -260,17 +286,17 @@ if __name__ == "__main__":
     sphere_visual = p.createVisualShape(p.GEOM_SPHERE,
                                         radius=0.1,
                                         rgbaColor=[1, 0, 0, 1])
-    sphere_collision = p.createCollisionShape(p.GEOM_SPHERE, radius=0.1)
+
     sphere = p.createMultiBody(baseMass=0,
-                                baseCollisionShapeIndex=sphere_collision,
                                 baseVisualShapeIndex=sphere_visual,
                                 basePosition=[0, 0, 0.1])
 
     while True:
+        positions,orientations = [0,0,0.1],[0,0,0,1]
         for positions, orientations, _ in test_path:
             p.resetBasePositionAndOrientation(sphere, positions, orientations)
             agv.set_target_pose(positions,orientations)
-            for _ in range(100):
+            for _ in range(50):
                 agv.update_position_loop()
                 p.stepSimulation()
 

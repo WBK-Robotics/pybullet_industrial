@@ -1,8 +1,8 @@
 """A simple class that encapsulates mobile robots."""
 import numpy as np
 import pybullet as p
-
-
+import unittest
+import os
 
 #Template Class for all AGV Robots
 class AGVRobot:
@@ -86,9 +86,6 @@ class AGVRobot:
         yaw_target_orientation = np.array(p.getEulerFromQuaternion(target_orientation))[2]
         self.target_pose = np.append(target_position[:2],yaw_target_orientation)
 
-
-
-
     def set_world_state(self, start_position: np.array, start_orientation: np.array):
         """Resets the robots base to a specified position and orientation
 
@@ -108,6 +105,61 @@ class AGVRobot:
             list: a 4 dimensional quaternion representing the orientation of the robot base
         """
         return p.getBasePositionAndOrientation(self.urdf)
+
+
+
+class TestAGVRobot(unittest.TestCase):
+
+    def setUp(self):
+        p.connect(p.DIRECT)
+        self.start_position = np.array([0, 0, 0])
+        self.start_orientation = np.array([0, 0, 0,1])
+        dirname = os.path.dirname(__file__)
+        urdf_file = os.path.join(dirname,
+                              'robot_descriptions', 'diff_drive_agv.urdf')
+        self.robot = AGVRobot(urdf_file, self.start_position, self.start_orientation)
+
+    def test_get_and_set_world_state(self):
+        # Set a new world state for the robot
+        new_position = np.array([1, 1, 0])
+        new_orientation = np.array([0, 0, 0, 1])
+        self.robot.set_world_state(new_position, new_orientation)
+        # Get the world state of the robot
+        position, orientation = self.robot.get_world_state()
+        self.assertTrue(np.allclose(position, new_position))
+        self.assertTrue(np.allclose(orientation, new_orientation))
+
+    def test_calculate_position_error(self):
+
+        # set the robot to the origin with zero orientation
+        self.robot.set_world_state(np.array([0, 0, 0]), np.array([0, 0, 0, 1]))
+
+        # set the target position to (1,1,0) and the target orientation to zero
+        target_position = np.array([1, 1, 0])
+        target_orientation = np.array([0, 0, 0, 1])
+
+        target_states= [[np.array([1, 1, 0]), np.array([0, 0, 0, 1])],
+                        [np.array([1,-1, 0]), p.getQuaternionFromEuler([0, 0, np.pi/2])],
+                        [np.array([-1, 0, 0]), np.array([0, 0, 0, 1])]]
+
+        correct_results = [[np.sqrt(2), np.pi/4, 0],
+                            [np.sqrt(2), -np.pi/4, - np.pi/2],
+                            [1, np.pi, 0]]
+
+        for target_state, correct_result in zip(target_states, correct_results):
+            target_position = target_state[0]
+            target_orientation = target_state[1]
+            self.robot.set_target_pose(target_position, target_orientation)
+
+            # calculate the position error
+            distance, angle, target_angle_error = self.robot._calculate_position_error()
+
+            # check if the position error is correct
+            self.assertAlmostEqual(distance, correct_result[0])
+            self.assertAlmostEqual(angle, correct_result[1])
+            self.assertAlmostEqual(target_angle_error, correct_result[2])
+
+
 
 
 
@@ -258,72 +310,4 @@ class DiffDriveAGV(AGVRobot):
 
 
 if __name__ == "__main__":
-    import pybullet_industrial as pi
-    import pybullet_data
-    import time
-    import os
-
-    def trajectory_follower_controller(distance,angle,target_angle_error):
-        kp_lin=1
-        kp_ang=1
-
-        linear_velocity = kp_lin*distance,
-        angular_velocity = -1*kp_ang*angle,
-
-        return [linear_velocity[0], angular_velocity[0]]
-
-
-    pysics_client = p.connect(p.GUI, options='--background_color_red=1 ' +
-                                                '--background_color_green=1 ' +
-                                                '--background_color_blue=1')
-
-    p.setAdditionalSearchPath(pybullet_data.getDataPath())
-    p.loadURDF("plane.urdf")
-    p.setGravity(0, 0, -10)
-
-    diff_drive_params = {"wheel_radius": 0.2,
-                         "track_width": 0.3,
-                         "max_linear_velocity": 0.8,
-                         "max_angular_velocity": 0.8}
-    dirname = os.path.dirname(__file__)
-    urdf_file = os.path.join(dirname,
-                              'robot_descriptions', 'diff_drive_agv.urdf')
-
-    agv = DiffDriveAGV(urdf_file, [0, 0, 0.3], [0, 0, 0, 1],
-                       "left_wheel_joint",
-                       "right_wheel_joint",
-                       diff_drive_params,
-                       position_controller=trajectory_follower_controller)
-
-    agv.set_world_state([2.25,0,1], [0,0,0,1])
-    print(agv.track_width, agv.wheel_radius)
-
-    test_path = pi.build_box_path(
-        [0,0,0], [4.5, 6.6], 0.8, [0, 0, 0, 1], 200)
-
-    test_path.draw()
-
-    #spawn a sphere mulitbody that highlights the target position
-    sphere_visual = p.createVisualShape(p.GEOM_SPHERE,
-                                        radius=0.1,
-                                        rgbaColor=[1, 0, 0, 1])
-
-    sphere = p.createMultiBody(baseMass=0,
-                                baseVisualShapeIndex=sphere_visual,
-                                basePosition=[0, 0, 0.1])
-
-    while True:
-        positions,orientations = [0,0,0.1],[0,0,0,1]
-        for positions, orientations, _ in test_path:
-            p.resetBasePositionAndOrientation(sphere, positions, orientations)
-            agv.set_target_pose(positions,orientations)
-            for _ in range(50):
-                agv.update_position_loop()
-                p.stepSimulation()
-
-            actual_pos, actual_ori = agv.get_world_state()
-
-            time.sleep(0.01)
-
-
-
+    unittest.main()

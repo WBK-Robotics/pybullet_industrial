@@ -91,15 +91,15 @@ class TestDiffDriveAGV(unittest.TestCase):
 
     def test_calculate_wheel_commands(self):
 
-        wheel_commands = self.robot._calculate_wheel_comands(1, 0)
+        wheel_commands = self.robot._calculate_wheel_comands([1, 0])
         self.assertTrue(np.allclose(wheel_commands, [10, 10]))
 
 
-        wheel_commands = self.robot._calculate_wheel_comands(0, 1)
+        wheel_commands = self.robot._calculate_wheel_comands([0, 1])
         self.assertTrue(np.allclose(wheel_commands, [-2.5, 2.5]))
 
 
-        wheel_commands = self.robot._calculate_wheel_comands(1, 1)
+        wheel_commands = self.robot._calculate_wheel_comands([1, 1])
         self.assertTrue(np.allclose(wheel_commands, [7.5, 12.5]))
 
     def test_set_velocity(self):

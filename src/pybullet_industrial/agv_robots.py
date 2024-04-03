@@ -1,4 +1,4 @@
-"""A simple class that encapsulates mobile robots."""
+"""A simple class that encapsulates mobile robots moving on the x-y plane in pybullet."""
 import numpy as np
 import pybullet as p
 
@@ -20,7 +20,7 @@ class AGVRobot:
                                                       the linear and angular velocity of the robot.
                                                       Defaults to None. In this case a standard
                                                       position controller is used.
-        
+
         """
 
         urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
@@ -73,10 +73,11 @@ class AGVRobot:
         return distance_to_target, angle_to_target, target_angle_error
 
     def standard_position_controller(self,distance,angle,target_angle_error):
-        pass
+        raise NotImplementedError("The standard position controller has to be implemented in a subclass.")
+
 
     def set_velocity(self,velocity_vector):
-        pass
+        raise NotImplementedError("The set_velocity method has to be implemented in a subclass.")
 
     def update_position_loop(self):
         """Updates the position of the robot in a loop.
@@ -176,7 +177,7 @@ class DiffDriveAGV(AGVRobot):
         p.setJointMotorControl2(self.urdf, self.left_wheel_index, p.VELOCITY_CONTROL)
         p.setJointMotorControl2(self.urdf, self.right_wheel_index, p.VELOCITY_CONTROL)
 
-    def _calculate_wheel_comands(self, linear_velocity: float, angular_velocity: float):
+    def _calculate_wheel_comands(self, velocity_vector):
         """Calculates the wheel commands for a differential drive robot.
 
         Args:
@@ -186,6 +187,9 @@ class DiffDriveAGV(AGVRobot):
         Returns:
             np.array: The wheel commands.
         """
+        linear_velocity = velocity_vector[0]
+        angular_velocity = velocity_vector[1]
+
         turning_contribution = angular_velocity * self.track_width / (2*self.wheel_radius)
         driving_contribution = linear_velocity / self.wheel_radius
         left_wheel_velocity = driving_contribution - turning_contribution
@@ -211,7 +215,7 @@ class DiffDriveAGV(AGVRobot):
                                     -self.max_angular_velocity,
                                     self.max_angular_velocity)
 
-        wheel_commands = self._calculate_wheel_comands(linear_velocity, angular_velocity)
+        wheel_commands = self._calculate_wheel_comands([linear_velocity, angular_velocity])
         p.setJointMotorControl2(self.urdf,
                                 self.left_wheel_index,
                                 p.VELOCITY_CONTROL,
@@ -222,6 +226,18 @@ class DiffDriveAGV(AGVRobot):
                                 targetVelocity=wheel_commands[1])
 
     def standard_position_controller(self,distance,angle,target_angle_error):
+        """ A simple position controller for a differential drive robot.
+
+
+        Args:
+            distance (float): the distance to the target position
+            angle (float): the angle to the target position in radians from -pi to pi
+            target_angle_error (float): the angle error between the robot orientation and the target orientation
+                                         in radians from -pi to pi
+
+        Returns:
+            List: A velocity vector containing the linear and angular velocity of the robot.
+        """
         kp_lin=1
         kp_ang= 0.8
         kp_target_ang = 0.4

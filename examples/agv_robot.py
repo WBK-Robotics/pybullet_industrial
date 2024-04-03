@@ -1,9 +1,7 @@
-"""A simple class that encapsulates mobile robots."""
-import numpy as np
+"""This is an example for an AGV following a set path using a custom controller."""
 import pybullet as p
-import unittest
 import os
-import pybullet_data
+
 
 import pybullet_industrial as pi
 import pybullet_data
@@ -11,6 +9,12 @@ import time
 import os
 
 def trajectory_follower_controller(distance,angle,target_angle_error):
+    """ A simple trajectory following controller that neglects the target_angle_error and simply
+        orients the robot towards the current target position.
+        The controller is a simple proportional controller that
+        takes the distance and angle to the target
+        and returns a linear and angular velocity command to the robot.
+        """
     kp_lin=1
     kp_ang=1
 

@@ -203,6 +203,8 @@ class DiffDriveAGV(AGVRobot):
 
         Args:
             velocity_vector (np.array): The velocity vector of the robot.
+                                        In this case the vector contains the linear
+                                        and angular velocity of the robot.
         """
         linear_velocity = velocity_vector[0]
         angular_velocity = velocity_vector[1]

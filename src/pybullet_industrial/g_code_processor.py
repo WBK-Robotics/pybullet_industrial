@@ -46,7 +46,7 @@ class GCodeProcessor:
         self.r_val = 0
         self.robot = robot
         self.endeffector_list = endeffector_list
-        self.active_endeffector = self.__get_active_endeffector()
+        self.active_endeffector = self.get_active_endeffector()
         self.offset = offset
         self.axis = axis
         self.interpolation_precision = interpolation_precision
@@ -67,47 +67,54 @@ class GCodeProcessor:
             self.__calibrate_tool()
 
     @staticmethod
-    def read_g_code(g_code_input: str):
-        """Reads G-code row by row and saves the processed data in
-        a list. Comments that start with % are ignored and all the other data is
+    def read_gcode(gcode_input: str):
+        """Reads g-code row by row and saves the processed data in
+        a list.
+        Comments that start with % are ignored and all the other data is
         stored as it gets read in.
 
         Args:
             g_code_input (str): Source of G-code as a string
 
         Returns:
-            list: Processed G-code as a list of dictionaries
+            gcode (list)
         """
 
         g_code_input = g_code_input.splitlines()
         g_code = []
 
-        for line in g_code_input:
-            if not line.strip() or line.strip().startswith('%'):
+        # Loop over the lines of the file
+        for line in gcode_input:
+
+            if not line.strip():
                 continue
 
-            new_line = {}
-            components = line.split()
+            # Read in G-Code if line is not a comment and not empty
+            if line[0] != "%" and len(line) > 1:
 
-            for component in components:
-                if "=" in component:
-                    key, value = component.split("=")
-                    val = float(value) if '.' in value else int(value)
-                else:
-                    match = re.match(r'([A-Z]+)(-?\d*\.?\d*)',
-                                     component, re.IGNORECASE)
-                    if match:
-                        key = match.group(1)
-                        value = match.group(2)
-                        val = float(value) if value and '.' in value else int(
-                            value)
+                # Initialize a new line as a list
+                new_line = []
 
-                # Convert key to uppercase
-                key = key.upper()
+                # Split the line into its components
+                data = line.split()
 
-                new_line[key] = val
+                # Loop over the components
+                for i in data:
+                    # Determine the ID of the component
+                    id_val = i[0]
 
-            g_code.append(new_line)
+                    # Extract the value of the component
+                    val2 = float(i[1:])
+
+                    if id_val in ["G", "M", "T"]:
+                        # Insert the value into the corresponding
+                        # column of the new line
+                        new_line.append([id_val, int(val2)])
+                    else:
+                        new_line.append([id_val, val2])
+
+                # Add the finished line to the list
+                gcode.append(new_line)
 
         return g_code
 
@@ -167,23 +174,17 @@ class GCodeProcessor:
             cmd_int(int): Current G-command integer
         """
 
-        interpolation_movement = ['X', 'Y', 'Z', 'A', 'B', 'C', 'R']
-        joint_movement = ['RA1', 'RA2', 'RA3', 'RA4', 'RA5', 'RA6']
-
-        if 'G' in g_code_line:
-            if any(key in g_code_line for key in interpolation_movement):
-                path = self.__build_path()
-                self.elementary_operations = \
-                    self.__create_movement_operations(path)
-            elif any(key in g_code_line for key in joint_movement):
-                self.elementary_operations = \
-                    self.__create_joint_movement_operations(g_code_line)
-            elif g_code_line.get('G') > 3:
-                for operation in self.g_commands[str(g_code_line.get('G'))]:
+        if cmd_type == "G":
+            if cmd_int > 3:
+                for operation in self.g_commands[str(cmd_int)]:
                     self.elementary_operations.append(lambda: operation())
+            else:
+                path = self.__build_path()
+                self.elementary_operations = self.__create_movement_operations(
+                    path)
 
-        elif 'M' in g_code_line:
-            for operation in self.m_commands[str(g_code_line.get('M'))]:
+        elif cmd_type == "M":
+            for operation in self.m_commands[str(cmd_int)]:
                 self.elementary_operations.append(lambda: operation())
 
         elif 'T' in g_code_line:
@@ -369,7 +370,7 @@ class GCodeProcessor:
 
         return elementary_operations
 
-    def __get_active_endeffector(self):
+    def get_active_endeffector(self):
         """Returns the index of the active endeffector.
 
         Returns:
@@ -390,7 +391,7 @@ class GCodeProcessor:
         ensures a smooth transition between tool changes.
         """
 
-        self.active_endeffector = self.__get_active_endeffector()
+        self.active_endeffector = self.get_active_endeffector()
         actv = self.active_endeffector  # abbreviation
 
         if self.active_endeffector == -1:

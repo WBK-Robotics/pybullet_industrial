@@ -8,13 +8,11 @@ class GCodeLogger:
 
     Args:
         robot (RobotBase): The robot instance.
-        round_decimal (int, optional): Number of decimal places to round values. Defaults to 4.
     """
 
-    def __init__(self, robot: RobotBase, round_decimal: int = 4):
+    def __init__(self, robot: RobotBase):
 
         self.robot = robot
-        self.round_decimals = round_decimal
         self.current_robot_pose = {'X': 0.0, 'Y': 0.0,
                                    'Z': 0.0, 'A': 0.0, 'B': 0.0, 'C': 0.0}
         self.current_joint_position = {'RA1': 0.0, 'RA2': 0.0, 'RA3': 0.0,
@@ -71,18 +69,6 @@ class GCodeLogger:
         self.g_code_joint_position.append(g_code_line)
         self.g_code_robot_view.append(g_code_line)
 
-    def _round_values(self, pose_dict):
-        """
-        Round the values in a dictionary.
-
-        Args:
-            pose_dict (dict): Dictionary containing values to be rounded.
-
-        Returns:
-            dict: Dictionary with rounded values.
-        """
-        return {key: round(value, self.round_decimals) for key, value in pose_dict.items()}
-
     def _update_g_code(self, new_pose, current_pose, g_code_list):
         """
         Update the G-code based on changes in pose.
@@ -115,17 +101,15 @@ class GCodeLogger:
         """
         Update G-code related to robot TCP.
         """
-        new_tcp_pose = self._round_values(self.get_tcp_pose())
-        self._update_g_code(new_tcp_pose, self._round_values(
-            self.current_tcp_pose), self.g_code_tcp)
+        self._update_g_code(self.get_tcp_pose(),
+                            self.current_tcp_pose, self.g_code_tcp)
 
     def update_g_code_robot_view(self):
         """
         Update G-code related to robot Cartesian coordinates.
         """
-        new_robot_pose = self._round_values(self.get_robot_pose())
-        self._update_g_code(new_robot_pose, self._round_values(
-            self.current_robot_pose), self.g_code_robot_view)
+        self._update_g_code(self.get_robot_pose(),
+                            self.current_robot_pose, self.g_code_robot_view)
 
     def get_joint_position(self):
         """
@@ -147,8 +131,8 @@ class GCodeLogger:
         """
         Update G-code related to joint positions.
         """
-        new_joint_position = self._round_values(self.get_joint_position())
-        self._update_g_code(new_joint_position, self._round_values(
-            self.current_joint_position), self.g_code_joint_position)
+        self._update_g_code(self.get_joint_position(),
+                            self.current_joint_position,
+                            self.g_code_joint_position)
         current_g_code_line = self.g_code_joint_position[-1]
         current_g_code_line['G'] = 1

@@ -143,11 +143,30 @@ class Test_GCodeProcessor(unittest.TestCase):
         self.assertTrue(check_robot_position(
             robot, pos1, ori1, pos_precision, ori_precision))
 
-        # Test 2: G1 without coupled tool
+        # Test 2.1: G1 without coupled tool
         cmd1 = "G1 X2.2\n"
         cmd2 = "G1 Y-0.3 Z1.6 A-1.403"
         commands = cmd1+cmd2
         test_object.g_code = test_object.read_g_code(commands)
+        run_simulation(test_iterator)
+
+        self.assertTrue(check_robot_position(
+            robot, pos2, ori2, pos_precision, ori_precision))
+
+        # Test 2.2: G1 with Joint Position
+        command = "G1 RA1=-0.26599832725015843 RA2=0.03251430369251254\
+              RA3=-1.9721862154817666 RA4=-3.07545425948084\
+                  RA5=-1.1542831213947777 RA6=-0.2932878229283541"
+        test_object.g_code = test_object.read_g_code(command)
+        run_simulation(test_iterator)
+
+        self.assertTrue(check_robot_position(
+            robot, pos1, ori1, pos_precision, ori_precision))
+
+        command = "G1 RA1=-0.15645379114988892 RA2=0.2524070196026062 \
+            RA3=-1.665587086827114 RA4=-2.967366576977744\
+        RA5=-1.254545645841404 RA6=-0.2133265842224983"
+        test_object.g_code = test_object.read_g_code(command)
         run_simulation(test_iterator)
 
         self.assertTrue(check_robot_position(

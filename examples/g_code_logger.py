@@ -37,8 +37,8 @@ class GCodeLogger:
                 order = ['G', 'X', 'Y', 'Z', 'A', 'B', 'C',
                          'RA1', 'RA2', 'RA3', 'RA4', 'RA5', 'RA6']
                 # Construct the line by joining key-value pairs
-                line = ' '.join(f'{key}{value}' for key,
-                                value in command.items() if key in order)
+                line = ' '.join(
+                    f'{key}{command[key]}' for key in order if key in command)
                 file.write(line + '\n')
 
     def get_robot_pose(self):

@@ -3,10 +3,10 @@ import pybullet as p
 import pybullet_data
 import numpy as np
 import pybullet_industrial as pi
-from examples.g_code_logger import GCodeLogger
+from g_code_logger import GCodeLogger
 
 
-def run_g_command(g_code_processor_iterator: GCodeProcessor,
+def run_g_command(g_code_processor_iterator: pi.GCodeProcessor,
                   g_code_logger: GCodeLogger = None):
     """
     Run the G-code commands from the given GCodeProcessor iterator.
@@ -15,6 +15,7 @@ def run_g_command(g_code_processor_iterator: GCodeProcessor,
         g_code_processor_iterator (GCodeProcessor): Iterator yielding G-code commands.
         g_code_logger (GCodeLogger, optional): GCodeLogger instance for logging G-code changes. Defaults to None.
     """
+
     for _ in g_code_processor_iterator:
         # Execute the simulation steps
         for _ in range(200):
@@ -30,7 +31,7 @@ if __name__ == "__main__":
     working_dir = os.path.dirname(__file__)
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     urdf_robot = os.path.join(
-        working_dir, 'robot_descriptions', 'comau_NJ290_robotNC.urdf')
+        working_dir, 'robot_descriptions', 'comau_nj290_robot.urdf')
 
     urdf_fofa = os.path.join(
         working_dir, 'Objects', 'FoFa', 'FoFa.urdf')
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     # Setting up GCodeLogger
     g_code_logger = GCodeLogger(robot)
     g_code_test = os.path.join(
-        working_dir, 'g_codes', 'g_code_logger_input.txt')
+        working_dir, 'GCodes', 'logger_input.txt')
     with open(g_code_test, encoding='utf-8') as f:
         gcode_input = f.read()
     g_code_processor.g_code = g_code_processor.read_g_code(gcode_input)
@@ -90,18 +91,44 @@ if __name__ == "__main__":
     g_code_processor.g_code = g_code_logger.g_code_joint_position
     run_g_command(g_code_processor)
 
-    # Run g_code_robot_view
-    g_code_processor.g_code = g_code_logger.g_code_robot_view
-    run_g_command(g_code_processor)
+    # # Run g_code_robot_view
+    # g_code_processor.g_code = g_code_logger.g_code_robot_view
+    # run_g_command(g_code_processor)
 
     # Writing g_code
     robot_view_path = os.path.join(
-        working_dir, 'g_codes', 'g_code_logger_robot_view.txt')
+        working_dir, 'Gcodes', 'g_code_logger_robot_view.txt')
 
     joint_poisitions_path = os.path.join(
-        working_dir, 'g_codes', 'g_code_logger_joint_positions.txt')
+        working_dir, 'Gcodes', 'g_code_logger_joint_positions.txt')
 
     g_code_logger.write_g_code(
         g_code_logger.g_code_robot_view, robot_view_path)
     g_code_logger.write_g_code(
         g_code_logger.g_code_joint_position, joint_poisitions_path)
+
+    # Alternative for recording G-Code
+    g_code_logger.g_code_robot_view = []
+    start_point = robot.get_endeffector_pose()[0]
+    start_orientation = robot.get_endeffector_pose()[1]
+    end_point = np.array([4.5, -6, 1.5])
+    end_orientation = p.getQuaternionFromEuler([-np.pi/4, 0, 0])
+    test_path_1 = pi.linear_interpolation(
+        start_point, end_point, 10, start_orientation, end_orientation)
+    test_path_2 = pi.linear_interpolation(
+        end_point, start_point, 10, end_orientation, start_orientation)
+
+    for positions, orientations, _ in test_path_1:
+        robot.set_endeffector_pose(positions, orientations)
+        for _ in range(30):
+            p.stepSimulation()
+        g_code_logger.update_g_code_robot_view()
+
+    for positions, orientations, _ in test_path_2:
+        robot.set_endeffector_pose(positions, orientations)
+        for _ in range(30):
+            p.stepSimulation()
+        g_code_logger.update_g_code_robot_view()
+
+    g_code_processor.g_code = g_code_logger.g_code_robot_view
+    run_g_command(g_code_processor)

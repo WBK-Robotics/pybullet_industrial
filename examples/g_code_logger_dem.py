@@ -69,7 +69,7 @@ if __name__ == "__main__":
     # Setting up GCodeLogger
     g_code_logger = GCodeLogger(robot)
     g_code_test = os.path.join(
-        working_dir, 'GCodes', 'logger_input.txt')
+        working_dir, 'g_codes', 'g_code_logger_input.txt')
     with open(g_code_test, encoding='utf-8') as f:
         gcode_input = f.read()
     g_code_processor.g_code = g_code_processor.read_g_code(gcode_input)
@@ -97,10 +97,10 @@ if __name__ == "__main__":
 
     # Writing g_code
     robot_view_path = os.path.join(
-        working_dir, 'Gcodes', 'g_code_logger_robot_view.txt')
+        working_dir, 'g_codes', 'g_code_logger_robot_view.txt')
 
     joint_poisitions_path = os.path.join(
-        working_dir, 'Gcodes', 'g_code_logger_joint_positions.txt')
+        working_dir, 'g_codes', 'g_code_logger_joint_positions.txt')
 
     g_code_logger.write_g_code(
         g_code_logger.g_code_robot_view, robot_view_path)

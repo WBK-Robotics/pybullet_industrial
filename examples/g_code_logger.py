@@ -118,12 +118,31 @@ class GCodeLogger:
         Returns:
             dict: Current joint positions.
         """
+        # Old Code
+        # joint_states = self.robot.get_joint_state()
+        # joint_position = {}
+
+        # for joint_name, joint_data in joint_states.items():
+        #     new_joint_name = 'RA' + joint_name[1]  # Replace 'Q' with 'N'
+        #     joint_position[new_joint_name] = joint_data['position']
+
         joint_states = self.robot.get_joint_state()
         joint_position = {}
 
         for joint_name, joint_data in joint_states.items():
             new_joint_name = 'RA' + joint_name[1]  # Replace 'Q' with 'N'
+            joint_number = self.robot._joint_name_to_index[joint_name]
+
+            # Adjust joint position if it exceeds joint limits
+            lower_limit = self.robot._lower_joint_limit[joint_number]
+            upper_limit = self.robot._upper_joint_limit[joint_number]
             joint_position[new_joint_name] = joint_data['position']
+
+            # Check if joint position exceeds limits
+            if joint_position[new_joint_name] > upper_limit:
+                joint_position[new_joint_name] = upper_limit
+            elif joint_position[new_joint_name] < lower_limit:
+                joint_position[new_joint_name] = lower_limit
 
         return joint_position
 

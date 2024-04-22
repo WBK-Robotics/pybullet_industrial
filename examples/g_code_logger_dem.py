@@ -3,11 +3,11 @@ import pybullet as p
 import pybullet_data
 import numpy as np
 import pybullet_industrial as pi
-from g_code_logger import GCodeLogger
+# from g_code_logger import GCodeLogger
 
 
 def run_g_command(g_code_processor_iterator: pi.GCodeProcessor,
-                  g_code_logger: GCodeLogger = None):
+                  g_code_logger: pi.GCodeLogger = None):
     """
     Run the G-code commands from the given GCodeProcessor iterator.
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     g_code_processor = pi.GCodeProcessor(None, robot)
 
     # Setting up GCodeLogger
-    g_code_logger = GCodeLogger(robot)
+    g_code_logger = pi.GCodeLogger(robot)
     g_code_test = os.path.join(
         working_dir, 'g_codes', 'g_code_logger_input.txt')
     with open(g_code_test, encoding='utf-8') as f:

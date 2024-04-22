@@ -64,7 +64,7 @@ if __name__ == "__main__":
     }
 
     dirname = os.path.dirname(__file__)
-    textfile = os.path.join(dirname, 'Gcodes', 'gcode_G123.txt')
+    textfile = os.path.join(dirname, 'g_codes', 'g_code_processor_example.txt')
 
     with open(textfile, encoding='utf-8') as f:
         gcode_input = f.read()

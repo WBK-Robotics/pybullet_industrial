@@ -2,13 +2,15 @@
 
 %Go to default position and adjust the orientation
 G0 X1.9 Y-0.5 Z1.5 A-1.5707 B0 C0
+%Run g-code with joint position
+G1 RA1=-0.2573075761931067 RA2=0.028043621595881703 RA3=-1.976378031835613 RA4=3.141474591084263 RA5=-1.137225401988045 RA6=-0.25725557365776847
 %Approach Gripper
-G1 X2.7 
+G1 X2.7
 G1 Z1.3
 
 %Toolchange (if programmed)
 T1
-%Move up and adjust orientation 
+%Move up and adjust orientation
 G1 Z1.5 A3.1415 B0 C0
 %Go back to the default position
 G1 X1.9 Y-0.5

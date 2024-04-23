@@ -35,22 +35,15 @@ class GCodeLogger:
                 order = ['G', 'X', 'Y', 'Z', 'A', 'B', 'C',
                          'RA1', 'RA2', 'RA3', 'RA4', 'RA5', 'RA6']
                 # Construct the line by joining key-value pairs
-                line = ' '.join(
-                    f'{key}{command[key]}' for key in order if key in command)
+                line_items = []
+                for key in order:
+                    if key in command:
+                        if key.startswith('RA'):
+                            line_items.append(f'{key}={command[key]}')
+                        else:
+                            line_items.append(f'{key}{command[key]}')
+                line = ' '.join(line_items)
                 file.write(line + '\n')
-
-    def get_robot_pose(self):
-        """
-        Get the current pose of the robot in Cartesian coordinates.
-
-        Returns:
-            dict: Current robot pose in Cartesian coordinates.
-        """
-        position = self.robot.get_endeffector_pose()[0]
-        orientation_quaternion = self.robot.get_endeffector_pose()[1]
-        orientation = p.getEulerFromQuaternion(orientation_quaternion)
-
-        return {'X': position[0], 'Y': position[1], 'Z': position[2], 'A': orientation[0], 'B': orientation[1], 'C': orientation[2]}
 
     def update(self):
         """
@@ -59,15 +52,22 @@ class GCodeLogger:
         self.update_g_code_robot_view()
         self.update_g_code_joint_position()
 
-    def add_g_code_line(self, g_code_line):
+    def update_g_code_robot_view(self):
         """
-        Add a G-code line to both robot view and joint position lists.
+        Update G-code related to robot Cartesian coordinates.
+        """
+        self._update_g_code(self._get_robot_pose(),
+                            self.current_robot_pose, self.g_code_robot_view)
 
-        Args:
-            g_code_line (dict): G-code line to add.
+    def update_g_code_joint_position(self):
         """
-        self.g_code_joint_position.append(g_code_line)
-        self.g_code_robot_view.append(g_code_line)
+        Update G-code related to joint positions.
+        """
+        self._update_g_code(self._get_joint_position(),
+                            self.current_joint_position,
+                            self.g_code_joint_position)
+        current_g_code_line = self.g_code_joint_position[-1]
+        current_g_code_line['G'] = 1
 
     def _update_g_code(self, new_pose, current_pose, g_code_list):
         """
@@ -97,21 +97,20 @@ class GCodeLogger:
 
             g_code_list.append(g_code_line)
 
-    def update_g_code_tcp(self):
+    def _get_robot_pose(self):
         """
-        Update G-code related to robot TCP.
-        """
-        self._update_g_code(self.get_tcp_pose(),
-                            self.current_tcp_pose, self.g_code_tcp)
+        Get the current pose of the robot in Cartesian coordinates.
 
-    def update_g_code_robot_view(self):
+        Returns:
+            dict: Current robot pose in Cartesian coordinates.
         """
-        Update G-code related to robot Cartesian coordinates.
-        """
-        self._update_g_code(self.get_robot_pose(),
-                            self.current_robot_pose, self.g_code_robot_view)
+        position = self.robot.get_endeffector_pose()[0]
+        orientation_quaternion = self.robot.get_endeffector_pose()[1]
+        orientation = p.getEulerFromQuaternion(orientation_quaternion)
 
-    def get_joint_position(self):
+        return {'X': position[0], 'Y': position[1], 'Z': position[2], 'A': orientation[0], 'B': orientation[1], 'C': orientation[2]}
+
+    def _get_joint_position(self):
         """
         Get the current joint positions of the robot.
 
@@ -137,13 +136,3 @@ class GCodeLogger:
                 joint_position[new_joint_name] = lower_limit
 
         return joint_position
-
-    def update_g_code_joint_position(self):
-        """
-        Update G-code related to joint positions.
-        """
-        self._update_g_code(self.get_joint_position(),
-                            self.current_joint_position,
-                            self.g_code_joint_position)
-        current_g_code_line = self.g_code_joint_position[-1]
-        current_g_code_line['G'] = 1

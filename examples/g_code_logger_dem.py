@@ -22,7 +22,7 @@ def run_g_command(g_code_processor_iterator: pi.GCodeProcessor,
             p.stepSimulation()
         # Update G-code logger if provided
         if g_code_logger is not None:
-            g_code_logger.update()
+            g_code_logger.update_g_code()
 
 
 if __name__ == "__main__":

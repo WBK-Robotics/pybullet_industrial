@@ -45,9 +45,9 @@ class GCodeLogger:
                 line = ' '.join(line_items)
                 file.write(line + '\n')
 
-    def update(self):
+    def update_g_code(self):
         """
-        Update the G-code based on changes in robot state.
+        Update both of the G-codes based on changes in robot state.
         """
         self.update_g_code_robot_view()
         self.update_g_code_joint_position()
@@ -121,7 +121,7 @@ class GCodeLogger:
         joint_position = {}
 
         for joint_name, joint_data in joint_states.items():
-            new_joint_name = 'RA' + joint_name[1]  # Replace 'Q' with 'N'
+            new_joint_name = 'RA' + joint_name[1]  # Replace 'Q' with 'RA'
             joint_number = self.robot._joint_name_to_index[joint_name]
 
             # Adjust joint position if it exceeds joint limits

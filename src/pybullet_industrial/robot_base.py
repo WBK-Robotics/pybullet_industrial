@@ -65,6 +65,7 @@ class RobotBase:
         for joint_number in range(self.number_of_joints):
             p.resetJointState(self.urdf, joint_number, targetValue=0)
 
+    
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name
 

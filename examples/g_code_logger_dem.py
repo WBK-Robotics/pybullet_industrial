@@ -82,7 +82,7 @@ if __name__ == "__main__":
     g_code_processor.g_code = first_entry
     run_g_command(iterator)
 
-    # Run demonstration sequence and record g-codes
+    # Run demonstration sequence and record g-code
     g_code_processor.g_code = full_g_code
     run_g_command(iterator, g_code_logger)
 

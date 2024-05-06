@@ -66,8 +66,6 @@ class GCodeLogger:
         self._update_g_code(self._get_joint_position(),
                             self.current_joint_position,
                             self.g_code_joint_position)
-        current_g_code_line = self.g_code_joint_position[-1]
-        current_g_code_line['G'] = 1
 
     def _update_g_code(self, new_pose, current_pose, g_code_list):
         """
@@ -86,10 +84,7 @@ class GCodeLogger:
 
             # Add G-code line with changed values
             g_code_line = {}
-
-            # Skip adding G: 1 for g_code_joint_position
-            if g_code_list is not self.g_code_joint_position:
-                g_code_line['G'] = 1
+            g_code_line['G'] = 1
 
             for key, value, changed in zip(new_pose.keys(), new_pose.values(), changed_values):
                 if changed:

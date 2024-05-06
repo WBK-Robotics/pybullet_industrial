@@ -3,7 +3,6 @@ import pybullet as p
 import pybullet_data
 import numpy as np
 import pybullet_industrial as pi
-# from g_code_logger import GCodeLogger
 
 
 def run_g_command(g_code_processor_iterator: pi.GCodeProcessor,

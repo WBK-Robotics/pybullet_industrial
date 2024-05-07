@@ -47,7 +47,7 @@ class Test_GCodeLogger(unittest.TestCase):
         #     cameraPitch=-30,
         #     cameraTargetPosition=np.array([1.9, 0, 1]) + start_pos)
         p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-        p.setPhysicsEngineParameter(numSolverIterations=5000)
+        p.setPhysicsEngineParameter(numSolverIterations=10000)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -10)
         # p.loadURDF(urdf_fofa, useFixedBase=True, globalScaling=0.001)

@@ -31,19 +31,25 @@ class GCodeSimplifier:
 
         simplified_points, simplified_points_indexes = self.simplify_points(
             points, epsilon)
-        simplified_orientations, simpflified_orientations_indexes = self.simplify_points(
-            orientations, epsilon)
+        simplified_orientations, simplified_orientations_indexes = self.simplify_points(
+            orientations, epsilon/100)
+
+        simplified_index = list(
+            set(simplified_points_indexes + simplified_orientations_indexes))
+        simplified_index.sort()
         # Rebuild simplified G-code
         simplified_g_code = []
-        for i, point in enumerate(simplified_points):
+        for i in simplified_index:
             # Assuming the index aligns, which may need adjustment
-            line = self.g_code[i]
+
             simplified_g_code.append({
                 'G': 1,
-                'X': point[0],
-                'Y': point[1],
-                'Z': point[2],
-                **{key: line[key] for key in line if key not in ['X', 'Y', 'Z']}
+                'X': points[i][0],
+                'Y': points[i][1],
+                'Z': points[i][2],
+                'A': orientations[i][0],
+                'B': orientations[i][1],
+                'C': orientations[i][2],
             })
 
         return simplified_g_code
@@ -101,6 +107,7 @@ class GCodeSimplifier:
                          scaling: int = 1,
                          offset: list = [0, 0, 0],
                          round_dec: int = 4,
+                         degrees: bool = False,
                          feedrate: int = None,
                          skip: list = ['M']):
         """
@@ -135,8 +142,12 @@ class GCodeSimplifier:
                             (value - offset_dict[key]) * scaling, round_dec)
 
                     if key in keys_abc:
-                        modified_line[key] = round(
-                            math.degrees(value), round_dec)
+                        if degrees:
+                            modified_line[key] = round(
+                                math.degrees(value), round_dec)
+                        else:
+                            modified_line[key] = round(
+                                value, round_dec)
 
                 if 'G' in initial_line and initial_line['G'] == 1 and feedrate is not None:
                     modified_line['F'] = feedrate

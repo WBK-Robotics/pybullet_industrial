@@ -21,29 +21,51 @@ class GCodeLogger:
         self.g_code_joint_position = []
 
     @staticmethod
-    def write_g_code(g_code: list, textfile: str):
+    def write_g_code(g_code: list, textfile: str, prefix: str = None,
+                     postfix: str = None):
         """
-        Write the given G-code commands to a text file.
+        Write the given G-code commands to a text file, with optional prefix and postfix.
 
         Args:
             g_code (list): List of dictionaries representing G-code commands.
             textfile (str): Path to the text file where G-code will be written.
+            prefix (str, optional): String to be written at the beginning of the file. Defaults to None.
+            postfix (str, optional): String to be written at the end of the file. Defaults to None.
         """
+        def format_value(value):
+            # Ensure the value is not in scientific notation and remove trailing zeros
+            formatted_value = f'{value:.15f}' if isinstance(
+                value, float) else str(value)
+            return formatted_value.rstrip('0').rstrip('.') if '.' in formatted_value else formatted_value
+
         with open(textfile, 'w') as file:
+            # Write the prefix if it exists
+            if prefix is not None:
+                file.write(prefix + '\n')
+
             for command in g_code:
-                # Define the order in which keys should be written
                 order = ['G', 'X', 'Y', 'Z', 'A', 'B', 'C',
                          'RA1', 'RA2', 'RA3', 'RA4', 'RA5', 'RA6']
-                # Construct the line by joining key-value pairs
                 line_items = []
+
+                # Write keys in the specified order
                 for key in order:
                     if key in command:
-                        if key.startswith('RA'):
-                            line_items.append(f'{key}={command[key]}')
-                        else:
-                            line_items.append(f'{key}{command[key]}')
-                line = ' '.join(line_items)
-                file.write(line + '\n')
+                        formatted_value = format_value(command[key])
+                        line_items.append(f'{key}={formatted_value}' if key.startswith(
+                            'RA') else f'{key}{formatted_value}')
+
+                # Write keys that are not in the specified order
+                for key in command:
+                    if key not in order:
+                        formatted_value = format_value(command[key])
+                        line_items.append(f'{key}{formatted_value}')
+
+                file.write(' '.join(line_items) + '\n')
+
+            # Write the postfix if it exists
+            if postfix is not None:
+                file.write(postfix + '\n')
 
     def update_g_code(self):
         """

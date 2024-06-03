@@ -22,7 +22,7 @@ class GCodeLogger:
 
     @staticmethod
     def write_g_code(g_code: list, textfile: str,
-                     translate: dict = {'M11': '%@example_call'},
+                     translate: dict = None,
                      prefix: str = None,
                      postfix: str = None):
         """
@@ -31,7 +31,8 @@ class GCodeLogger:
         Args:
             g_code (list): List of dictionaries representing G-code commands.
             textfile (str): Path to the text file where G-code will be written.
-            translate (dict, optional): Dictionary for translating specific commands.
+            translate (dict, optional): Dictionary for translating specific commands
+                                        ({'M11': '%@example_call'}). Defaults to None.
             prefix (str, optional): String to be written at the beginning of the file. Defaults to None.
             postfix (str, optional): String to be written at the end of the file. Defaults to None.
         """

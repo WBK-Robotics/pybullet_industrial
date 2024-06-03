@@ -33,30 +33,36 @@ class Test_GCodeLogger(unittest.TestCase):
             parentDir, 'examples', 'robot_descriptions',
             'comau_nj290_robot.urdf')
         start_pos = np.array([2.0, -6.5, 0])
-        robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
-        g_code_logger = pi.GCodeLogger(robot)
+        test_robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
+        g_code_logger = pi.GCodeLogger(test_robot)
         # Sample G-code commands
         g_code = [
             {'G': 0, 'X': 10, 'Y': 20, 'Z': 30, 'A': 0, 'B': 0, 'C': 0},
             {'G': 1, 'X': 15, 'Y': 25, 'Z': 35, 'A': 0, 'B': 0, 'C': 0},
             {'G': 1, 'RA1': 0.5, 'RA2': 1.2, 'RA3': 0.8,
              'RA4': 1.5, 'RA5': 1.0, 'RA6': 1.8},
-            {'T': 2, 'M': 5}
+            {'T': 2, 'M': 5},
+            {'M': 11}
         ]
         # Create a temporary text file
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
             temp_file_path = temp_file.name
         # Write G-code to the temporary text file
-        g_code_logger.write_g_code(g_code, temp_file_path)
+        g_code_logger.write_g_code(g_code, temp_file_path, {
+                                   'M11': '%@example_call'},
+                                   "%prefix", "%postfix")
         # Check if the file was created and contains the expected content
         self.assertTrue(os.path.isfile(temp_file_path))
         with open(temp_file_path, 'r') as file:
             written_content = file.readlines()
             expected_content = [
+                '%prefix\n',
                 'G0 X10 Y20 Z30 A0 B0 C0\n',
                 'G1 X15 Y25 Z35 A0 B0 C0\n',
                 'G1 RA1=0.5 RA2=1.2 RA3=0.8 RA4=1.5 RA5=1 RA6=1.8\n',
-                'T2 M5\n'
+                'T2 M5\n',
+                '%@example_call\n',
+                '%postfix\n'
             ]
             self.assertEqual(written_content, expected_content)
         # Delete the temporary file
@@ -87,21 +93,21 @@ class Test_GCodeLogger(unittest.TestCase):
         p.setGravity(0, 0, -10)
         # p.loadURDF(urdf_fofa, useFixedBase=True, globalScaling=0.001)
         # Setting up robot position
-        robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
-        robot.set_joint_position(
+        test_robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
+        test_robot.set_joint_position(
             {'q2': np.deg2rad(-15.0), 'q3': np.deg2rad(-90.0)})
         for _ in range(100):
             p.stepSimulation()
-        new_point = robot.get_endeffector_pose()[0]
-        robot.set_endeffector_pose(
+        new_point = test_robot.get_endeffector_pose()[0]
+        test_robot.set_endeffector_pose(
             new_point, p.getQuaternionFromEuler([0, 0, 0]))
         for _ in range(100):
             p.stepSimulation()
 
         # Create test objects using the robot object created in setUpClass
-        g_code_logger = pi.GCodeLogger(robot)
+        g_code_logger = pi.GCodeLogger(test_robot)
         g_code_processor = pi.GCodeProcessor(
-            robot=robot)
+            robot=test_robot)
         g_code_iterator = iter(g_code_processor)
         # Test G-Code robot view
         input_g_code = [

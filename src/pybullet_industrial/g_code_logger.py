@@ -21,7 +21,9 @@ class GCodeLogger:
         self.g_code_joint_position = []
 
     @staticmethod
-    def write_g_code(g_code: list, textfile: str, prefix: str = None,
+    def write_g_code(g_code: list, textfile: str,
+                     translate: dict = {'M11': '%@example_call'},
+                     prefix: str = None,
                      postfix: str = None):
         """
         Write the given G-code commands to a text file, with optional prefix and postfix.
@@ -29,6 +31,7 @@ class GCodeLogger:
         Args:
             g_code (list): List of dictionaries representing G-code commands.
             textfile (str): Path to the text file where G-code will be written.
+            translate (dict, optional): Dictionary for translating specific commands.
             prefix (str, optional): String to be written at the beginning of the file. Defaults to None.
             postfix (str, optional): String to be written at the end of the file. Defaults to None.
         """
@@ -58,8 +61,12 @@ class GCodeLogger:
                 # Write keys that are not in the specified order
                 for key in command:
                     if key not in order:
-                        formatted_value = format_value(command[key])
-                        line_items.append(f'{key}{formatted_value}')
+                        check_translate = key + str(command[key])
+                        if check_translate in translate:
+                            line_items.append(translate[check_translate])
+                        else:
+                            formatted_value = format_value(command[key])
+                            line_items.append(f'{key}{formatted_value}')
 
                 file.write(' '.join(line_items) + '\n')
 

@@ -102,7 +102,7 @@ if __name__ == "__main__":
         working_dir, 'g_codes', 'g_code_logger_joint_positions.txt')
 
     g_code_logger.write_g_code(
-        g_code_logger.g_code_robot_view, robot_view_path)
+        g_code_logger.g_code_robot_view, robot_view_path, )
     g_code_logger.write_g_code(
         g_code_logger.g_code_joint_position, joint_poisitions_path)
 

@@ -127,6 +127,7 @@ class Test_GCodeLogger(unittest.TestCase):
         # Compare G-Codes
         output_g_code_joint_position = round_float_values(
             g_code_logger.g_code_joint_position, 2)
+        p.disconnect()
         self.assertEqual(input_g_code, output_g_code_joint_position)
 
 

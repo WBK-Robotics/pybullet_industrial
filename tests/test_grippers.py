@@ -34,8 +34,10 @@ class TestGrippers(unittest.TestCase):
         start_orientation2 = p.getQuaternionFromEuler([0, 0, np.pi])
         robot2 = pi.RobotBase(urdf_file1, start_pos2, start_orientation2)
 
-        robot.set_joint_position({'q2': np.deg2rad(-15.0), 'q3': np.deg2rad(-90.0)})
-        robot2.set_joint_position({'q2': np.deg2rad(-15.0), 'q3': np.deg2rad(-90.0)})
+        robot.set_joint_position(
+            {'q2': np.deg2rad(-15.0), 'q3': np.deg2rad(-90.0)})
+        robot2.set_joint_position(
+            {'q2': np.deg2rad(-15.0), 'q3': np.deg2rad(-90.0)})
         for _ in range(100):
             p.stepSimulation()
 
@@ -85,11 +87,13 @@ class TestGrippers(unittest.TestCase):
 
         path = pi.linear_interpolation(np.array(safepoint1),
                                        np.array(grippoint1_2), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_gr] * len(path.orientations[0]))
         move_along_path(gripper, path, start_orientation_gr)
         path = pi.linear_interpolation(
             np.array(grippoint1_2), np.array(grippoint1), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_gr] * len(path.orientations[0]))
         move_along_path(gripper, path)
         for _ in range(25):
             p.stepSimulation()
@@ -98,11 +102,13 @@ class TestGrippers(unittest.TestCase):
             p.stepSimulation()
         path = pi.linear_interpolation(np.array(grippoint1),
                                        np.array(grippoint1_2), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_gr] * len(path.orientations[0]))
         move_along_path(gripper, path)
         path = pi.linear_interpolation(
             np.array(grippoint1_2), np.array(droppoint1), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_gr] * len(path.orientations[0]))
         move_along_path(gripper, path)
         for _ in range(25):
             p.stepSimulation()
@@ -111,21 +117,24 @@ class TestGrippers(unittest.TestCase):
             p.stepSimulation()
         path = pi.linear_interpolation(np.array(droppoint1),
                                        np.array(safepoint1), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_gr] * len(path.orientations[0]))
         move_along_path(gripper, path)
 
         current_position, _ = p.getBasePositionAndOrientation(minicube)
         position_error = np.linalg.norm(current_position - grippoint2)
         within_precision = within_precision and (
-                position_error <= pos_precision)
+            position_error <= pos_precision)
 
         path = pi.linear_interpolation(np.array(safepoint2),
                                        np.array(grippoint2_2), 10)
-        path.orientations = np.transpose([start_orientation_sg] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_sg] * len(path.orientations[0]))
         move_along_path(suction_gripper, path, start_orientation_sg)
         path = pi.linear_interpolation(
             np.array(grippoint2_2), np.array(grippoint2), 10)
-        path.orientations = np.transpose([start_orientation_sg] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_sg] * len(path.orientations[0]))
         move_along_path(suction_gripper, path)
         for _ in range(25):
             p.stepSimulation()
@@ -134,11 +143,13 @@ class TestGrippers(unittest.TestCase):
             p.stepSimulation()
         path = pi.linear_interpolation(np.array(grippoint2),
                                        np.array(grippoint2_2), 10)
-        path.orientations = np.transpose([start_orientation_sg] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_sg] * len(path.orientations[0]))
         move_along_path(suction_gripper, path)
         path = pi.linear_interpolation(
             np.array(grippoint2_2), np.array(droppoint2), 10)
-        path.orientations = np.transpose([start_orientation_sg] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_sg] * len(path.orientations[0]))
         move_along_path(suction_gripper, path)
         for _ in range(25):
             p.stepSimulation()
@@ -147,13 +158,14 @@ class TestGrippers(unittest.TestCase):
             p.stepSimulation()
         path = pi.linear_interpolation(np.array(droppoint2),
                                        np.array(safepoint2), 10)
-        path.orientations = np.transpose([start_orientation_sg] * len(path.orientations[0]))
+        path.orientations = np.transpose(
+            [start_orientation_sg] * len(path.orientations[0]))
         move_along_path(suction_gripper, path)
 
         current_position, _ = p.getBasePositionAndOrientation(minicube)
         position_error = np.linalg.norm(current_position - grippoint1)
         within_precision = within_precision and (
-                position_error <= pos_precision)
+            position_error <= pos_precision)
         p.disconnect()
         self.assertTrue(within_precision)
 

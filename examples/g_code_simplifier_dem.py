@@ -88,10 +88,10 @@ if __name__ == "__main__":
 
     g_code_simplifier = GCodeSimplifier(input_g_code)
 
-    g_code_simplifier.simplify_cartesian(0.1, 0.1)
+    g_code_simplifier.simplify_cartesian(0.4, 0.1, 0.4)
 
-    g_code_simplifier.plot_points()
-    g_code_simplifier.plot_orientations()
+    # g_code_simplifier.plot_points()
+    # g_code_simplifier.plot_orientations()
 
     g_code_simplifier.round_cartesian(1, 3)
 

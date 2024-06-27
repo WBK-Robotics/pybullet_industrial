@@ -29,11 +29,11 @@ class GCodeSimplifier:
 
         # Plotting the input orientations
         ax.scatter(x_input, y_input, z_input, c='r',
-                   marker='o', label='Input Orientations')
+                   marker='o', label='Input Orientations', s=20)
 
         # Plotting the simplified orientations
         ax.scatter(x_simplified, y_simplified, z_simplified, c='b',
-                   marker='^', label='Simplified Orientations')
+                   marker='^', label='Simplified Orientations', s=100)
 
         # Adding labels
         ax.set_xlabel('X Label')
@@ -62,11 +62,11 @@ class GCodeSimplifier:
 
         # Plotting the input points
         ax.scatter(x_input, y_input, z_input, c='r',
-                   marker='o', label='Input Points')
+                   marker='o', label='Input Points', alpha=0.5, s=20)
 
-        # Plotting the simplified points
+        # Plotting the simplified points with larger marker size and different color
         ax.scatter(x_simplified, y_simplified, z_simplified,
-                   c='b', marker='^', label='Simplified Points')
+                   c='b', marker='^', label='Simplified Points', s=100)
 
         # Adding labels
         ax.set_xlabel('X Label')
@@ -117,7 +117,8 @@ class GCodeSimplifier:
 
         # self.build_simpflified_g_code(
         #     simplified_points_indexes, simplified_orientations_indexes)
-
+        self.simplified_points, self.simplified_orientations = np.split(
+            self.simpliflied_vector, 2, axis=1)
         self.build_simpflified_g_code()
 
     # def build_simpflified_g_code(self, points_indexes, orientations_indexes):

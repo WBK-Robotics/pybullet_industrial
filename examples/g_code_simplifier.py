@@ -113,10 +113,19 @@ class GCodeSimplifier:
 
     # This needs to be tested
 
-    def round_g_code(self, round_dec):
+    def round_cartesian(self, round_xyz: int = 4, round_abc: int = 4):
         for g_code_line in self.g_code:
             for key in g_code_line:
-                if isinstance(g_code_line[key], (int, float)):
+                if key in ['X', 'Y', 'Z']:
+                    g_code_line[key] = round(g_code_line[key], round_xyz)
+                elif key in ['A', 'B', 'C']:
+                    g_code_line[key] = round(g_code_line[key], round_abc)
+
+    def round_joint_position(self, round_dec: int = 4):
+        search_keys = ['RA1', 'RA2', 'RA3', 'RA4', 'RA5', 'RA6']
+        for g_code_line in self.g_code:
+            for key in g_code_line:
+                if key in search_keys:
                     g_code_line[key] = round(g_code_line[key], round_dec)
 
     def scale_g_code(self, scaling, keys_xyz):

@@ -76,14 +76,20 @@ if __name__ == "__main__":
     joint_poisitions_path = os.path.join(
         working_dir, 'g_codes', 'g_code_logger_joint_positions.txt')
 
+    # # Setting up G-Code Simplifier
+    # with open(robot_view_path, encoding='utf-8') as f:
+    #     gcode_input = f.read()
+    # input_g_code = pi.GCodeProcessor.read_g_code(gcode_input)
+
     # Setting up G-Code Simplifier
-    with open(robot_view_path, encoding='utf-8') as f:
+    with open(joint_poisitions_path, encoding='utf-8') as f:
         gcode_input = f.read()
     input_g_code = pi.GCodeProcessor.read_g_code(gcode_input)
 
     g_code_simplifier = GCodeSimplifier(input_g_code)
-    g_code_simplifier.simplify_cartesian(0.1, 0.5)
-    g_code_simplifier.round_g_code(round_dec=2)
+    # g_code_simplifier.simplify_cartesian(0.1, 0.5)
+    # g_code_simplifier.round_cartesian(1, 3)
+    g_code_simplifier.round_joint_position(2)
 
     simpflified_g_code_path = os.path.join(
         working_dir, 'g_codes', 'g_code_simplified.txt')

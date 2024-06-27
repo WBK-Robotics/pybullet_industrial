@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import math
+import matplotlib.pyplot as plt
 
 
 class GCodeSimplifier:
@@ -9,6 +10,75 @@ class GCodeSimplifier:
         self.g_code = input_g_code
         self.input_points = None
         self.input_orientations = None
+
+    def plot_orientations(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Extracting x, y, z coordinates from the input orientations
+        x_input = [orientation[0] for orientation in self.input_orientations]
+        y_input = [orientation[1] for orientation in self.input_orientations]
+        z_input = [orientation[2] for orientation in self.input_orientations]
+
+        # Extracting x, y, z coordinates from the simplified orientations
+        x_simplified = [orientation[0]
+                        for orientation in self.simplified_orientations]
+        y_simplified = [orientation[1]
+                        for orientation in self.simplified_orientations]
+        z_simplified = [orientation[2]
+                        for orientation in self.simplified_orientations]
+
+        # Plotting the input orientations
+        ax.scatter(x_input, y_input, z_input, c='r',
+                   marker='o', label='Input Orientations')
+
+        # Plotting the simplified orientations
+        ax.scatter(x_simplified, y_simplified, z_simplified, c='b',
+                   marker='^', label='Simplified Orientations')
+
+        # Adding labels
+        ax.set_xlabel('X Label')
+        ax.set_ylabel('Y Label')
+        ax.set_zlabel('Z Label')
+
+        # Adding a legend
+        ax.legend()
+
+        # Showing the plot
+        plt.show()
+
+    def plot_points(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Extracting x, y, z coordinates from the input points
+        x_input = [point[0] for point in self.input_points]
+        y_input = [point[1] for point in self.input_points]
+        z_input = [point[2] for point in self.input_points]
+
+        # Extracting x, y, z coordinates from the simplified points
+        x_simplified = [point[0] for point in self.simplified_points]
+        y_simplified = [point[1] for point in self.simplified_points]
+        z_simplified = [point[2] for point in self.simplified_points]
+
+        # Plotting the input points
+        ax.scatter(x_input, y_input, z_input, c='r',
+                   marker='o', label='Input Points')
+
+        # Plotting the simplified points
+        ax.scatter(x_simplified, y_simplified, z_simplified,
+                   c='b', marker='^', label='Simplified Points')
+
+        # Adding labels
+        ax.set_xlabel('X Label')
+        ax.set_ylabel('Y Label')
+        ax.set_zlabel('Z Label')
+
+        # Adding a legend
+        ax.legend()
+
+        # Showing the plot
+        plt.show()
 
     def g_code_to_arrays(self):
         points = []
@@ -37,10 +107,10 @@ class GCodeSimplifier:
     def simplify_cartesian(self, epsilon_points, epsilon_orientations):
         self.g_code_to_arrays()
 
-        simppfliefied_points, simplified_points_indexes = self.simplify_vectors(
+        self.simplified_points, simplified_points_indexes = self.simplify_vectors(
             self.input_points,
             epsilon_points)
-        simppfliefied_orientations, simplified_orientations_indexes = self.simplify_vectors(
+        self.simplified_orientations, simplified_orientations_indexes = self.simplify_vectors(
             self.input_orientations,
             epsilon_orientations)
 

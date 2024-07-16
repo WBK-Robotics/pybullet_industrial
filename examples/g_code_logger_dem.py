@@ -67,8 +67,10 @@ if __name__ == "__main__":
 
     # Setting up GCodeLogger
     g_code_logger = pi.GCodeLogger(robot)
+    # g_code_test = os.path.join(
+    #     working_dir, 'g_codes', 'g_code_logger_input.txt')
     g_code_test = os.path.join(
-        working_dir, 'g_codes', 'g_code_logger_input.txt')
+        working_dir, 'g_codes', 'g_code_simplifier_input.txt')
     with open(g_code_test, encoding='utf-8') as f:
         gcode_input = f.read()
     g_code_processor.g_code = g_code_processor.read_g_code(gcode_input)

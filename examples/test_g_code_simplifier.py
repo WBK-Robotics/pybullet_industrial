@@ -7,7 +7,7 @@ class TestGCodeSimplifier(unittest.TestCase):
 
     def setUp(self):
         # Sample input G-code data for testing
-        self.sample_g_code = [
+        self.simplfy_sample_g_code = [
             {'G': 1, 'X': 0.0, 'Y': 0.0, 'Z': 0.0,
                 'A': -3.5, 'B': -3.5, 'C': -3.5},
             {'G': 1, 'X': 2.0, 'Y': 2.0, 'Z': 2.0,
@@ -18,9 +18,13 @@ class TestGCodeSimplifier(unittest.TestCase):
             {'G': 1, 'X': 8.0, 'Y': 8.0, 'Z': 8.0, 'A': 2.1, 'B': 2.1, 'C': 2.1},
             {'G': 1, 'X': 10.0, 'Y': 10.0, 'Z': 10.0, 'A': 3.5, 'B': 3.5, 'C': 3.5}
         ]
-        self.simplifier = GCodeSimplifier(self.sample_g_code)
+
+        self.transform_sample_g_code = [
+            {'G': 1, 'X': 8.2459, 'Y': 1.3463, 'Z': 3.9874, 'A': -1.7321, 'B': -2.8943, 'C': 2.9876}]
+        self.simplifier = GCodeSimplifier()
 
     def test_initialization(self):
+        self.simplifier.g_code = self.simplfy_sample_g_code
         self.assertIsInstance(self.simplifier, GCodeSimplifier)
         self.assertEqual(self.simplifier.g_code, self.sample_g_code)
         self.assertIsNone(self.simplifier.input_points)
@@ -42,17 +46,17 @@ class TestGCodeSimplifier(unittest.TestCase):
         self.assertGreater(len(self.simplifier.input_orientations), len(
             self.simplifier.simplified_orientations))
 
-    # def test_round_cartesian(self):
-    #     self.simplifier.round_cartesian(round_xyz=2, round_abc=2)
-    #     for g_code_line in self.simplifier.g_code:
-    #         for key in ['X', 'Y', 'Z']:
-    #             if key in g_code_line:
-    #                 self.assertEqual(
-    #                     len(str(g_code_line[key]).split('.')[-1]), 2)
-    #         for key in ['A', 'B', 'C']:
-    #             if key in g_code_line:
-    #                 self.assertEqual(
-    #                     len(str(g_code_line[key]).split('.')[-1]), 2)
+    def test_round_cartesian(self):
+        self.simplifier.round_cartesian(round_xyz=2, round_abc=2)
+        for g_code_line in self.simplifier.g_code:
+            for key in ['X', 'Y', 'Z']:
+                if key in g_code_line:
+                    self.assertEqual(
+                        len(str(g_code_line[key]).split('.')[-1]), 2)
+            for key in ['A', 'B', 'C']:
+                if key in g_code_line:
+                    self.assertEqual(
+                        len(str(g_code_line[key]).split('.')[-1]), 2)
 
     def test_round_joint_position(self):
         self.simplifier.round_joint_position(round_dec=2)

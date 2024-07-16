@@ -88,13 +88,13 @@ if __name__ == "__main__":
     g_code_processor.g_code = full_g_code
     run_g_command(iterator, g_code_logger)
 
-    # Run g_code_joint_position
-    g_code_processor.g_code = g_code_logger.g_code_joint_position
-    run_g_command(g_code_processor)
+    # # Run g_code_joint_position
+    # g_code_processor.g_code = g_code_logger.g_code_joint_position
+    # run_g_command(g_code_processor)
 
-    # Run g_code_robot_view
-    g_code_processor.g_code = g_code_logger.g_code_robot_view
-    run_g_command(g_code_processor)
+    # # Run g_code_robot_view
+    # g_code_processor.g_code = g_code_logger.g_code_robot_view
+    # run_g_command(g_code_processor)
 
     # Writing g_code
     robot_view_path = os.path.join(

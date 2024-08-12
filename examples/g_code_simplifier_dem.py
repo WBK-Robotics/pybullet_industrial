@@ -36,22 +36,57 @@ if __name__ == "__main__":
     joint_poisitions_path = os.path.join(
         working_dir, 'g_codes', 'g_code_logger_joint_positions.txt')
 
+    # Demonstrating Bugs of G-Code Simpflifier
+    simplifier_bugs_path = os.path.join(
+        working_dir, 'g_codes', 'g_code_simplifier_bugs.txt')
+
+    # Output G-Code path
+    joint_positions_simplified_path = os.path.join(
+        working_dir, 'g_codes', 'joint_positions_simplified.txt')
+
+    # Output G-Code path
+    cartesian_simplified_path = os.path.join(
+        working_dir, 'g_codes', 'joint_positions_simplified.txt')
+
     # Setting up G-Code Simplifier
     with open(robot_view_path, encoding='utf-8') as f:
-        gcode_input = f.read()
-    input_g_code = pi.GCodeProcessor.read_g_code(gcode_input)
+        cartesian_g_code = f.read()
 
-    g_code_simplifier = GCodeSimplifier(input_g_code)
+    # # Setting up G-Code Simplifier
+    # with open(simplifier_bugs_path, encoding='utf-8') as f:
+    #     gcode_input = f.read()
+
+    # Setting up G-Code Simplifier
+    with open(joint_poisitions_path, encoding='utf-8') as f:
+        joint_position_g_code = f.read()
+
+    input_g_code_joint_position = pi.GCodeProcessor.read_g_code(
+        joint_position_g_code)
+
+    g_code_simplifier = GCodeSimplifier(
+        input_g_code_joint_position, 'joint_positions')
 
     g_code_simplifier.simplify_g_code(0.01)
+    g_code_simplifier.plot_joint_positions()
 
+    pi.GCodeLogger.write_g_code(
+        g_code_simplifier.g_code, joint_positions_simplified_path)
+
+    # Setting up G-Code Simplifier
+    with open(robot_view_path, encoding='utf-8') as f:
+        cartesian_g_code = f.read()
+
+    input_g_code_cartesian = pi.GCodeProcessor.read_g_code(
+        cartesian_g_code)
+
+    g_code_simplifier = GCodeSimplifier(
+        input_g_code_cartesian, 'cartesian')
+
+    g_code_simplifier.simplify_g_code(0.01)
     g_code_simplifier.plot_points()
     g_code_simplifier.plot_orientations()
 
     g_code_simplifier.round_cartesian(1, 3)
 
-    simpflified_g_code_path = os.path.join(
-        working_dir, 'g_codes', 'g_code_simplified.txt')
-
     pi.GCodeLogger.write_g_code(
-        g_code_simplifier.g_code, simpflified_g_code_path)
+        g_code_simplifier.g_code, cartesian_simplified_path)

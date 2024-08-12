@@ -5,12 +5,26 @@ import matplotlib.pyplot as plt
 
 class GCodeSimplifier:
 
-    def __init__(self, input_g_code: list = None,
-                 g_code_type: chr = 'cartesian'):
-        self.g_code = input_g_code
-        self.g_code_type = g_code_type
+    def __init__(self, input_g_code: list = None, g_code_type: chr = None):
+        self._g_code = input_g_code
+        self._g_code_type = g_code_type
         self.input_points = None
         self.input_orientations = None
+
+    @property
+    def g_code(self):
+        return self._g_code
+
+    @property
+    def g_code_type(self):
+        return self._g_code_type
+
+    def set_g_code_and_type(self, g_code, g_code_type):
+        """Sets g_code and g_code_type together to ensure they are synchronized."""
+        if g_code is None or g_code_type is None:
+            raise ValueError("Both g_code and g_code_type must be provided.")
+        self._g_code = g_code
+        self._g_code_type = g_code_type
 
     def plot_joint_positions(self):
         # Extract the number of samples for input data
@@ -182,8 +196,7 @@ class GCodeSimplifier:
         self.build_simpflified_g_code()
 
     def build_simpflified_g_code(self):
-        self.g_code = []
-
+        self.set_g_code_and_type([], self.g_code_type)
         if self.g_code_type == 'cartesian':
             for i in self.simplified_vector:
                 self.g_code.append({

@@ -19,7 +19,7 @@ class GCodeSimplifier:
     def g_code_type(self):
         return self._g_code_type
 
-    def set_g_code_and_type(self, g_code, g_code_type):
+    def set_g_code_and_type(self, g_code, g_code_type='cartesian'):
         """Sets g_code and g_code_type together to ensure they are synchronized."""
         if g_code is None or g_code_type is None:
             raise ValueError("Both g_code and g_code_type must be provided.")
@@ -53,6 +53,10 @@ class GCodeSimplifier:
             # Plot simplified joint positions as larger points with the same color
             plt.scatter(self.simplified_indexes, simplified_joint_values,
                         label=f'{label} Simplified', marker='^', color=color, s=100, edgecolor='black')
+
+        # Plot vertical dotted lines at each simplified index
+        for index in self.simplified_indexes:
+            plt.axvline(x=index, color='gray', linestyle='--', linewidth=1)
 
         # Adding labels and title
         plt.xlabel('Sample Index')
@@ -289,48 +293,74 @@ class GCodeSimplifier:
 
         return distance
 
-    def round_cartesian(self, round_xyz: int = 4, round_abc: int = 4):
-        for g_code_line in self.g_code:
+    @staticmethod
+    def round_cartesian(g_code, round_xyz: int = 4, round_abc: int = 4):
+        for g_code_line in g_code:
             for key in g_code_line:
                 if key in ['X', 'Y', 'Z']:
                     g_code_line[key] = round(g_code_line[key], round_xyz)
                 elif key in ['A', 'B', 'C']:
                     g_code_line[key] = round(g_code_line[key], round_abc)
+        return g_code
 
-    def round_joint_positions(self, round_dec: int = 4):
+    @staticmethod
+    def round_joint_positions(g_code, round_dec: int = 5):
         search_keys = ['RA1', 'RA2', 'RA3', 'RA4', 'RA5', 'RA6']
-        for g_code_line in self.g_code:
-            for key in g_code_line:
-                if key in search_keys:
-                    g_code_line[key] = round(g_code_line[key], round_dec)
+        for command in g_code:
+            for key in search_keys:
+                if key in command:
+                    command[key] = round(command[key], round_dec)
+        return g_code
 
-    def scale_g_code(self, scaling, keys_xyz):
-        for g_code_line in self.g_code:
-            for key in keys_xyz:
-                if key in g_code_line:
-                    g_code_line[key] *= scaling
+    @staticmethod
+    def scale_g_code(g_code, scaling, keys):
+        for command in g_code:
+            for key in keys:
+                if key in command:
+                    command[key] *= scaling
+        return g_code
 
-    def add_offset_to_g_code(self, offset_dict, keys_xyz):
-        for g_code_line in self.g_code:
-            for key in keys_xyz:
-                if key in g_code_line:
-                    g_code_line[key] -= offset_dict[key]
+    @staticmethod
+    def add_offset_to_g_code(g_code, offset_dict):
+        for command in g_code:
+            for key in offset_dict:
+                if key in command:
+                    command[key] += offset_dict[key]
+        return g_code
 
-    def convert_to_degrees(self, round_dec, keys_abc, degrees):
-        for g_code_line in self.g_code:
-            for key in keys_abc:
-                if key in g_code_line:
-                    if degrees:
-                        g_code_line[key] = round(
-                            math.degrees(g_code_line[key]), round_dec)
-                    else:
-                        g_code_line[key] = round(g_code_line[key], round_dec)
+    @staticmethod
+    def convert_to_radians(g_code):
+        for command in g_code:
+            for key in command:
+                if key in {'A', 'B', 'C'} or key.startswith('RA'):
+                    command[key] = np.radians(command[key])
+        return g_code
 
-    def apply_feedrate(self, feedrate):
-        for g_code_line in self.g_code:
+    @staticmethod
+    def convert_to_degrees(g_code):
+        for command in g_code:
+            for key in command:
+                if key in {'A', 'B', 'C'} or key.startswith('RA'):
+                    command[key] = np.degrees(command[key])
+        return g_code
+
+    @staticmethod
+    def apply_feedrate(g_code, feedrate):
+        for g_code_line in g_code:
             if 'G' in g_code_line and g_code_line['G'] == 1 and feedrate is not None:
                 g_code_line['F'] = feedrate
+        return g_code
 
-    def skip_command(self, skip):
-        self.g_code = [line for line in self.g_code if not any(
-            key in line for key in skip)]
+    @staticmethod
+    def skip_command(g_code, skip_commands):
+        filtered_g_code = []
+        for command in g_code:
+            # Remove the key-value pairs that match the commands to skip
+            for key in list(skip_commands.keys()):
+                if key in command and command[key] == skip_commands[key]:
+                    del command[key]
+            # Add to the filtered list only if the command is not empty
+            if command:
+                filtered_g_code.append(command)
+
+        return filtered_g_code

@@ -29,6 +29,49 @@ class TestGCodeSimplifier(unittest.TestCase):
         self.assertEqual(g_code, desired_g_code)
 
     def test_cartesian_simplification(self):
+        g_code = [
+            {'G': 1, 'X': 0, 'Y': 0, 'Z': 0, 'A': 0, 'B': 0, 'C': 0},
+            {'G': 1, 'X': 2, 'Y': 0.1, 'Z': 0, 'A': 0, 'B': 0, 'C': 0},
+            {'G': 1, 'X': 3, 'Y': 0.11, 'Z': 0, 'A': 0, 'B': 0, 'C': 0},
+            {'G': 1, 'X': 4, 'Y': 0, 'Z': 0, 'A': 0, 'B': 0, 'C': 0},
+            {'G': 1, 'X': 0, 'Y': 0, 'Z': 0, 'A': 0, 'B': 0, 'C': 0},
+        ]
+
+        g_code_simplifier = GCodeSimplifier(g_code, 'cartesian')
+        g_code_simplifier.simplify_g_code(0.1)
+        desired_g_code = [
+            {'G': 1, 'X': 0, 'Y': 0, 'Z': 0, 'A': 0, 'B': 0, 'C': 0},
+            {'G': 1, 'X': 3, 'Y': 0.11, 'Z': 0, 'A': 0, 'B': 0, 'C': 0},
+            {'G': 1, 'X': 4, 'Y': 0, 'Z': 0, 'A': 0, 'B': 0, 'C': 0},
+            {'G': 1, 'X': 0, 'Y': 0, 'Z': 0, 'A': 0, 'B': 0, 'C': 0},
+        ]
+
+        self.assertEqual(g_code_simplifier.g_code, desired_g_code)
+
+    def test_joint_positions_simplification(self):
+        g_code = [{'G': 1, 'RA1': 0, 'RA2': 0, 'RA3': 0, 'RA4': 0, 'RA5': 0, 'RA6': 0},
+                  {'G': 1, 'RA1': 2, 'RA2': 0.1, 'RA3': 0,
+                      'RA4': 0, 'RA5': 0, 'RA6': 0},
+                  {'G': 1, 'RA1': 3, 'RA2': 0.11, 'RA3': 0,
+                      'RA4': 0, 'RA5': 0, 'RA6': 0},
+                  {'G': 1, 'RA1': 4, 'RA2': 0, 'RA3': 0,
+                      'RA4': 0, 'RA5': 0, 'RA6': 0},
+                  {'G': 1, 'RA1': 0, 'RA2': 0, 'RA3': 0,
+                   'RA4': 0, 'RA5': 0, 'RA6': 0}]
+
+        g_code_simplifier = GCodeSimplifier()
+        g_code_simplifier.set_g_code_and_type(g_code, 'joint_positions')
+        g_code_simplifier.simplify_g_code(0.1)
+        desired_g_code = [{'G': 1, 'RA1': 0, 'RA2': 0, 'RA3': 0,
+                           'RA4': 0, 'RA5': 0, 'RA6': 0},
+                          {'G': 1, 'RA1': 3, 'RA2': 0.11, 'RA3': 0,
+                           'RA4': 0, 'RA5': 0, 'RA6': 0},
+                          {'G': 1, 'RA1': 4, 'RA2': 0, 'RA3': 0,
+                           'RA4': 0, 'RA5': 0, 'RA6': 0},
+                          {'G': 1, 'RA1': 0, 'RA2': 0, 'RA3': 0,
+                           'RA4': 0, 'RA5': 0, 'RA6': 0}]
+
+        self.assertEqual(g_code_simplifier.g_code, desired_g_code)
 
 
 if __name__ == '__main__':

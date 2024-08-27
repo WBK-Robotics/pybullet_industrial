@@ -10,6 +10,9 @@ class GCodeSimplifier:
         self._g_code_type = g_code_type
         self.input_points = None
         self.input_orientations = None
+        self.simplified_joint_positions = None
+        self.simplified_vectors = []
+        self.simplified_indexes = []
 
     @property
     def g_code(self):
@@ -186,31 +189,55 @@ class GCodeSimplifier:
         elif self.g_code_type == 'joint_positions':
             self.input_joint_positions = np.array(joint_positions)
 
-    def simplify_g_code(self, epsilon):
+    def simplify_g_code(self, epsilon, split_angle=0):
         self.g_code_to_arrays()
 
         if self.g_code_type == 'cartesian':
-            # self.simplified_vector, self.simplified_indexes = \
-            #     self.simplify_douglas_peuker(
-            #         np.concatenate((self.input_points, self.input_orientations), axis=1), epsilon)
-            self.simplified_vector, self.simplified_indexes = \
-                self.simplify_directions(np.concatenate(
-                    (self.input_points, self.input_orientations), axis=1), epsilon)
-            self.simplified_points, self.simplified_orientations = np.split(
-                self.simplified_vector, 2, axis=1)
-
+            self.input_vectors = np.concatenate(
+                (self.input_points, self.input_orientations), axis=1)
         elif self.g_code_type == 'joint_positions':
-            # self.simplified_joint_positions, self.simplified_indexes = self.simplify_douglas_peuker(
-            #     self.input_joint_positions, epsilon)
-            self.simplified_joint_positions, self.simplified_indexes = self.simplify_directions(
-                self.input_joint_positions, epsilon)
+            self.input_vectors = self.input_joint_positions
 
-        self.build_simpflified_g_code()
+        _, edge_indexes = self.simplify_directions(
+            self.input_vectors, split_angle)
 
-    def build_simpflified_g_code(self):
+        self.simplified_vectors = []
+        self.simplified_indexes = []
+
+        for i in range(len(edge_indexes) - 1):
+            start_index = edge_indexes[i]
+            end_index = edge_indexes[i + 1]
+
+            points, relative_indexes = self.simplify_douglas_peuker(
+                self.input_vectors[start_index:end_index + 1], epsilon)
+
+            # Convert relative indexes to absolute indexes
+            absolute_indexes = [
+                index + start_index for index in relative_indexes]
+
+            # Append all but the last point and index to avoid redundancy
+            self.simplified_vectors.append(points[:-1])
+            self.simplified_indexes.extend(absolute_indexes[:-1])
+
+        # Add the last point and index to ensure it's included
+        self.simplified_vectors.append(self.input_vectors[edge_indexes[-1]])
+        self.simplified_indexes.append(edge_indexes[-1])
+
+        # Convert list of arrays into a single array
+        self.simplified_vectors = np.vstack(self.simplified_vectors)
+
+        if self.g_code_type == 'cartesian':
+            self.simplified_points, self.simplified_orientations = np.split(
+                self.simplified_vectors, 2, axis=1)
+        elif self.g_code_type == 'joint_positions':
+            self.simplified_joint_positions = self.simplified_vectors
+
+        self.build_simplified_g_code()
+
+    def build_simplified_g_code(self):
         self.set_g_code_and_type([], self.g_code_type)
         if self.g_code_type == 'cartesian':
-            for i in self.simplified_vector:
+            for i in self.simplified_vectors:
                 self.g_code.append({
                     'G': 1,
                     'X': i[0],
@@ -233,15 +260,15 @@ class GCodeSimplifier:
                     'RA6': i[5]
                 })
 
-    def simplify_directions(self, vectors, epsilon):
+    def simplify_directions(self, vectors, split_angle):
         # Initialize the list of kept points with the first point
-        simplified_indexes = [0]  # Start with the first point
-        simplified_vectors = [vectors[0]]
+        edge_indexes = [0]  # Start with the first point
+        edge_vectors = [vectors[0]]
 
         # Iterate through the vector list
         for i in range(1, len(vectors) - 1):
             # Calculate the direction from the previous kept point to the current point
-            direction_prev = vectors[i] - vectors[simplified_indexes[-1]]
+            direction_prev = vectors[i] - vectors[edge_indexes[-1]]
             direction_next = vectors[i + 1] - vectors[i]
 
             # Normalize the direction vectors
@@ -259,21 +286,21 @@ class GCodeSimplifier:
             cos_angle = np.dot(direction_prev, direction_next)
 
             # Calculate the angular change (1 - cos_angle gives the small-angle approximation)
-            angle_change = 1 - cos_angle
+            angle_change = cos_angle * -1
 
             # If the angle change is greater than epsilon, keep the current point
-            if angle_change > epsilon:
-                simplified_indexes.append(i)
-                simplified_vectors.append(vectors[i])
+            if angle_change > split_angle:
+                edge_indexes.append(i)
+                edge_vectors.append(vectors[i])
 
         # Always keep the last point
-        simplified_indexes.append(len(vectors) - 1)
-        simplified_vectors.append(vectors[-1])
+        edge_indexes.append(len(vectors) - 1)
+        edge_vectors.append(vectors[-1])
 
         # Convert the list of simplified vectors to a NumPy array
-        simplified_vectors = np.array(simplified_vectors)
+        edge_vectors = np.array(edge_vectors)
 
-        return simplified_vectors, simplified_indexes
+        return edge_vectors, edge_indexes
 
     def simplify_douglas_peuker(self, vectors, epsilon, start_index=0):
         if len(vectors) < 3:
@@ -291,7 +318,7 @@ class GCodeSimplifier:
                 max_distance = distance
                 max_index = i
 
-        simplified_points = []
+        simplified_vectors = []
         simplified_indexes = []
         if max_distance > epsilon:
             # Recursively simplify the segments
@@ -305,14 +332,14 @@ class GCodeSimplifier:
             second_half = np.array(second_half)
 
             # Concatenate numpy arrays
-            simplified_points = np.concatenate(
+            simplified_vectors = np.concatenate(
                 (first_half[:-1], second_half), axis=0)
             simplified_indexes = first_half_indexes[:-1] + second_half_indexes
         else:
-            simplified_points = np.array([start_point, end_point])
+            simplified_vectors = np.array([start_point, end_point])
             simplified_indexes = [start_index, start_index + len(vectors) - 1]
 
-        return simplified_points, simplified_indexes
+        return simplified_vectors, simplified_indexes
 
     def distance_point_to_line(self, point, start, end):
         # Convert inputs to numpy arrays

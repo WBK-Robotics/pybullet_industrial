@@ -1,5 +1,6 @@
 % Moving along the same axis
 G1 X0 Y0 Z0 A0 B0 C0
+G1 X5
 G1 X10
 G1 X5
 G1 X10

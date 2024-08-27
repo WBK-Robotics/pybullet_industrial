@@ -1,4 +1,7 @@
 import unittest
+from unittest.mock import patch, MagicMock
+import numpy as np
+import matplotlib.pyplot as plt
 from g_code_simplifier import GCodeSimplifier
 
 
@@ -72,6 +75,126 @@ class TestGCodeSimplifier(unittest.TestCase):
                            'RA4': 0, 'RA5': 0, 'RA6': 0}]
 
         self.assertEqual(g_code_simplifier.g_code, desired_g_code)
+
+    # @patch('matplotlib.pyplot.show')
+    # @patch('matplotlib.pyplot.scatter')
+    # @patch('matplotlib.pyplot.figure')
+    # def test_plot_joint_positions(self, mock_figure, mock_scatter, mock_show):
+    #     """Test if plot_joint_positions creates plots."""
+    #     # Prepare mock methods
+    #     mock_figure_instance = MagicMock()
+    #     mock_figure.return_value = mock_figure_instance
+    #     mock_scatter.return_value = None
+    #     mock_show.return_value = None
+
+    #     # Mock for the 'add_subplot' method of figure
+    #     mock_axes = MagicMock()
+    #     mock_figure_instance.add_subplot.return_value = mock_axes
+
+    #     # Initialize simplifier-object
+    #     g_code_simplifier = GCodeSimplifier()
+    #     # Generate some dummy data for the test
+    #     g_code_simplifier.input_joint_positions = np.array([
+    #         [0, 0, 0, 0, 0, 0],
+    #         [1, 1, 1, 1, 1, 1],
+    #         [2, 2, 2, 2, 2, 2]
+    #     ])
+    #     g_code_simplifier.simplified_joint_positions = np.array([
+    #         [0, 0, 0, 0, 0, 0],
+    #         [2, 2, 2, 2, 2, 2]
+    #     ])
+    #     g_code_simplifier.simplified_indexes = [0, 2]
+
+    #     # Call the plot function
+    #     g_code_simplifier.plot_joint_positions()
+
+    #     # Check that plot methods were called
+    #     # Check for the number of calls to figure
+    #     self.assertGreaterEqual(mock_figure.call_count,
+    #                             1, "Figure was not called")
+    #     # Check that scatter was called on the axes
+    #     mock_axes.scatter.assert_called()
+    #     mock_show.assert_called_once()
+
+    # @patch('matplotlib.pyplot.show')
+    # @patch('matplotlib.pyplot.scatter')
+    # @patch('matplotlib.pyplot.figure')
+    # def test_plot_orientations(self, mock_figure, mock_scatter, mock_show):
+    #     """Test if plot_orientations creates plots."""
+    #     # Prepare mock methods
+    #     mock_figure_instance = MagicMock()
+    #     mock_figure.return_value = mock_figure_instance
+    #     mock_scatter.return_value = None
+    #     mock_show.return_value = None
+
+    #     # Mock for the 'add_subplot' method of figure
+    #     mock_axes = MagicMock()
+    #     mock_figure_instance.add_subplot.return_value = mock_axes
+
+    #     # Initialize simplifier-object
+    #     g_code_simplifier = GCodeSimplifier()
+    #     # Generate some dummy data for the test
+    #     g_code_simplifier.input_orientations = np.array([
+    #         [0, 0, 0],
+    #         [1, 1, 1],
+    #         [2, 2, 2]
+    #     ])
+    #     g_code_simplifier.simplified_orientations = np.array([
+    #         [0, 0, 0],
+    #         [2, 2, 2]
+    #     ])
+    #     g_code_simplifier.simplified_indexes = [0, 2]
+
+    #     # Call the plot function
+    #     g_code_simplifier.plot_orientations()
+
+    #     # Check that plot methods were called
+    #     # Check for the number of calls to figure
+    #     self.assertGreaterEqual(mock_figure.call_count,
+    #                             1, "Figure was not called")
+    #     # Check that scatter was called on the axes
+    #     mock_axes.scatter.assert_called()
+    #     mock_show.assert_called_once()
+
+    # @patch('matplotlib.pyplot.show')
+    # @patch('matplotlib.pyplot.scatter')
+    # @patch('matplotlib.pyplot.figure')
+    # def test_plot_points(self, mock_figure, mock_scatter, mock_show):
+    #     """Test if plot_points creates plots."""
+    #     # Prepare mock methods
+    #     mock_figure_instance = MagicMock()
+    #     mock_figure.return_value = mock_figure_instance
+    #     mock_scatter.return_value = None
+    #     mock_show.return_value = None
+
+    #     # Mock for the 'add_subplot' method of figure
+    #     mock_axes = MagicMock()
+    #     mock_figure_instance.add_subplot.return_value = mock_axes
+
+    #     # Initialize simplifier-object
+    #     g_code_simplifier = GCodeSimplifier()
+    #     # Generate some dummy data for the test
+    #     g_code_simplifier.input_points = np.array([
+    #         [0, 0, 0],
+    #         [1, 1, 1],
+    #         [2, 2, 2]
+    #     ])
+    #     g_code_simplifier.simplified_points = np.array([
+    #         [0, 0, 0],
+    #         [2, 2, 2]
+    #     ])
+    #     g_code_simplifier.simplified_indexes = [0, 2]
+
+    #     # Call the plot function
+    #     g_code_simplifier.plot_points()
+
+    #     # Check that plot methods were called
+    #     # Check for the number of calls to figure
+    #     self.assertGreaterEqual(mock_figure.call_count,
+    #                             1, "Figure was not called")
+    #     # Check that scatter was called on the axes
+    #     mock_axes.scatter.assert_called()
+    #     mock_show.assert_called_once()
 
 
 if __name__ == '__main__':

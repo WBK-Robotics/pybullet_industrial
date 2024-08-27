@@ -69,7 +69,8 @@ if __name__ == "__main__":
     g_code_simplifier.simplify_g_code(0.05)
     g_code_simplifier.plot_joint_positions()
 
-    g_code_simplifier.round_joint_positions(round_dec=4)
+    g_code_simplifier.round_joint_positions(
+        g_code_simplifier.g_code, round_dec=4)
 
     pi.GCodeLogger.write_g_code(
         g_code_simplifier.g_code, joint_positions_simplified_path)
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     g_code_simplifier.simplify_g_code(0.01)
     g_code_simplifier.plot_points()
     g_code_simplifier.plot_orientations()
-    g_code_simplifier.round_cartesian(1, 3)
+    g_code_simplifier.round_cartesian(g_code_simplifier.g_code, 1, 3)
 
     pi.GCodeLogger.write_g_code(
         g_code_simplifier.g_code, cartesian_simplified_path)

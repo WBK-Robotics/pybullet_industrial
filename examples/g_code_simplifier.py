@@ -149,32 +149,34 @@ class GCodeSimplifier:
         for line in self.g_code:
             if self.g_code_type == 'cartesian':
                 if all(key in line for key in cartesian_order):
-                    prev_point = np.array([line[key]
-                                           for key in cartesian_order[:3]])
+                    # Convert each value to float
+                    prev_point = np.array([float(line[key])
+                                          for key in cartesian_order[:3]])
                     prev_orientation = np.array(
-                        [line[key] for key in cartesian_order[3:]])
+                        [float(line[key]) for key in cartesian_order[3:]])
                     points.append(prev_point)
                     orientations.append(prev_orientation)
                 elif prev_point is not None:  # If there's a previous point
                     # Use the previous point if current line doesn't have X, Y, or Z
-                    point = np.array([line.get(key, prev_point[i])
-                                      for i, key in enumerate(cartesian_order[:3])])
-                    orientation = np.array(
-                        [line.get(key, prev_orientation[i]) for i, key in enumerate(cartesian_order[3:])])
+                    point = np.array([float(line.get(key, prev_point[i]))
+                                     for i, key in enumerate(cartesian_order[:3])])
+                    orientation = np.array([float(line.get(
+                        key, prev_orientation[i])) for i, key in enumerate(cartesian_order[3:])])
                     points.append(point)
                     orientations.append(orientation)
 
             elif self.g_code_type == 'joint_positions':
                 if all(key in line for key in joint_order):
+                    # Convert each value to float
                     joint_positions.append(
-                        np.array([line[key] for key in joint_order]))
+                        np.array([float(line[key]) for key in joint_order]))
                 else:
                     # Handle cases where some joint positions may be missing
                     if joint_positions:
                         # If there are previously recorded joint positions, use them
                         last_joint_position = joint_positions[-1]
                         joint_position = np.array(
-                            [line.get(key, last_joint_position[i]) for i, key in enumerate(joint_order)])
+                            [float(line.get(key, last_joint_position[i])) for i, key in enumerate(joint_order)])
                         joint_positions.append(joint_position)
 
         # Convert lists to numpy arrays
@@ -188,13 +190,19 @@ class GCodeSimplifier:
         self.g_code_to_arrays()
 
         if self.g_code_type == 'cartesian':
-            self.simplified_vector, self.simplified_indexes = self.simplify_vectors(
-                np.concatenate((self.input_points, self.input_orientations), axis=1), epsilon)
+            # self.simplified_vector, self.simplified_indexes = \
+            #     self.simplify_douglas_peuker(
+            #         np.concatenate((self.input_points, self.input_orientations), axis=1), epsilon)
+            self.simplified_vector, self.simplified_indexes = \
+                self.simplify_directions(np.concatenate(
+                    (self.input_points, self.input_orientations), axis=1), epsilon)
             self.simplified_points, self.simplified_orientations = np.split(
                 self.simplified_vector, 2, axis=1)
 
         elif self.g_code_type == 'joint_positions':
-            self.simplified_joint_positions, self.simplified_indexes = self.simplify_vectors(
+            # self.simplified_joint_positions, self.simplified_indexes = self.simplify_douglas_peuker(
+            #     self.input_joint_positions, epsilon)
+            self.simplified_joint_positions, self.simplified_indexes = self.simplify_directions(
                 self.input_joint_positions, epsilon)
 
         self.build_simpflified_g_code()
@@ -225,7 +233,49 @@ class GCodeSimplifier:
                     'RA6': i[5]
                 })
 
-    def simplify_vectors(self, vectors, epsilon, start_index=0):
+    def simplify_directions(self, vectors, epsilon):
+        # Initialize the list of kept points with the first point
+        simplified_indexes = [0]  # Start with the first point
+        simplified_vectors = [vectors[0]]
+
+        # Iterate through the vector list
+        for i in range(1, len(vectors) - 1):
+            # Calculate the direction from the previous kept point to the current point
+            direction_prev = vectors[i] - vectors[simplified_indexes[-1]]
+            direction_next = vectors[i + 1] - vectors[i]
+
+            # Normalize the direction vectors
+            norm_prev = np.linalg.norm(direction_prev)
+            norm_next = np.linalg.norm(direction_next)
+
+            # If either norm is zero, skip this point
+            if norm_prev == 0 or norm_next == 0:
+                continue
+
+            direction_prev /= norm_prev
+            direction_next /= norm_next
+
+            # Calculate the angle between the two direction vectors using the dot product
+            cos_angle = np.dot(direction_prev, direction_next)
+
+            # Calculate the angular change (1 - cos_angle gives the small-angle approximation)
+            angle_change = 1 - cos_angle
+
+            # If the angle change is greater than epsilon, keep the current point
+            if angle_change > epsilon:
+                simplified_indexes.append(i)
+                simplified_vectors.append(vectors[i])
+
+        # Always keep the last point
+        simplified_indexes.append(len(vectors) - 1)
+        simplified_vectors.append(vectors[-1])
+
+        # Convert the list of simplified vectors to a NumPy array
+        simplified_vectors = np.array(simplified_vectors)
+
+        return simplified_vectors, simplified_indexes
+
+    def simplify_douglas_peuker(self, vectors, epsilon, start_index=0):
         if len(vectors) < 3:
             return vectors, list(range(start_index, start_index + len(vectors)))
 
@@ -245,9 +295,9 @@ class GCodeSimplifier:
         simplified_indexes = []
         if max_distance > epsilon:
             # Recursively simplify the segments
-            first_half, first_half_indexes = self.simplify_vectors(
+            first_half, first_half_indexes = self.simplify_douglas_peuker(
                 vectors[:max_index+1], epsilon, start_index)
-            second_half, second_half_indexes = self.simplify_vectors(
+            second_half, second_half_indexes = self.simplify_douglas_peuker(
                 vectors[max_index:], epsilon, start_index + max_index)
 
             # Convert lists to numpy arrays
@@ -293,7 +343,7 @@ class GCodeSimplifier:
 
         return distance
 
-    @staticmethod
+    @ staticmethod
     def round_cartesian(g_code, round_xyz: int = 4, round_abc: int = 4):
         for g_code_line in g_code:
             for key in g_code_line:
@@ -303,7 +353,7 @@ class GCodeSimplifier:
                     g_code_line[key] = round(g_code_line[key], round_abc)
         return g_code
 
-    @staticmethod
+    @ staticmethod
     def round_joint_positions(g_code, round_dec: int = 5):
         search_keys = ['RA1', 'RA2', 'RA3', 'RA4', 'RA5', 'RA6']
         for command in g_code:
@@ -312,7 +362,7 @@ class GCodeSimplifier:
                     command[key] = round(command[key], round_dec)
         return g_code
 
-    @staticmethod
+    @ staticmethod
     def scale_g_code(g_code, scaling, keys):
         for command in g_code:
             for key in keys:
@@ -320,7 +370,7 @@ class GCodeSimplifier:
                     command[key] *= scaling
         return g_code
 
-    @staticmethod
+    @ staticmethod
     def add_offset_to_g_code(g_code, offset_dict):
         for command in g_code:
             for key in offset_dict:
@@ -328,7 +378,7 @@ class GCodeSimplifier:
                     command[key] += offset_dict[key]
         return g_code
 
-    @staticmethod
+    @ staticmethod
     def convert_to_radians(g_code):
         for command in g_code:
             for key in command:
@@ -336,7 +386,7 @@ class GCodeSimplifier:
                     command[key] = np.radians(command[key])
         return g_code
 
-    @staticmethod
+    @ staticmethod
     def convert_to_degrees(g_code):
         for command in g_code:
             for key in command:
@@ -344,14 +394,14 @@ class GCodeSimplifier:
                     command[key] = np.degrees(command[key])
         return g_code
 
-    @staticmethod
+    @ staticmethod
     def apply_feedrate(g_code, feedrate):
         for g_code_line in g_code:
             if 'G' in g_code_line and g_code_line['G'] == 1 and feedrate is not None:
                 g_code_line['F'] = feedrate
         return g_code
 
-    @staticmethod
+    @ staticmethod
     def skip_command(g_code, skip_commands):
         filtered_g_code = []
         for command in g_code:

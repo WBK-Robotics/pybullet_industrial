@@ -13,3 +13,5 @@ from pybullet_industrial.path_builders import *
 from pybullet_industrial.milling_tool import *
 from pybullet_industrial.g_code_processor import *
 from pybullet_industrial.agv_robots import *
+from pybullet_industrial.g_code_logger import *
+

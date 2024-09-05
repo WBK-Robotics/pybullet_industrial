@@ -75,14 +75,14 @@ if __name__ == "__main__":
     pi.GCodeLogger.write_g_code(
         g_code_simplifier.g_code, joint_positions_simplified_path)
 
-    # # Demonstrating cartesion g-code simpflification
-    # g_code_simplifier.set_g_code_and_type(
-    #     input_g_code_cartesian, 'cartesian')
+    # Demonstrating cartesion g-code simpflification
+    g_code_simplifier.set_g_code_and_type(
+        input_g_code_cartesian, 'cartesian')
 
-    # g_code_simplifier.simplify_g_code(0.01)
-    # g_code_simplifier.plot_points()
-    # g_code_simplifier.plot_orientations()
-    # g_code_simplifier.round_cartesian(g_code_simplifier.g_code, 1, 3)
+    g_code_simplifier.simplify_g_code(0.01)
+    g_code_simplifier.plot_points()
+    g_code_simplifier.plot_orientations()
+    g_code_simplifier.round_cartesian(g_code_simplifier.g_code, 1, 3)
 
     # pi.GCodeLogger.write_g_code(
     #     g_code_simplifier.g_code, cartesian_simplified_path)

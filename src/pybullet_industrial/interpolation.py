@@ -52,7 +52,9 @@ def linear_interpolation(start_point: np.array, end_point: np.array, samples: in
     positions = np.linspace(start_point, end_point, num=samples)
     final_path = ToolPath(positions=positions.transpose())
 
-    if start_orientation is not None and end_orientation is not None:
+    if start_orientation is not None:
+        if end_orientation is None:
+            end_orientation = start_orientation
         start_orientation = p.getEulerFromQuaternion(start_orientation)
         end_orientation = p.getEulerFromQuaternion(end_orientation)
         orientations = np.linspace(start_orientation,
@@ -148,7 +150,9 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
     positions[axis] = np.linspace(start_point[axis], end_point[axis], samples)
     final_path = ToolPath(positions=positions)
 
-    if start_orientation is not None and end_orientation is not None:
+    if start_orientation is not None:
+        if end_orientation is None:
+            end_orientation = start_orientation
         start_orientation = p.getEulerFromQuaternion(start_orientation)
         end_orientation = p.getEulerFromQuaternion(end_orientation)
         orientations = np.linspace(start_orientation,

@@ -4,13 +4,14 @@ from pybullet_industrial import linear_interpolation
 from pybullet_industrial import circular_interpolation
 from pybullet_industrial import ToolPath
 import numpy as np
+import re
 
 
 class GCodeProcessor:
     """Initializes a GCodeProcessor object with the provided parameters.
 
     Args:
-        gcode_input (str, optional): Simulated input G-code
+        g_code_input (str, optional): Simulated input G-code
         robot (RobotBase, optional): The robot which is controlled
         endeffector_list (list, optional): List of endeffectors to use
         m_commands (list, optional): M-commands to execute
@@ -24,7 +25,7 @@ class GCodeProcessor:
                                                 before determining precision
     """
 
-    def __init__(self, gcode_input: str = None, robot: RobotBase = None,
+    def __init__(self, g_code_input: str = None, robot: RobotBase = None,
                  endeffector_list: list = None,
                  m_commands: dict = None,
                  t_commands: dict = None,
@@ -34,8 +35,8 @@ class GCodeProcessor:
                  interpolation_approach: int = 1000):
 
         #  Converting G-Code into special list format
-        if gcode_input is not None:
-            self.gcode = self.read_gcode(gcode_input)
+        if g_code_input is not None:
+            self.g_code = self.read_g_code(g_code_input)
 
         # Initializing class variables
         self.new_point = []
@@ -66,56 +67,49 @@ class GCodeProcessor:
             self.__calibrate_tool()
 
     @staticmethod
-    def read_gcode(gcode_input: str):
-        """Reads g-code row by row and saves the processed data in
-        a list.
-        Comments that start with % are ignored and all the other data is
+    def read_g_code(g_code_input: str):
+        """Reads G-code row by row and saves the processed data in
+        a list. Comments that start with % are ignored and all the other data is
         stored as it gets read in.
 
         Args:
-            filename (list[str]): Source of information
+            g_code_input (str): Source of G-code as a string
 
         Returns:
-            gcode (list)
+            list: Processed G-code as a list of dictionaries
         """
 
-        gcode_input = gcode_input.splitlines()
-        gcode = []
+        g_code_input = g_code_input.splitlines()
+        g_code = []
 
-        # Loop over the lines of the file
-        for line in gcode_input:
-
-            if not line.strip():
+        for line in g_code_input:
+            if not line.strip() or line.strip().startswith('%'):
                 continue
 
-            # Read in G-Code if line is not a comment and not empty
-            if line[0] != "%" and len(line) > 1:
+            new_line = {}
+            components = line.split()
 
-                # Initialize a new line as a list
-                new_line = []
+            for component in components:
+                if "=" in component:
+                    key, value = component.split("=")
+                    val = float(value) if '.' in value else int(value)
+                else:
+                    match = re.match(r'([A-Z]+)(-?\d*\.?\d*)',
+                                     component, re.IGNORECASE)
+                    if match:
+                        key = match.group(1)
+                        value = match.group(2)
+                        val = float(value) if value and '.' in value else int(
+                            value)
 
-                # Split the line into its components
-                data = line.split()
+                # Convert key to uppercase
+                key = key.upper()
 
-                # Loop over the components
-                for i in data:
-                    # Determine the ID of the component
-                    id_val = i[0]
+                new_line[key] = val
 
-                    # Extract the value of the component
-                    val2 = float(i[1:])
+            g_code.append(new_line)
 
-                    if id_val in ["G", "M", "T"]:
-                        # Insert the value into the corresponding
-                        # column of the new line
-                        new_line.append([id_val, int(val2)])
-                    else:
-                        new_line.append([id_val, val2])
-
-                # Add the finished line to the list
-                gcode.append(new_line)
-
-        return gcode
+        return g_code
 
     def __iter__(self):
         """ Initialization of the the class variables which are responsible
@@ -124,10 +118,10 @@ class GCodeProcessor:
         Returns:
         self(GCodeProcessor): Iterator
         """
-
+        self.__calibrate_tool()
         self.elementary_operations = []
         self.index_operation = 0
-        self.index_gcode = 0
+        self.index_g_code = 0
         self.path = []
         return self
 
@@ -144,27 +138,26 @@ class GCodeProcessor:
             self.elementary_operations[i]()
 
         # Reads the G-Code command to create elementary operations
-        elif self.index_gcode < len(self.gcode):
+        elif self.index_g_code < len(self.g_code):
             self.elementary_operations = []
             self.index_operation = 0
 
-            i = self.index_gcode
-            cmd_type = self.gcode[i][0][0]
-            cmd_int = self.gcode[i][0][1]
+            i = self.index_g_code
+            g_code_line = self.g_code[i]
 
             self.last_point = np.array(self.new_point)
             self.last_or = np.array(self.new_or)
 
-            self.__create_elementary_operations(cmd_type, cmd_int)
+            self.__create_elementary_operations(g_code_line)
 
-            self.index_gcode += 1
+            self.index_g_code += 1
 
-            return self.gcode[i]
+            return self.g_code[i]
 
         else:
             raise StopIteration
 
-    def __create_elementary_operations(self, cmd_type: str, cmd_int: int):
+    def __create_elementary_operations(self, g_code_line: dict):
         """Appends all the elemenatry operations which are necessary to execute
         the recent command. All the elementary operations are safed with the
         help of lambda calls.
@@ -174,21 +167,27 @@ class GCodeProcessor:
             cmd_int(int): Current G-command integer
         """
 
-        if cmd_type == "G":
-            if cmd_int > 3:
-                for operation in self.g_commands[str(cmd_int)]:
-                    self.elementary_operations.append(lambda: operation())
-            else:
-                path = self.__build_path()
-                self.elementary_operations = self.__create_movement_operations(
-                    path)
+        interpolation_movement = ['X', 'Y', 'Z', 'A', 'B', 'C', 'R']
+        joint_movement = ['RA1', 'RA2', 'RA3', 'RA4', 'RA5', 'RA6']
 
-        elif cmd_type == "M":
-            for operation in self.m_commands[str(cmd_int)]:
+        if 'G' in g_code_line:
+            if any(key in g_code_line for key in interpolation_movement):
+                path = self.__build_path()
+                self.elementary_operations = \
+                    self.__create_movement_operations(path)
+            elif any(key in g_code_line for key in joint_movement):
+                self.elementary_operations = \
+                    self.__create_joint_movement_operations(g_code_line)
+            elif g_code_line.get('G') > 3:
+                for operation in self.g_commands[str(g_code_line.get('G'))]:
+                    self.elementary_operations.append(lambda: operation())
+
+        elif 'M' in g_code_line:
+            for operation in self.m_commands[str(g_code_line.get('M'))]:
                 self.elementary_operations.append(lambda: operation())
 
-        elif cmd_type == "T":
-            for operation in self.t_commands[str(cmd_int)]:
+        elif 'T' in g_code_line:
+            for operation in self.t_commands[str(g_code_line.get('T'))]:
                 self.elementary_operations.append(lambda: operation())
 
             self.elementary_operations.append(lambda: self.__calibrate_tool())
@@ -204,23 +203,22 @@ class GCodeProcessor:
             path(ToolPath): Interpolated tool path
         """
 
-        cmd = self.gcode[self.index_gcode]
-        g_com = cmd[0][1]
+        g_code_line = self.g_code[self.index_g_code]
+        # g_com = cmd[0][1]
 
-        self.__build_new_point(cmd)
+        self.__build_new_point(g_code_line)
 
-        if g_com == 0:
+        if g_code_line['G'] == 0:
             path = self.__build_simple_path()
+            orientation = p.getQuaternionFromEuler(self.new_or)
+            path.orientations = np.transpose([orientation]
+                                             * len(path.orientations[0]))
         else:
-            path = self.__build_precise_path(g_com)
-
-        orientation = p.getQuaternionFromEuler(self.new_or)
-        path.orientations = np.transpose([orientation]
-                                         * len(path.orientations[0]))
+            path = self.__build_precise_path(g_code_line['G'])
 
         return path
 
-    def __build_new_point(self, cmd: list):
+    def __build_new_point(self, g_code_line: dict):
         """Calculates the new point of a G-Code command with respect
         to the current offset.
 
@@ -229,13 +227,15 @@ class GCodeProcessor:
         """
 
         variables = {'G': np.nan, 'X': np.nan, 'Y': np.nan, 'Z': np.nan,
-                     'A': np.nan, 'B': np.nan, 'C': np.nan, 'R': np.nan}
+                     'A': np.nan, 'B': np.nan, 'C': np.nan, 'R': np.nan,
+                     'F': np.nan}
 
-        for val in cmd:
-            if val[0] in variables:
-                variables[val[0]] = val[1]
+        # for val in cmd:
+        for key, value in g_code_line.items():
+            if key in variables:
+                variables[key] = value
             else:
-                raise KeyError("Variable '{}' is not defined.".format(val[0]))
+                raise KeyError("Variable '{}' is not defined.".format(key))
 
         xyz_val = np.array([variables['X'], variables['Y'],
                             variables['Z']])
@@ -277,8 +277,7 @@ class GCodeProcessor:
         """
 
         path = linear_interpolation(self.last_point,
-                                    self.new_point,
-                                    2)
+                                    self.new_point, 2)
 
         return path
 
@@ -293,6 +292,8 @@ class GCodeProcessor:
 
         interpolation_steps = self.interpolation_approach
         percise_path = True
+        start_or = p.getQuaternionFromEuler(self.last_or)
+        end_or = p.getQuaternionFromEuler(self.new_or)
 
         for _ in range(2):
 
@@ -300,7 +301,8 @@ class GCodeProcessor:
             if g_com == 1:
                 path = linear_interpolation(self.last_point,
                                             self.new_point,
-                                            interpolation_steps)
+                                            interpolation_steps, start_or,
+                                            end_or)
 
             # Building the path if there is a circular interpolation
             elif g_com in [2, 3]:
@@ -308,12 +310,16 @@ class GCodeProcessor:
                     path = circular_interpolation(self.last_point,
                                                   self.new_point, self.r_val,
                                                   interpolation_steps,
-                                                  self.axis, True)
+                                                  self.axis, True,
+                                                  start_or,
+                                                  end_or)
                 else:
                     path = circular_interpolation(self.last_point,
                                                   self.new_point, self.r_val,
                                                   interpolation_steps,
-                                                  self.axis, False)
+                                                  self.axis, False,
+                                                  start_or,
+                                                  end_or)
             # Calculating the total ditance
             if percise_path:
                 percise_path = False
@@ -397,6 +403,23 @@ class GCodeProcessor:
             or_euler = p.getEulerFromQuaternion(
                 self.endeffector_list[actv].get_tool_pose()[1])
             self.new_or = np.array(or_euler)
+
+    def __create_joint_movement_operations(self, g_code_line: dict):
+        """Returns a list with a lambda function to set the joint position.
+
+        Args:
+            g_code_line(dict): Current G-code line
+
+        Returns:
+            elementary_operations(list)
+        """
+
+        joint_positions = {'q' + key[2:]: value for key,
+                           value in g_code_line.items() if key.startswith('R')}
+        elementary_operations = [
+            lambda: self.robot.set_joint_position(joint_positions)]
+
+        return elementary_operations
 
     def __g_54(self):
         # Activation of the zero offset

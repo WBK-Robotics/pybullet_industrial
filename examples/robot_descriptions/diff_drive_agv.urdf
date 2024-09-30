@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<robot name="simple_diff_drive_agv">
+
+  <!-- Base Link -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.5 0.3 0.2"/> <!-- dimensions of the base -->
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.5 0.3 0.2"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Left Wheel -->
+  <link name="left_wheel">
+  <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0"/>
+      <stiffness value="30000"/>
+      <damping value="1000"/>
+    </contact>
+    <visual>
+      <geometry>
+        <cylinder radius="0.2" length="0.05"/> <!-- wheel dimensions -->
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.2" length="0.05"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Right Wheel -->
+  <link name="right_wheel">
+  <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0"/>
+      <stiffness value="30000"/>
+      <damping value="1000"/>
+    </contact>
+    <visual>
+      <geometry>
+        <cylinder radius="0.2" length="0.05"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.2" length="0.05"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Caster Wheel -->
+  <link name="caster_wheel">
+  <contact>
+      <lateral_friction value="0.0"/>
+      <rolling_friction value="0.0"/>
+      <stiffness value="30000"/>
+      <damping value="1000"/>
+    </contact>
+    <visual>
+      <geometry>
+        <sphere radius="0.05"/> <!-- caster wheel size -->
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.05"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joints -->
+  <joint name="left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_wheel"/>
+    <origin xyz="0.2 -0.15 0" rpy="-1.57079632679 0 0"/> <!-- position and orientation -->
+    <axis xyz="0 0 1"/> <!-- rotation axis -->
+  </joint>
+
+  <joint name="right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_wheel"/>
+    <origin xyz="0.2 0.15 0" rpy="-1.57079632679 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <joint name="caster_wheel_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="caster_wheel"/>
+    <origin xyz="-0.2 0 -0.1" rpy="0 0 0"/> <!-- rear-mounted caster wheel -->
+  </joint>
+
+</robot>

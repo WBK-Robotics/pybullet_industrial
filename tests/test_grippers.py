@@ -86,9 +86,8 @@ class TestGrippers(unittest.TestCase):
         path = pi.linear_interpolation(np.array(safepoint1),
                                        np.array(grippoint1_2), 10, start_orientation_gr)
         move_along_path(gripper, path, start_orientation_gr)
-        path = pi.linear_interpolation(
-            np.array(grippoint1_2), np.array(grippoint1), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+        path = pi.circular_interpolation(
+            start_point=np.array(grippoint1_2), end_point=np.array(grippoint1), samples=10, axis=0, radius=10, start_orientation=start_orientation_gr)
         move_along_path(gripper, path)
         for _ in range(25):
             p.stepSimulation()

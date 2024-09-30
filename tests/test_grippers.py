@@ -84,8 +84,7 @@ class TestGrippers(unittest.TestCase):
         within_precision = True
 
         path = pi.linear_interpolation(np.array(safepoint1),
-                                       np.array(grippoint1_2), 10)
-        path.orientations = np.transpose([start_orientation_gr] * len(path.orientations[0]))
+                                       np.array(grippoint1_2), 10, start_orientation_gr)
         move_along_path(gripper, path, start_orientation_gr)
         path = pi.linear_interpolation(
             np.array(grippoint1_2), np.array(grippoint1), 10)

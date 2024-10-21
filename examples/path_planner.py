@@ -26,6 +26,13 @@ class PathPlanner:
                 self.upper_joint_limit[index] = upper_limit
                 index += 1
 
+    def path_planner(self, start_config, goal_config):
+        total_distance = distance(start_config, goal_config)
+        search_distance = total_distance/100
+
+    def distance(self, p1, p2):
+        pass
+
     def create_random_sample(self):
         pass
 

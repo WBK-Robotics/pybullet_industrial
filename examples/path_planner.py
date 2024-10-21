@@ -1,10 +1,11 @@
 import pybullet_industrial as pi
 import pybullet as p
 import numpy as np
+from robot_base import RobotBase
 
 
 class PathPlanner:
-    def __init__(self, robot: pi.RobotBase, step_size=None,
+    def __init__(self, robot: RobotBase, step_size=None,
                  max_iterations=None):
         self.robot = robot
         self.step_size = step_size
@@ -24,7 +25,6 @@ class PathPlanner:
                 self.lower_joint_limit[index] = lower_limit
                 self.upper_joint_limit[index] = upper_limit
                 index += 1
-        print("s")
 
     def create_random_sample(self):
         pass

@@ -91,8 +91,12 @@ class TestInterpolation(unittest.TestCase):
             start_point, end_point, radius, samples, axis, clockwise,
             start_orientation, end_orientation)
 
-        # Expected positions for both orientations case (assuming planar interpolation is correct)
-        expected_positions = result_with_both_orientations.positions
+        # Expected positions for both orientations case (using the provided array)
+        expected_positions = np.array([
+            [1.0, 0.61731657, 0.29289322, 0.07612047, 0.0],
+            [0.0, 0.07612047, 0.29289322, 0.61731657, 1.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0]
+        ])
 
         # Generate expected orientations using RotationSpline for SLERP
         start_rot = R.from_quat(start_orientation)

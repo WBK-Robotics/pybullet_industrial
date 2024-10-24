@@ -49,9 +49,12 @@ def build_circular_path(center: np.array, radius: float,
     circular_path = np.zeros((2, step_num))
     for j in range(step_num):
         if clockwise:
-            path_angle = min_angle-j*(max_angle-min_angle)/step_num
+            path_angle = min_angle - j * \
+                (max_angle - min_angle) / (step_num - 1)
         else:
-            path_angle = min_angle+j*(max_angle-min_angle)/step_num
+            path_angle = min_angle + j * \
+                (max_angle - min_angle) / (step_num - 1)
+
         new_position = center + radius * \
             np.array([np.cos(path_angle), np.sin(path_angle)])
         circular_path[:, j] = new_position

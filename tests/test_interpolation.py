@@ -8,8 +8,10 @@ from scipy.spatial.transform import Rotation as R, RotationSpline
 
 class TestInterpolation(unittest.TestCase):
 
-    def test_linear_interpolation_with_both_orientations(self):
-        # Test linear interpolation with both start and end orientation
+    def test_linear_interpolation(self):
+        # Test both cases for linear interpolation
+
+        # Case 1: Test with both start and end orientations
         start_point = np.array([0.0, 0.0, 0.0])
         end_point = np.array([10.0, 10.0, 10.0])
         samples = 5
@@ -18,10 +20,11 @@ class TestInterpolation(unittest.TestCase):
         end_orientation = p.getQuaternionFromEuler(
             [0, np.pi / 2, 0])  # 90 degrees rotation
 
-        result = linear_interpolation(
-            start_point, end_point, samples, start_orientation, end_orientation)
+        result_with_both_orientations = linear_interpolation(
+            start_point, end_point, samples,
+            start_orientation, end_orientation)
 
-        # Create expected ToolPath for positions
+        # Expected positions for both orientations case
         expected_positions = np.array([
             [0.0, 2.5, 5.0, 7.5, 10.0],
             [0.0, 2.5, 5.0, 7.5, 10.0],
@@ -34,49 +37,45 @@ class TestInterpolation(unittest.TestCase):
         rotations = R.from_quat([start_rot.as_quat(), end_rot.as_quat()])
         t_vals = np.linspace(0, 1, samples)
         slerp_spline = RotationSpline([0, 1], rotations)
-        expected_orientations = slerp_spline(t_vals).as_quat()
+        expected_orientations_both = slerp_spline(t_vals).as_quat()
 
-        expected_toolpath = ToolPath(
-            positions=expected_positions, orientations=expected_orientations.transpose())
+        expected_toolpath_with_both = ToolPath(
+            positions=expected_positions,
+            orientations=expected_orientations_both.transpose())
 
-        # Check positions and orientations
+        # Check positions and orientations for both orientations case
         np.testing.assert_array_almost_equal(
-            result.positions, expected_toolpath.positions, decimal=6)
+            result_with_both_orientations.positions,
+            expected_toolpath_with_both.positions, decimal=6)
         np.testing.assert_array_almost_equal(
-            result.orientations, expected_toolpath.orientations, decimal=6)
+            result_with_both_orientations.orientations,
+            expected_toolpath_with_both.orientations, decimal=6)
 
-    def test_linear_interpolation_with_only_start_orientation(self):
-        # Test linear interpolation with only start orientation (end_orientation is None)
-        start_point = np.array([0.0, 0.0, 0.0])
-        end_point = np.array([10.0, 10.0, 10.0])
-        samples = 5
-        start_orientation = p.getQuaternionFromEuler(
-            [0, 0, 0])  # Neutral orientation
+        # Case 2: Test with only start orientation (end_orientation is None)
+        result_with_only_start_orientation = linear_interpolation(
+            start_point, end_point, samples,
+            start_orientation, end_orientation=None)
 
-        result = linear_interpolation(
-            start_point, end_point, samples, start_orientation, end_orientation=None)
-
-        # Create expected ToolPath for positions
-        expected_positions = np.array([
-            [0.0, 2.5, 5.0, 7.5, 10.0],
-            [0.0, 2.5, 5.0, 7.5, 10.0],
-            [0.0, 2.5, 5.0, 7.5, 10.0]
-        ])
-
-        # Since end_orientation is None, the same start_orientation should be used for all points
-        expected_orientations = np.tile(
+        # Expected orientations for only start orientation case
+        expected_orientations_start_only = np.tile(
             start_orientation, (samples, 1)).transpose()
-        expected_toolpath = ToolPath(
-            positions=expected_positions, orientations=expected_orientations)
 
-        # Check positions and orientations
-        np.testing.assert_array_almost_equal(
-            result.positions, expected_toolpath.positions, decimal=6)
-        np.testing.assert_array_almost_equal(
-            result.orientations, expected_toolpath.orientations, decimal=6)
+        expected_toolpath_with_start_only = ToolPath(
+            positions=expected_positions,
+            orientations=expected_orientations_start_only)
 
-    def test_circular_interpolation_with_both_orientations(self):
-        # Test circular interpolation with both start and end orientation
+        # Check positions and orientations for only start orientation case
+        np.testing.assert_array_almost_equal(
+            result_with_only_start_orientation.positions,
+            expected_toolpath_with_start_only.positions, decimal=6)
+        np.testing.assert_array_almost_equal(
+            result_with_only_start_orientation.orientations,
+            expected_toolpath_with_start_only.orientations, decimal=6)
+
+    def test_circular_interpolation(self):
+        # Test both cases for circular interpolation
+
+        # Case 1: Test with both start and end orientations
         start_point = np.array([1.0, 0.0, 0.0])
         end_point = np.array([0.0, 1.0, 0.0])
         radius = 1.0
@@ -88,12 +87,12 @@ class TestInterpolation(unittest.TestCase):
         end_orientation = p.getQuaternionFromEuler(
             [0, 0, np.pi / 2])  # 90 degrees rotation around Z-axis
 
-        result = circular_interpolation(
-            start_point, end_point, radius, samples, axis, clockwise, start_orientation, end_orientation)
+        result_with_both_orientations = circular_interpolation(
+            start_point, end_point, radius, samples, axis, clockwise,
+            start_orientation, end_orientation)
 
-        # Generate expected positions (based on circular interpolation)
-        # Assuming planar interpolation is correct
-        expected_positions = result.positions
+        # Expected positions for both orientations case (assuming planar interpolation is correct)
+        expected_positions = result_with_both_orientations.positions
 
         # Generate expected orientations using RotationSpline for SLERP
         start_rot = R.from_quat(start_orientation)
@@ -101,46 +100,40 @@ class TestInterpolation(unittest.TestCase):
         rotations = R.from_quat([start_rot.as_quat(), end_rot.as_quat()])
         t_vals = np.linspace(0, 1, samples)
         slerp_spline = RotationSpline([0, 1], rotations)
-        expected_orientations = slerp_spline(t_vals).as_quat()
+        expected_orientations_both = slerp_spline(t_vals).as_quat()
 
-        expected_toolpath = ToolPath(
-            positions=expected_positions, orientations=expected_orientations.transpose())
+        expected_toolpath_with_both = ToolPath(
+            positions=expected_positions,
+            orientations=expected_orientations_both.transpose())
 
-        # Check positions and orientations
+        # Check positions and orientations for both orientations case
         np.testing.assert_array_almost_equal(
-            result.positions, expected_toolpath.positions, decimal=6)
+            result_with_both_orientations.positions,
+            expected_toolpath_with_both.positions, decimal=6)
         np.testing.assert_array_almost_equal(
-            result.orientations, expected_toolpath.orientations, decimal=6)
+            result_with_both_orientations.orientations,
+            expected_toolpath_with_both.orientations, decimal=6)
 
-    def test_circular_interpolation_with_only_start_orientation(self):
-        # Test circular interpolation with only start orientation (end_orientation is None)
-        start_point = np.array([1.0, 0.0, 0.0])
-        end_point = np.array([0.0, 1.0, 0.0])
-        radius = 1.0
-        samples = 5
-        axis = 2  # Z-axis
-        clockwise = True
-        start_orientation = p.getQuaternionFromEuler(
-            [0, 0, 0])  # Neutral orientation
+        # Case 2: Test with only start orientation (end_orientation is None)
+        result_with_only_start_orientation = circular_interpolation(
+            start_point, end_point, radius, samples, axis, clockwise,
+            start_orientation, end_orientation=None)
 
-        result = circular_interpolation(
-            start_point, end_point, radius, samples, axis, clockwise, start_orientation, end_orientation=None)
-
-        # Create expected ToolPath for positions
-        # Assuming planar interpolation is correct
-        expected_positions = result.positions
-
-        # Since end_orientation is None, the same start_orientation should be used for all points
-        expected_orientations = np.tile(
+        # Expected orientations for only start orientation case
+        expected_orientations_start_only = np.tile(
             start_orientation, (samples, 1)).transpose()
-        expected_toolpath = ToolPath(
-            positions=expected_positions, orientations=expected_orientations)
 
-        # Check positions and orientations
+        expected_toolpath_with_start_only = ToolPath(
+            positions=expected_positions,
+            orientations=expected_orientations_start_only)
+
+        # Check positions and orientations for only start orientation case
         np.testing.assert_array_almost_equal(
-            result.positions, expected_toolpath.positions, decimal=6)
+            result_with_only_start_orientation.positions,
+            expected_toolpath_with_start_only.positions, decimal=6)
         np.testing.assert_array_almost_equal(
-            result.orientations, expected_toolpath.orientations, decimal=6)
+            result_with_only_start_orientation.orientations,
+            expected_toolpath_with_start_only.orientations, decimal=6)
 
 
 if __name__ == '__main__':

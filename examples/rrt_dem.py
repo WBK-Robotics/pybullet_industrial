@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     # Run RRT
     rrt_tree, goal_reached = rrt(
-        start_node, goal_node, obstacles, step_size=0.02)
+        start_node, goal_node, obstacles, step_size=0.1)
 
     # If the goal was reached, trace and plot the final path
     if goal_reached:

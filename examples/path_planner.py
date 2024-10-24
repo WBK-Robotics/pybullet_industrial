@@ -37,56 +37,25 @@ class PathPlanner:
 
         for _ in range(self.max_iterations):
             # Sample Random Node in C-Space
-<<<<<<< Updated upstream
             random_node = self.create_random_sample()
-=======
-            random_node = self.sampling()
->>>>>>> Stashed changes
 
             # Find nearest node in the tree
             nearest_node = self.find_nearest_node(nodes, random_node)
 
-<<<<<<< Updated upstream
             # Steer from the nearest node towards the random node
-=======
-            # Steer from the nearest node towards the random node (Local Planner)
->>>>>>> Stashed changes
             new_node = self.steer(nearest_node, random_node)
 
             if self.is_collision_free(nearest_node, new_node):
                 new_node.parent = nearest_node
                 nodes.append(new_node)
 
-<<<<<<< Updated upstream
-=======
-                if self.distance(new_node, goal_config) <= self.step_size and self.is_collision_free:
-                    goal_config.parent = new_node
-                    nodes.append(goal_config)
-                    print("Goal Reached")
-                    return nodes
-
->>>>>>> Stashed changes
     def distance(self, p1, p2):
         pass
 
     def steer(self):
         pass
 
-<<<<<<< Updated upstream
     def create_random_sample(self):
-=======
-    def sampling(self):
-        sample_config = self.c_space_sample()
-
-        self.robot.reset_robot(sample_config)
-        p.performCollisionDetection()
-        contact_points = p.getContactPoints(self.robot.urdf)
-
-        if not contact_points:
-            return sample_config
-
-    def c_space_sample(self):
->>>>>>> Stashed changes
         pass
 
     def is_collision_free(self, sample):

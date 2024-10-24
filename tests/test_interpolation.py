@@ -3,6 +3,7 @@ import numpy as np
 import pybullet as p
 from pybullet_industrial.toolpath import ToolPath
 from pybullet_industrial.interpolation import linear_interpolation, circular_interpolation
+from scipy.spatial.transform import Rotation as R, RotationSpline
 
 
 class TestInterpolation(unittest.TestCase):
@@ -15,21 +16,28 @@ class TestInterpolation(unittest.TestCase):
         start_orientation = p.getQuaternionFromEuler(
             [0, 0, 0])  # Neutral orientation
         end_orientation = p.getQuaternionFromEuler(
-            [0, np.pi/2, 0])  # 90 degrees rotation
+            [0, np.pi / 2, 0])  # 90 degrees rotation
 
         result = linear_interpolation(
             start_point, end_point, samples, start_orientation, end_orientation)
 
-        # Create expected ToolPath for positions and orientations
+        # Create expected ToolPath for positions
         expected_positions = np.array([
             [0.0, 2.5, 5.0, 7.5, 10.0],
             [0.0, 2.5, 5.0, 7.5, 10.0],
             [0.0, 2.5, 5.0, 7.5, 10.0]
         ])
-        expected_orientations = np.array([p.getQuaternionFromEuler(
-            [0, angle, 0]) for angle in np.linspace(0, np.pi/2, samples)]).transpose()
+
+        # Generate expected orientations using RotationSpline for SLERP
+        start_rot = R.from_quat(start_orientation)
+        end_rot = R.from_quat(end_orientation)
+        rotations = R.from_quat([start_rot.as_quat(), end_rot.as_quat()])
+        t_vals = np.linspace(0, 1, samples)
+        slerp_spline = RotationSpline([0, 1], rotations)
+        expected_orientations = slerp_spline(t_vals).as_quat()
+
         expected_toolpath = ToolPath(
-            positions=expected_positions, orientations=expected_orientations)
+            positions=expected_positions, orientations=expected_orientations.transpose())
 
         # Check positions and orientations
         np.testing.assert_array_almost_equal(
@@ -48,12 +56,14 @@ class TestInterpolation(unittest.TestCase):
         result = linear_interpolation(
             start_point, end_point, samples, start_orientation, end_orientation=None)
 
-        # Create expected ToolPath for positions and orientations (orientations should remain the same)
+        # Create expected ToolPath for positions
         expected_positions = np.array([
             [0.0, 2.5, 5.0, 7.5, 10.0],
             [0.0, 2.5, 5.0, 7.5, 10.0],
             [0.0, 2.5, 5.0, 7.5, 10.0]
         ])
+
+        # Since end_orientation is None, the same start_orientation should be used for all points
         expected_orientations = np.tile(
             start_orientation, (samples, 1)).transpose()
         expected_toolpath = ToolPath(
@@ -76,16 +86,25 @@ class TestInterpolation(unittest.TestCase):
         start_orientation = p.getQuaternionFromEuler(
             [0, 0, 0])  # Neutral orientation
         end_orientation = p.getQuaternionFromEuler(
-            [0, 0, np.pi/2])  # 90 degrees rotation around Z-axis
+            [0, 0, np.pi / 2])  # 90 degrees rotation around Z-axis
 
         result = circular_interpolation(
             start_point, end_point, radius, samples, axis, clockwise, start_orientation, end_orientation)
 
-        # Create expected ToolPath for positions and orientations
-        expected_orientations = np.array([p.getQuaternionFromEuler(
-            [0, 0, angle]) for angle in np.linspace(0, np.pi/2, samples)]).transpose()
+        # Generate expected positions (based on circular interpolation)
+        # Assuming planar interpolation is correct
+        expected_positions = result.positions
+
+        # Generate expected orientations using RotationSpline for SLERP
+        start_rot = R.from_quat(start_orientation)
+        end_rot = R.from_quat(end_orientation)
+        rotations = R.from_quat([start_rot.as_quat(), end_rot.as_quat()])
+        t_vals = np.linspace(0, 1, samples)
+        slerp_spline = RotationSpline([0, 1], rotations)
+        expected_orientations = slerp_spline(t_vals).as_quat()
+
         expected_toolpath = ToolPath(
-            positions=result.positions, orientations=expected_orientations)
+            positions=expected_positions, orientations=expected_orientations.transpose())
 
         # Check positions and orientations
         np.testing.assert_array_almost_equal(
@@ -107,11 +126,15 @@ class TestInterpolation(unittest.TestCase):
         result = circular_interpolation(
             start_point, end_point, radius, samples, axis, clockwise, start_orientation, end_orientation=None)
 
-        # Create expected ToolPath for positions and orientations (orientations should remain the same)
+        # Create expected ToolPath for positions
+        # Assuming planar interpolation is correct
+        expected_positions = result.positions
+
+        # Since end_orientation is None, the same start_orientation should be used for all points
         expected_orientations = np.tile(
             start_orientation, (samples, 1)).transpose()
         expected_toolpath = ToolPath(
-            positions=result.positions, orientations=expected_orientations)
+            positions=expected_positions, orientations=expected_orientations)
 
         # Check positions and orientations
         np.testing.assert_array_almost_equal(

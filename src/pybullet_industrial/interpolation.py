@@ -1,8 +1,32 @@
 import numpy as np
 import scipy.interpolate as sci
-import pybullet as p
+from scipy.spatial.transform import Rotation as R, RotationSpline
 
 from pybullet_industrial.toolpath import ToolPath
+
+
+def slerp(start_quat, end_quat, t_vals):
+    """Performs Spherical Linear Interpolation (SLERP) between two quaternions
+
+    Args:
+        start_quat (np.array): The starting quaternion
+        end_quat (np.array): The ending quaternion
+        t_vals (np.array): Array of interpolation parameters (0 <= t <= 1)
+
+    Returns:
+        np.array: The array of interpolated quaternions
+    """
+    start_rot = R.from_quat(start_quat)
+    end_rot = R.from_quat(end_quat)
+
+    # Create the spline (SLERP) object from two quaternions
+    slerp_rotations = R.from_quat([start_rot.as_quat(), end_rot.as_quat()])
+    slerp_spline = RotationSpline([0, 1], slerp_rotations)
+
+    # Perform SLERP interpolation at the time values
+    interpolated_rots = slerp_spline(t_vals)
+
+    return interpolated_rots.as_quat()
 
 
 def build_circular_path(center: np.array, radius: float,
@@ -37,7 +61,7 @@ def build_circular_path(center: np.array, radius: float,
 def linear_interpolation(start_point: np.array, end_point: np.array, samples: int,
                          start_orientation: np.array = None,
                          end_orientation: np.array = None):
-    """Performs a linear interpolation betwenn two points in 3D space
+    """Performs a linear interpolation between two points in 3D space
 
     Args:
         start_point (np.array): The start point of the interpolation
@@ -55,17 +79,14 @@ def linear_interpolation(start_point: np.array, end_point: np.array, samples: in
     if start_orientation is not None:
         if end_orientation is None:
             end_orientation = start_orientation
-        start_orientation = p.getEulerFromQuaternion(start_orientation)
-        end_orientation = p.getEulerFromQuaternion(end_orientation)
-        orientations = np.linspace(start_orientation,
-                                   end_orientation, num=samples)
-        final_orientations = []
 
-        for orientation in orientations:
-            orientation_quat = p.getQuaternionFromEuler(orientation)
-            final_orientations.append(orientation_quat)
+        # Time values for SLERP interpolation
+        t_vals = np.linspace(0, 1, samples)
 
-        final_path.orientations = np.array(final_orientations).transpose()
+        # Interpolate orientations using SLERP
+        final_orientations = slerp(start_orientation, end_orientation, t_vals)
+
+        final_path.orientations = final_orientations.transpose()
 
     return final_path
 
@@ -117,7 +138,7 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
                            radius: float, samples: int, axis: int = 2,
                            clockwise: bool = True, start_orientation: np.array = None,
                            end_orientation: np.array = None):
-    """AI is creating summary for circular_interpolation
+    """Performs a circular interpolation between two points in 3D space
 
     Args:
         start_point (np.array): The start point of the interpolation
@@ -125,7 +146,7 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
         radius (float): The radius of the circle used for the interpolation
         samples (int): The number of samples used to interpolate
         axis (int, optional): The axis around which the circle is interpolated.
-                              Defaults to 2 which corresponds to the z-axis (0=x,1=y).
+                              Defaults to 2 which corresponds to the z-axis (0=x, 1=y).
         clockwise (bool, optional): The direction of circular travel. Defaults to True.
         start_orientation (np.array): Start orientation as quaternion
         end_orientation (np.array): End orientation as quaternion
@@ -133,9 +154,10 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
     Returns:
         ToolPath: A ToolPath object of the interpolated path
     """
-
     all_axis = [0, 1, 2]
     all_axis.remove(axis)
+
+    # Interpolate positions in the x-y plane
     planar_start_point = np.array(
         [start_point[all_axis[0]], start_point[all_axis[1]]])
     planar_end_point = np.array(
@@ -148,22 +170,20 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
     for i in range(2):
         positions[all_axis[i]] = planar_path[i]
     positions[axis] = np.linspace(start_point[axis], end_point[axis], samples)
+
     final_path = ToolPath(positions=positions)
 
     if start_orientation is not None:
         if end_orientation is None:
             end_orientation = start_orientation
-        start_orientation = p.getEulerFromQuaternion(start_orientation)
-        end_orientation = p.getEulerFromQuaternion(end_orientation)
-        orientations = np.linspace(start_orientation,
-                                   end_orientation, num=samples)
-        final_orientations = []
 
-        for orientation in orientations:
-            orientation_quat = p.getQuaternionFromEuler(orientation)
-            final_orientations.append(orientation_quat)
+        # Time values for SLERP interpolation
+        t_vals = np.linspace(0, 1, samples)
 
-        final_path.orientations = np.array(final_orientations).transpose()
+        # Interpolate orientations using SLERP
+        final_orientations = slerp(start_orientation, end_orientation, t_vals)
+
+        final_path.orientations = final_orientations.transpose()
 
     return final_path
 

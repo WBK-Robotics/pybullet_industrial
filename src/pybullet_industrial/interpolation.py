@@ -69,7 +69,7 @@ def linear_interpolation(start_point: np.array, end_point: np.array, samples: in
     Args:
         start_point (np.array): The start point of the interpolation
         end_point (np.array): The end point of the interpolation
-        samples (int): The number of samples used to interpolate
+        samples (int): The number of samples between start and end
         start_orientation (np.array): Start orientation as quaternion
         end_orientation (np.array): End orientation as quaternion
 
@@ -103,7 +103,7 @@ def planar_circular_interpolation(start_point: np.array, end_point: np.array,
         start_point (np.array): The start point of the interpolation
         end_point (np.array): The end point of the interpolation
         radius (float): The radius of the circle
-        samples (int): The number of samples used to interpolate
+        samples (int): The number of samples between start and end
         clockwise (bool): boolean value indicating if the interpolation is performed clockwise
                             or anticlockwise
 
@@ -148,7 +148,7 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
         start_point (np.array): The start point of the interpolation
         end_point (np.array): The end point of the interpolation
         radius (float): The radius of the circle used for the interpolation
-        samples (int): The number of samples used to interpolate
+        samples (int): The number of samples between start and end
         axis (int, optional): The axis around which the circle is interpolated.
                               Defaults to 2 which corresponds to the z-axis (0=x, 1=y).
         clockwise (bool, optional): The direction of circular travel. Defaults to True.

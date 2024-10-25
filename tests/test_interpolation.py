@@ -14,7 +14,7 @@ class TestInterpolation(unittest.TestCase):
         # Case 1: Test with both start and end orientations
         start_point = np.array([0.0, 0.0, 0.0])
         end_point = np.array([10.0, 10.0, 10.0])
-        samples = 5
+        samples = 3
         start_orientation = p.getQuaternionFromEuler(
             [0, 0, 0])  # Neutral orientation
         end_orientation = p.getQuaternionFromEuler(
@@ -35,7 +35,7 @@ class TestInterpolation(unittest.TestCase):
         start_rot = R.from_quat(start_orientation)
         end_rot = R.from_quat(end_orientation)
         rotations = R.from_quat([start_rot.as_quat(), end_rot.as_quat()])
-        t_vals = np.linspace(0, 1, samples)
+        t_vals = np.linspace(0, 1, samples+2)
         slerp_spline = RotationSpline([0, 1], rotations)
         expected_orientations_both = slerp_spline(t_vals).as_quat()
 
@@ -58,7 +58,7 @@ class TestInterpolation(unittest.TestCase):
 
         # Expected orientations for only start orientation case
         expected_orientations_start_only = np.tile(
-            start_orientation, (samples, 1)).transpose()
+            start_orientation, (samples+2, 1)).transpose()
 
         expected_toolpath_with_start_only = ToolPath(
             positions=expected_positions,
@@ -79,7 +79,7 @@ class TestInterpolation(unittest.TestCase):
         start_point = np.array([1.0, 0.0, 0.0])
         end_point = np.array([0.0, 1.0, 0.0])
         radius = 1.0
-        samples = 5
+        samples = 3
         axis = 2  # Z-axis
         clockwise = True
         start_orientation = p.getQuaternionFromEuler(
@@ -102,7 +102,7 @@ class TestInterpolation(unittest.TestCase):
         start_rot = R.from_quat(start_orientation)
         end_rot = R.from_quat(end_orientation)
         rotations = R.from_quat([start_rot.as_quat(), end_rot.as_quat()])
-        t_vals = np.linspace(0, 1, samples)
+        t_vals = np.linspace(0, 1, samples+2)
         slerp_spline = RotationSpline([0, 1], rotations)
         expected_orientations_both = slerp_spline(t_vals).as_quat()
 
@@ -125,7 +125,7 @@ class TestInterpolation(unittest.TestCase):
 
         # Expected orientations for only start orientation case
         expected_orientations_start_only = np.tile(
-            start_orientation, (samples, 1)).transpose()
+            start_orientation, (samples+2, 1)).transpose()
 
         expected_toolpath_with_start_only = ToolPath(
             positions=expected_positions,
@@ -143,13 +143,39 @@ class TestInterpolation(unittest.TestCase):
         start_point = np.array([1.0, 0.0, 0.0])
         end_point = np.array([0.0, 1.0, 0.0])
         radius = 1.0
-        samples = 5
+        samples = 0
         axis = 2  # Z-axis
         clockwise = True
         start_orientation = p.getQuaternionFromEuler(
             [0, 0, 0])  # Neutral orientation
         end_orientation = p.getQuaternionFromEuler(
             [0, 0, np.pi / 2])  # 90 degrees rotation around Z-axis
+
+        linear_path = linear_interpolation(
+            start_point, end_point, samples, start_orientation,
+            end_orientation)
+        circular_path = circular_interpolation(
+            start_point, end_point, radius, samples, axis, clockwise,
+            start_orientation, end_orientation)
+
+        expected_position = np.array([[1, 0], [0, 1], [0, 0]])
+        expected_orientation = np.array([
+            [0, 0],
+            [0, 0],
+            [0, 0.70710678],
+            [1, 0.70710678]
+        ])
+
+        expected_toolpath = ToolPath(expected_position, expected_orientation)
+
+        np.testing.assert_array_almost_equal(
+            linear_path.positions, expected_toolpath.positions, decimal=6)
+        np.testing.assert_array_almost_equal(
+            circular_path.positions, expected_toolpath.positions, decimal=6)
+        np.testing.assert_array_almost_equal(
+            linear_path.orientations, expected_toolpath.orientations, decimal=6)
+        np.testing.assert_array_almost_equal(
+            linear_path.orientations, expected_toolpath.orientations, decimal=6)
 
 
 if __name__ == '__main__':

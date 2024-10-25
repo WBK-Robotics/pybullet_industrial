@@ -38,7 +38,7 @@ def build_circular_path(center: np.array, radius: float,
         radius (float): the radius of the circle
         min_angle (float): minimum angle of the circle path
         max_angle (float): maximum angle of the circle path
-        step_num (int): the number of steps between min_angle and max_angle
+        step_num (int): the number of steps including min_angle and max_angle
         clockwise (bool): boolean value indicating if the interpolation is performed clockwise
                           or anticlockwise
 
@@ -69,14 +69,13 @@ def linear_interpolation(start_point: np.array, end_point: np.array, samples: in
     Args:
         start_point (np.array): The start point of the interpolation
         end_point (np.array): The end point of the interpolation
-        samples (int): The number of samples between start and end
+        samples (int): The number of samples including start and end
         start_orientation (np.array): Start orientation as quaternion
         end_orientation (np.array): End orientation as quaternion
 
     Returns:
         ToolPath: A ToolPath object of the interpolated path
     """
-    samples = samples + 2
     positions = np.linspace(start_point, end_point, num=samples)
     final_path = ToolPath(positions=positions.transpose())
 
@@ -103,7 +102,7 @@ def planar_circular_interpolation(start_point: np.array, end_point: np.array,
         start_point (np.array): The start point of the interpolation
         end_point (np.array): The end point of the interpolation
         radius (float): The radius of the circle
-        samples (int): The number of samples between start and end
+        samples (int): The number of including start and end
         clockwise (bool): boolean value indicating if the interpolation is performed clockwise
                             or anticlockwise
 
@@ -148,7 +147,7 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
         start_point (np.array): The start point of the interpolation
         end_point (np.array): The end point of the interpolation
         radius (float): The radius of the circle used for the interpolation
-        samples (int): The number of samples between start and end
+        samples (int): The number of samples including start and end
         axis (int, optional): The axis around which the circle is interpolated.
                               Defaults to 2 which corresponds to the z-axis (0=x, 1=y).
         clockwise (bool, optional): The direction of circular travel. Defaults to True.
@@ -158,7 +157,6 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
     Returns:
         ToolPath: A ToolPath object of the interpolated path
     """
-    samples = samples + 2
     all_axis = [0, 1, 2]
     all_axis.remove(axis)
 

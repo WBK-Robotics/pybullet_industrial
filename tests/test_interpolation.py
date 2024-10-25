@@ -139,6 +139,18 @@ class TestInterpolation(unittest.TestCase):
             result_with_only_start_orientation.orientations,
             expected_toolpath_with_start_only.orientations, decimal=6)
 
+    def test_sample_size(self):
+        start_point = np.array([1.0, 0.0, 0.0])
+        end_point = np.array([0.0, 1.0, 0.0])
+        radius = 1.0
+        samples = 5
+        axis = 2  # Z-axis
+        clockwise = True
+        start_orientation = p.getQuaternionFromEuler(
+            [0, 0, 0])  # Neutral orientation
+        end_orientation = p.getQuaternionFromEuler(
+            [0, 0, np.pi / 2])  # 90 degrees rotation around Z-axis
+
 
 if __name__ == '__main__':
     unittest.main()

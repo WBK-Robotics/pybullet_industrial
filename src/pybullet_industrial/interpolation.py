@@ -76,6 +76,7 @@ def linear_interpolation(start_point: np.array, end_point: np.array, samples: in
     Returns:
         ToolPath: A ToolPath object of the interpolated path
     """
+    samples = samples + 2
     positions = np.linspace(start_point, end_point, num=samples)
     final_path = ToolPath(positions=positions.transpose())
 
@@ -157,6 +158,7 @@ def circular_interpolation(start_point: np.array, end_point: np.array,
     Returns:
         ToolPath: A ToolPath object of the interpolated path
     """
+    samples = samples + 2
     all_axis = [0, 1, 2]
     all_axis.remove(axis)
 

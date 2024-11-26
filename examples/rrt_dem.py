@@ -11,10 +11,8 @@ class PlanningProblem:
         self.bounds.setLow(0)
         self.bounds.setHigh(1)
         self.space.setBounds(self.bounds)
-
         # Set up the space information
         self.si = ob.SpaceInformation(self.space)
-
     def is_valid(self, state):
         """Define obstacle checking"""
         obstacles = [

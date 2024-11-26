@@ -1,3 +1,0 @@
-[submodule "external/ompl"]
-	path = external/ompl
-	url = https://github.com/ompl/ompl.git

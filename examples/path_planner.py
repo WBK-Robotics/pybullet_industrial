@@ -19,7 +19,9 @@ class PathPlanner:
             print(len(contact_points))
             for i, contact in enumerate(contact_points):
                 print(f"Contact {i}:")
-                print(contact)
+                print(p.getCollisionShapeData(self.robot.urdf, contact[3])[0][4])
+                print("  && ")
+                print(p.getCollisionShapeData(self.robot.urdf, contact[4])[0][4])
         else:
             print("NO COLLISION")
         print("end of code")

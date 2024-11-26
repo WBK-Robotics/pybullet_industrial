@@ -33,26 +33,23 @@ if __name__ == "__main__":
     p.setGravity(0, 0, -10)
     p.loadURDF(urdf_fofa, useFixedBase=True, globalScaling=0.001)
 
-    # Setting up robot position
+    # Setting up robot position 
     robot = RobotBase(urdf_robot, start_pos, start_orientation)
 
-    # robot.set_joint_position(
-    #     {'q2': -0.1, 'q3': -0.1})
-    # for _ in range(100):
-    #     p.stepSimulation()
+    # Setting robot configuration (fast way)
+    joint_position = [-6, 0, -1, 0, 0, 0]
+    robot.set_robot(joint_position)
 
-    joint_position = [0.5, -1.3, -np.pi, 0, 0, 0]
-    robot.reset_robot(joint_position)
-    p.performCollisionDetection()
-    contact_points = p.getContactPoints(robot.urdf)
+    # Finding out more about collision
+    path_planner = PathPlanner(robot)
+    path_planner.collision_report()
+
+   
 
     g_code_logger = pi.GCodeLogger(robot)
     g_code_logger.update_g_code()
     rounded_g_code = {key: round(
         value, 4) for key, value in g_code_logger.g_code_joint_position[0].items()}
     print(rounded_g_code)
-    if contact_points:
-        print("collision detected")
-    else:
-        print("no collision")
-    print("end of code")
+    
+

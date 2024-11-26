@@ -219,12 +219,11 @@
 		</visual>
 	</link>
 	
-	<joint name="q1" type="revolute">
+	<joint name="q1" type="continuous">
 		<parent link="link0_passive"/>
 		<child link="link1"/>
 		<origin xyz="0 0 1.14" rpy="0 0 0"/>
 		<axis xyz="0 0 1"/>
-		<limit effort="204" lower="-3.14159265358" upper="3.14159265358" velocity="1.91986217719"/>
 	</joint>
 	<joint name="q2" type="revolute">
 		<parent link="link1_passive"/>

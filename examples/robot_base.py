@@ -19,7 +19,9 @@ class RobotBase:
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
                  default_endeffector: str = None):
 
-        urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS
+        urdf_flags = (p.URDF_USE_SELF_COLLISION | p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS)
+        # urdf_flags = (p.URDF_USE_SELF_COLLISION)
+      
         self.urdf = p.loadURDF(urdf_model,
                                start_position, start_orientation,
                                flags=urdf_flags,
@@ -173,7 +175,7 @@ class RobotBase:
                                     force=self.max_joint_force[joint_number],
                                     targetPosition=joint_position)
 
-    def reset_robot(self, joint_values: list):
+    def set_robot(self, joint_values: list):
         """Resets the robot's joints to specified values.
 
         Args:
@@ -202,6 +204,27 @@ class RobotBase:
                 p.resetJointState(self.urdf, joint_number,
                                   targetValue=joint_value)
                 index += 1
+
+    def reset_robot(self, start_position: np.array, start_orientation: np.array,
+                    joint_values: list = None):
+        """resets the robots joints to 0 and the base to a specified position and orientation
+
+        Args:
+            start_position (np.array): a 3 dimensional position
+            start_orientation (np.array): a 4 dimensional quaternion representing
+                                          the desired orientation
+            joint_values (list): Allows to reset the joint state of the robot given
+                                 a list of positions.
+                                 Defaults to None in which case the joints remain in their current
+                                 configuration.
+        """
+        self.set_world_state(start_position, start_orientation)
+
+        if joint_values is None:
+            joint_values = np.zeros(self.number_of_joints)
+        for joint in range(self.number_of_joints):
+            p.resetJointState(self.urdf, joint,
+                              targetValue=joint_values[joint])
 
     def set_world_state(self, start_position: np.array, start_orientation: np.array):
         """Resets the robots base to a specified position and orientation

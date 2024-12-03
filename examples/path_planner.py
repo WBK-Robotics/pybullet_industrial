@@ -11,6 +11,21 @@ class PathPlanner:
         self.max_iterations = max_iterations
         self.ignored_internal_collisions = set()
 
+    def get_joint_name_mapping(self, body_id):
+        """
+        Retrieves a mapping of joint indices to joint names and their types for a given body.
+        """
+        num_joints = p.getNumJoints(body_id)
+        joint_name_mapping = {}
+
+        for joint_index in range(num_joints):
+            joint_info = p.getJointInfo(body_id, joint_index)
+            joint_name = joint_info[1].decode('utf-8')  # Extract the joint name
+            joint_type = joint_info[2]  # Extract the joint type
+            joint_name_mapping[joint_index] = (joint_name, joint_type)
+
+        return joint_name_mapping
+
     def get_link_name_mapping(self, body_id):
         """
         Retrieves a mapping of link indices to link names for a given body.

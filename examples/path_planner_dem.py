@@ -36,20 +36,22 @@ if __name__ == "__main__":
     # Setting up robot position 
     robot = RobotBase(urdf_robot, start_pos, start_orientation)
 
+
     # Setting robot configuration (fast way)
     joint_position = [-6, 0, -1, 0, 0, 0]
     robot.set_robot(joint_position)
 
     # Finding out more about collision
     path_planner = PathPlanner(robot)
-    path_planner.collision_report()
-    path_planner.ignored_collisions = path_planner.get_collisions()
-    path_planner.collision_report()	
-   
+
+    joint_informations = path_planner.get_joint_name_mapping(robot.urdf)
+    unignored, ignored = path_planner.get_internal_collisions(detailed=True)
+    path_planner.update_ignored_internal_collisions(unignored)
+    path_planner.get_internal_collisions(detailed=True)
 
 
     # g_code_logger = pi.GCodeLogger(robot)
     # g_code_logger.update_g_code()
     # rounded_g_code = {key: round(
-    #     value, 4) for key, value in g_code_logger.g_code_joint_position[0].items()}
+    #     value, 4) for key, value in g_code_logger.g_code_joint_positio
     # print(rounded_g_code)

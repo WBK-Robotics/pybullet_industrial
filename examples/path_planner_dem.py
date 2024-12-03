@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
 
     # Setting robot configuration (fast way)
-    joint_position = [-6, 0, -1, 0, 0, 0]
+    joint_position = [-6, 0, 0, 0, 0, 0]
     robot.set_robot(joint_position)
 
     # Finding out more about collision
@@ -46,9 +46,9 @@ if __name__ == "__main__":
 
     joint_informations = path_planner.get_joint_name_mapping(robot.urdf)
     unignored, ignored = path_planner.get_internal_collisions(detailed=True)
-    path_planner.update_ignored_internal_collisions(unignored)
-    path_planner.get_internal_collisions(detailed=True)
-
+    # path_planner.update_ignored_internal_collisions(unignored)
+    # path_planner.get_internal_collisions(detailed=True)
+    print("end of code")
 
     # g_code_logger = pi.GCodeLogger(robot)
     # g_code_logger.update_g_code()

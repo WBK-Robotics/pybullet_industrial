@@ -19,9 +19,7 @@ class RobotBase:
     def __init__(self, urdf_model: str, start_position: np.array, start_orientation: np.array,
                  default_endeffector: str = None):
 
-        urdf_flags = (p.URDF_USE_SELF_COLLISION | 
-                    p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS | 
-                    p.URDF_MAINTAIN_LINK_ORDER)
+        # urdf_flags = (p.URDF_USE_SELF_COLLISION | p.URDF_MAINTAIN_LINK_ORDER)
         urdf_flags =  p.URDF_USE_SELF_COLLISION 
         # urdf_flags = (p.URDF_USE_SELF_COLLISION)
         # urdf_flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS

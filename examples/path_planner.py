@@ -12,59 +12,36 @@ class PathPlanner:
         self.max_iterations = max_iterations
         self.ignored_internal_collisions = set()
 
-    def get_link_name_mapping(self, body_id):
-        """
-        Retrieves a mapping of PyBullet unique body link indices to link names.
-
-        Args:
-            body_id (int): The ID of the robot's body in the simulation.
-
-        Returns:
-            Dict[int, str]: A mapping of link indices (PyBullet unique IDs) to link names.
-        """
-        # Create a reverse mapping to ensure correctness
-        _link_name_to_index = {p.getBodyInfo(body_id)[0].decode('UTF-8'): -1}
-
-        # Populate the mapping
-        for joint_id in range(p.getNumJoints(body_id)):
-            link_name = p.getJointInfo(body_id, joint_id)[12].decode('UTF-8')
-            _link_name_to_index[link_name] = joint_id
-
-        # Convert to the desired output format: {index: name}
-        link_name_mapping = {index: name for name, index in _link_name_to_index.items()}
-
-        return link_name_mapping
-
-
-
     def get_joint_name_mapping(self, body_id):
-        """
-        Retrieves a mapping of joint indices to joint names, types, and participating links.
-
-        Args:
-            body_id (int): The ID of the robot's body in the simulation.
-
-        Returns:
-            Dict[int, Tuple[str, int, str, str]]: A mapping of joint indices to a tuple containing:
-                                                   - Joint name
-                                                   - Joint type
-                                                   - Parent link name
-                                                   - Child link name
-        """
-        num_joints = p.getNumJoints(body_id)
         joint_name_mapping = {}
-
-        link_name_mapping = self.get_link_name_mapping(body_id)
-
+        num_joints = p.getNumJoints(body_id)
         for joint_index in range(num_joints):
             joint_info = p.getJointInfo(body_id, joint_index)
-            joint_name = joint_info[1].decode('utf-8')  # Extract the joint name
-            joint_type = joint_info[2]  # Joint type (e.g., revolute, prismatic)
-            parent_link = link_name_mapping.get(joint_info[16], "Unknown")  # Parent link name
-            child_link = joint_info[12].decode('utf-8')  # Child link name
-            joint_name_mapping[joint_index] = (joint_name, joint_type, parent_link, child_link)
-
+            joint_name = joint_info[1].decode('utf-8')
+            child_link = joint_info[12]
+            parent_index = joint_info[16]
+            joint_name_mapping[joint_index] = {
+                'joint_name': joint_name,
+                'parent_index': parent_index,
+                'child_link': child_link
+            }
         return joint_name_mapping
+
+    def get_link_name_mapping(self, body_id):
+        # Get base link information
+        body_info = p.getBodyInfo(body_id)
+        base_name = body_info[0].decode('utf-8')  # Decode the base name
+        link_mapping = {-1: base_name}  # Initialize with base link
+
+        # Get joint name mapping
+        joint_name_mapping = self.get_joint_name_mapping(body_id)
+
+        # Map child links from the joint_name_mapping
+        for joint_index, joint_data in joint_name_mapping.items():
+            child_link_name = joint_data['child_link'].decode('utf-8')
+            link_mapping[joint_index] = child_link_name
+
+        return link_mapping
 
     def get_internal_collisions(self, detailed=False):
         """
@@ -105,14 +82,15 @@ class PathPlanner:
                 print("\nUnignored Collisions:")
                 for i, (collision, link_a_index, link_b_index) in enumerate(unignored_collisions, 1):
                     joint_info = None
-                    for joint_index, (joint_name, joint_type, parent_link, child_link) in joint_name_mapping.items():
-                        if set(collision) == {parent_link, child_link}:
-                            joint_info = (joint_name, joint_type, parent_link, child_link)
+                    for joint_index, joint_data in joint_name_mapping.items():
+                        if set(collision) == {joint_data['parent_index'], joint_data['child_link'].decode('utf-8')}:
+                            joint_info = joint_data
                             break
 
                     if joint_info:
                         print(f"Collision {i}: {collision[0]} ({link_a_index}) - {collision[1]} ({link_b_index}) "
-                              f"(Joint: {joint_info[0]}, Type: {joint_info[1]}, Parent: {joint_info[2]}, Child: {joint_info[3]})")
+                              f"(Joint: {joint_info['joint_name']}, Parent Index: {joint_info['parent_index']}, "
+                              f"Child: {joint_info['child_link'].decode('utf-8')})")
                     else:
                         print(f"Collision {i}: {collision[0]} ({link_a_index}) - {collision[1]} ({link_b_index})")
 
@@ -148,7 +126,3 @@ class PathPlanner:
 
     def is_collision_free(self, sample):
         pass
-
-
-
-

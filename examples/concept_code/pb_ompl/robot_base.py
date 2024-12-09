@@ -2,7 +2,7 @@ from typing import Dict
 
 import numpy as np
 import pybullet as p
-
+import copy
 
 class RobotBase:
     """A Base class encapsulating a URDF based industrial robot manipulator
@@ -39,6 +39,7 @@ class RobotBase:
         self.upper_joint_limit = np.zeros(self.number_of_joints)
 
         self.joint_idx = []
+        self.state = []
 
         for joint_number in range(self.number_of_joints):
             joint_info = p.getJointInfo(self.urdf, joint_number)
@@ -103,6 +104,9 @@ class RobotBase:
                                       'torque': joint_state_list[3]}
                 joint_state[joint_name] = single_joint_state
         return joint_state
+    
+    def get_cur_state(self):
+        return copy.deepcopy(self.state)
 
     def set_joint_position(self, target: Dict[str,  float], ignore_limits=False):
         """Sets the target position for a number of joints.
@@ -220,6 +224,8 @@ class RobotBase:
                                   targetValue=joint_value)
                 index += 1
 
+        self.state = joint_values
+        
     def reset_robot(self, start_position: np.array, start_orientation: np.array,
                     joint_values: list = None):
         """resets the robots joints to 0 and the base to a specified position and orientation

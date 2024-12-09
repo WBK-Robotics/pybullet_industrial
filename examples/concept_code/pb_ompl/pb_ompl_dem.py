@@ -66,11 +66,10 @@ if __name__ == "__main__":
 
     robot.set_robot(start)
     print("end of code")
-    robot.set_robot(goal)
-    print("end of code")
-    # res, path = pb_ompl_interface.plan(goal)
-    # if res:
-    #     pb_ompl_interface.execute(path)
+    res, path = pb_ompl_interface.plan(goal)
+    if res:
+        print("solution found")
+        # pb_ompl_interface.execute(path)
 
 
    

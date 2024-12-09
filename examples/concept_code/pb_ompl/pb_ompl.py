@@ -178,7 +178,7 @@ class PbOMPL():
             print("No solution found")
 
         # reset robot state
-        self.robot.set_state(orig_robot_state)
+        self.robot.set_robot(orig_robot_state)
         return res, sol_path_list
 
     def plan(self, goal, allowed_time = DEFAULT_PLANNING_TIME):

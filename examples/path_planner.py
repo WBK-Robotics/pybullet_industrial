@@ -102,12 +102,18 @@ class PathPlanner:
 
     def update_ignored_internal_collisions(self, collisions):
         """
-        Updates the ignored_internal_collisions set with new collision pairs.
-        Ensures reverse duplicates are normalized and not added.
+        Updates the ignored_internal_collisions set with normalized collision pairs.
+
+        Args:
+            collisions (list of tuples): Each tuple contains a collision pair and their indices.
         """
+        normalized_collisions = set()
         for collision in collisions:
-            normalized_collision = tuple(sorted(collision))
-            self.ignored_internal_collisions.add(normalized_collision)
+            collision_pair = collision[0]  # Extract the pair of link names
+            normalized_collision = tuple(sorted((str(collision_pair[0]), str(collision_pair[1]))))  # Normalize as strings
+            normalized_collisions.add(normalized_collision)
+        self.ignored_internal_collisions.update(normalized_collisions)
+
 
     def get_ignored_collisions(self):
         """

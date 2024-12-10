@@ -111,6 +111,10 @@ class PbOMPL():
 
     def setup_collision_detection(self, robot: RobotBase, obstacles, self_collisions = True, allow_collision_links = []):
         self.check_link_pairs = utils.get_self_link_pairs(robot.urdf, robot.joint_idx) if self_collisions else []
+        
+        # Remove entries from check_link_pairs that are in allow_collision_links
+        self.check_link_pairs = [pair for pair in self.check_link_pairs if pair not in allow_collision_links]
+        
         moving_links = frozenset(
             [item for item in utils.get_moving_links(robot.urdf, robot.joint_idx) if not item in allow_collision_links])
         moving_bodies = [(robot.urdf, moving_links)]

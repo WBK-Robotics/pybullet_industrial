@@ -40,11 +40,13 @@ class RobotBase:
 
         self.joint_idx = []
         self.state = []
+        self.num_dim = 0
 
         for joint_number in range(self.number_of_joints):
             joint_info = p.getJointInfo(self.urdf, joint_number)
             link_name = joint_info[12].decode("utf-8")
             self._link_name_to_index[link_name] = joint_number
+            
 
             if joint_info[2] != 4:  # checks if the joint is not fixed
                 self.joint_idx.append(joint_number)
@@ -61,7 +63,9 @@ class RobotBase:
                 self.lower_joint_limit[joint_number] = lower_limit
                 self.upper_joint_limit[joint_number] = upper_limit
 
-        self.num_dim = len(self.lower_joint_limit)
+                self.num_dim += 1
+
+        
         self._kinematic_solver_map = np.array(kinematic_solver_map)
 
         if default_endeffector is None:

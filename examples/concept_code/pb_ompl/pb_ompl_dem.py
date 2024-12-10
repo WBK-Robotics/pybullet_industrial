@@ -5,6 +5,8 @@ import numpy as np
 import pybullet_industrial as pi
 from robot_base import RobotBase
 from pb_ompl import PbOMPL
+import utils
+from itertools import product
 
 # from g_code_processor import GCodeProcessor
 
@@ -61,15 +63,54 @@ if __name__ == "__main__":
     pb_ompl_interface.set_obstacles(obstacles)
     pb_ompl_interface.set_planner("BITstar")
 
-    start = [0,0,0,-1,0,1.5,0]
-    goal = [0,1,-0.5,-0.1,0,0.2,0]
+    start = [0,0,0,-1,0,1.5]
+    goal = [0, 1, -0.5, -0.1, 0, 0.2]
 
     robot.set_robot(start)
-    print("end of code")
+
+    # Testing collision controll
+    
+    # Configuration for collision checking
+    self_collisions = True
+    allow_collision_links = []
+
+
+    check_link_pairs = utils.get_self_link_pairs(robot.urdf, robot.joint_idx) if self_collisions else []
+    moving_links = frozenset(
+        [item for item in utils.get_moving_links(robot.urdf, robot.joint_idx) if not item in allow_collision_links])
+    moving_bodies = [(robot.urdf, moving_links)]
+    check_body_pairs = list(product(moving_bodies, obstacles))
+
+    # check self-collision
+    robot.set_robot(pb_ompl_interface.state_to_list(robot.state))
+    for link1, link2 in check_link_pairs:
+        if utils.pairwise_link_collision(robot.urdf, link1, robot.urdf, link2):
+            allow_collision_links.append((link1, link2))
+            # print(get_body_name(body), get_link_name(body, link1), get_link_name(body, link2))
+
+    # check collision against environment
+    for body1, body2 in check_body_pairs:
+        if utils.pairwise_collision(body1, body2):
+            # print('body collision', body1, body2)
+            # print(get_body_name(body1), get_body_name(body2))
+            print("collision with environment")
+
+    pb_ompl_interface.setup_collision_detection(robot, obstacles, self_collisions, allow_collision_links)
+
+    valid = pb_ompl_interface.is_state_valid(robot.state)
+    print("Start Stat is valid: ", valid)
+
+    robot.set_robot(goal)
+    valid = pb_ompl_interface.is_state_valid(robot.state)
+    print("Goal Stat is valid: ", valid)
+
+    robot.set_robot(start)
+
+    # Planning
     res, path = pb_ompl_interface.plan(goal)
     if res:
         print("solution found")
         # pb_ompl_interface.execute(path)
 
 
-   
+

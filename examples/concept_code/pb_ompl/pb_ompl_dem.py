@@ -5,8 +5,10 @@ import numpy as np
 import pybullet_industrial as pi
 from robot_base import RobotBase
 from pb_ompl import PbOMPL
+from g_code_processor import GCodeProcessor
 import utils
 from itertools import product
+import time
 
 # from g_code_processor import GCodeProcessor
 
@@ -42,7 +44,7 @@ def clear_obstacles(obstacles):
 
 def add_box(box_pos, half_box_size):
     colBoxId = p.createCollisionShape(p.GEOM_BOX, halfExtents=half_box_size)
-    box_id = p.createMultiBody(baseMass=0, baseCollisionShapeIndex=colBoxId, basePosition=box_pos)
+    box_id = p.createMultiBody(baseMass=0, baseCollisionShapeIndex=colBoxId, basePosition=box_pos, baseOrientation=p.getQuaternionFromEuler([-np.pi/2, 0, 0]))
 
     return box_id
 
@@ -58,13 +60,13 @@ if __name__ == "__main__":
     # setup pb_ompl
     obstacles = []
     pb_ompl_interface = PbOMPL(robot,obstacles)
-    obstacle = add_box([1, 0, 0.7], [0.5, 0.5, 0.05])
+    obstacle = add_box(start_pos+[1.8, 0, 1.8], [0.5, 0.5, 0.05])
     obstacles.append(obstacle)
     pb_ompl_interface.set_obstacles(obstacles)
     pb_ompl_interface.set_planner("BITstar")
 
-    start = [0,0,0,-1,0,1.5]
-    goal = [0, 1, -0.5, -0.1, 0, 0.2]
+    start = [-0.5,0,-(np.pi/2),-(np.pi-0.001),-(np.pi/2),0]
+    goal = [0.5,0.3,-(np.pi/2),-(np.pi-0.001),-(np.pi/2),0]
 
     robot.set_robot(start)
 
@@ -111,6 +113,58 @@ if __name__ == "__main__":
     if res:
         print("solution found path")
         # pb_ompl_interface.execute(path)
+    
+        # Alternative for running g_code
+
+    for line in path:
+        robot.set_robot(line)
+        time.sleep(0.01)
 
 
+    # demonstration_object = pi.GCodeProcessor(robot=robot)
+    # g_code = []
+    
+    # # Converting path to a runnable processor-path
+    # for line in path:
+    #     g_code_line = {
+    #         "G": 1,
+    #         "RA1": line[0],
+    #         "RA2": line[1],
+    #         "RA3": line[2],
+    #         "RA4": line[3],
+    #         "RA5": line[4],
+    #         "RA6": line[5]
+    #     }
+    #     g_code.append(g_code_line)
 
+    # # Setting up the simulation
+    # robot.set_joint_position(({
+    #     'q1': 0,
+    #     'q2': 0,
+    #     'q3': -1,
+    #     'q4': 0,
+    #     'q5': 0,
+    #     'q6': 1.5
+    # }))
+    # for _ in range(100):
+    #     p.stepSimulation()
+
+    # # Create an iterator from the demonstration object
+    # demonstration_iterator = iter(demonstration_object)
+
+    # #adding G-code to the demonstration object
+    # demonstration_object.g_code = [g_code[0]]
+    # # Iterate over the demonstration object
+    # for _ in demonstration_iterator:
+    #     # Execute the simulation steps
+    #     for _ in range(200):
+    #         p.stepSimulation()
+
+    # #adding G-code to the demonstration object
+    # demonstration_object.g_code = g_code
+    # # Iterate over the demonstration object
+    # for _ in demonstration_iterator:
+    #     # Execute the simulation steps
+    #     for _ in range(20):
+    #         p.stepSimulation()
+    # print("finished")

@@ -40,13 +40,11 @@ class RobotBase:
 
         self.joint_idx = []
         self.state = []
-        moveable_joint = 0
 
         for joint_number in range(self.number_of_joints):
             joint_info = p.getJointInfo(self.urdf, joint_number)
             link_name = joint_info[12].decode("utf-8")
             self._link_name_to_index[link_name] = joint_number
-            
 
             if joint_info[2] != 4:  # checks if the joint is not fixed
                 self.joint_idx.append(joint_number)
@@ -60,13 +58,10 @@ class RobotBase:
                 if upper_limit < lower_limit:
                     lower_limit = -np.inf
                     upper_limit = np.inf
-                self.lower_joint_limit[moveable_joint] = lower_limit
-                self.upper_joint_limit[moveable_joint] = upper_limit
+                self.lower_joint_limit[joint_number] = lower_limit
+                self.upper_joint_limit[joint_number] = upper_limit
 
-                moveable_joint	+= 1
-
-        
-        self.num_dim = moveable_joint
+        self.num_dim = len(self.joint_idx)
         self._kinematic_solver_map = np.array(kinematic_solver_map)
 
         if default_endeffector is None:
@@ -86,7 +81,13 @@ class RobotBase:
         Returns:
             list: A list of tuples containing the lower and upper joint limits
         """
-        return [(self.lower_joint_limit[i], self.upper_joint_limit[i]) for i in range(self.num_dim)]
+        self.joint_bounds = []
+        for jont_idx in self.joint_idx:
+            lower = self.lower_joint_limit[jont_idx]
+            upper = self.upper_joint_limit[jont_idx]
+            self.joint_bounds.append([lower, upper])
+
+        return self.joint_bounds
 
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name
@@ -208,21 +209,26 @@ class RobotBase:
         Raises:
             ValueError: If any joint value is out of the lower or upper limits.
         """
-        for joint_number, joint_value in zip(self.joint_idx, joint_values):
-   
+        index = 0
+        for joint_number in range(self.number_of_joints):
+            joint_type = p.getJointInfo(self.urdf, joint_number)[2]
 
-            # Check if the joint value is within the limits
-            lower_limit = self.lower_joint_limit[joint_number]
-            upper_limit = self.upper_joint_limit[joint_number]
+            if joint_type == 0:  # Revolute or Prismatic joint (movable joint)
+                joint_value = joint_values[index]
 
-            if joint_value < lower_limit or joint_value > upper_limit:
-                raise ValueError(
-                    f"Joint value {joint_value} for joint {joint_number} is out of bounds. "
-                    f"Must be between {lower_limit} and {upper_limit}.")
+                # Check if the joint value is within the limits
+                lower_limit = self.lower_joint_limit[joint_number]
+                upper_limit = self.upper_joint_limit[joint_number]
 
-            # Reset the joint state
-            p.resetJointState(self.urdf, joint_number,
-                                targetValue=joint_value)                
+                if joint_value < lower_limit or joint_value > upper_limit:
+                    raise ValueError(
+                        f"Joint value {joint_value} for joint {joint_number} is out of bounds. "
+                        f"Must be between {lower_limit} and {upper_limit}.")
+
+                # Reset the joint state
+                p.resetJointState(self.urdf, joint_number,
+                                  targetValue=joint_value)
+                index += 1
 
         self.state = joint_values
         

@@ -109,7 +109,7 @@ if __name__ == "__main__":
     # Planning
     res, path = pb_ompl_interface.plan(goal)
     if res:
-        print("solution found")
+        print("solution found path")
         # pb_ompl_interface.execute(path)
 
 

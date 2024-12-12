@@ -175,8 +175,8 @@ class PbOMPL():
             sol_path_list = [self.state_to_list(state) for state in sol_path_states]
             # print(len(sol_path_list))
             # print(sol_path_list)
-            for sol_path in sol_path_list:
-                self.is_state_valid(sol_path)
+            # for sol_path in sol_path_list:
+            #     self.is_state_valid(sol_path)
             res = True
         else:
             print("No solution found")

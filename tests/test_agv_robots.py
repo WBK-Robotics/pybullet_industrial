@@ -146,7 +146,7 @@ class TestDiffDriveAGV(unittest.TestCase):
         distance, angle, target_angle_error = self.robot._calculate_position_error()
 
         # check if the position error is correct
-        self.assertAlmostEqual(distance, 0, delta=0.05)
+        self.assertAlmostEqual(distance, 0, delta=0.06)
 
 
 

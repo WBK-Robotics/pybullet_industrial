@@ -2,7 +2,7 @@ from typing import Dict
 
 import numpy as np
 import pybullet as p
-
+import copy
 
 class RobotBase:
     """A Base class encapsulating a URDF based industrial robot manipulator
@@ -35,8 +35,11 @@ class RobotBase:
         self._joint_name_to_index = {}
         self._link_name_to_index = {}
         kinematic_solver_map = []
-        self._lower_joint_limit = np.zeros(self.number_of_joints)
-        self._upper_joint_limit = np.zeros(self.number_of_joints)
+        self.lower_joint_limit = np.zeros(self.number_of_joints)
+        self.upper_joint_limit = np.zeros(self.number_of_joints)
+
+        self.joint_idx = []
+        self.state = []
 
         for joint_number in range(self.number_of_joints):
             joint_info = p.getJointInfo(self.urdf, joint_number)
@@ -44,6 +47,7 @@ class RobotBase:
             self._link_name_to_index[link_name] = joint_number
 
             if joint_info[2] != 4:  # checks if the joint is not fixed
+                self.joint_idx.append(joint_number)
                 joint_name = joint_info[1].decode("utf-8")
                 self._joint_name_to_index[joint_name] = joint_number
 
@@ -54,9 +58,10 @@ class RobotBase:
                 if upper_limit < lower_limit:
                     lower_limit = -np.inf
                     upper_limit = np.inf
-                self._lower_joint_limit[joint_number] = lower_limit
-                self._upper_joint_limit[joint_number] = upper_limit
+                self.lower_joint_limit[joint_number] = lower_limit
+                self.upper_joint_limit[joint_number] = upper_limit
 
+        self.num_dim = len(self.joint_idx)
         self._kinematic_solver_map = np.array(kinematic_solver_map)
 
         if default_endeffector is None:
@@ -69,6 +74,20 @@ class RobotBase:
         self.max_joint_force = 1000*np.ones(self.number_of_joints)
         for joint_number in range(self.number_of_joints):
             p.resetJointState(self.urdf, joint_number, targetValue=0)
+
+    def get_joint_bounds(self):
+        """Returns the lower and upper joint limits
+
+        Returns:
+            list: A list of tuples containing the lower and upper joint limits
+        """
+        self.joint_bounds = []
+        for jont_idx in self.joint_idx:
+            lower = self.lower_joint_limit[jont_idx]
+            upper = self.upper_joint_limit[jont_idx]
+            self.joint_bounds.append([lower, upper])
+
+        return self.joint_bounds
 
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name
@@ -91,6 +110,9 @@ class RobotBase:
                                       'torque': joint_state_list[3]}
                 joint_state[joint_name] = single_joint_state
         return joint_state
+    
+    def get_cur_state(self):
+        return copy.deepcopy(self.state)
 
     def set_joint_position(self, target: Dict[str,  float], ignore_limits=False):
         """Sets the target position for a number of joints.
@@ -110,8 +132,8 @@ class RobotBase:
             joint_number = self._joint_name_to_index[joint]
 
             if ignore_limits is False:
-                lower_joint_limit = self._lower_joint_limit[joint_number]
-                upper_joint_limit = self._upper_joint_limit[joint_number]
+                lower_joint_limit = self.lower_joint_limit[joint_number]
+                upper_joint_limit = self.upper_joint_limit[joint_number]
                 if joint_position > upper_joint_limit or joint_position < lower_joint_limit:
                     raise ValueError('The joint position '+str(joint_position) +
                                      ' is out of limit for joint '+joint+'. Its limits are:\n' +
@@ -162,14 +184,14 @@ class RobotBase:
             joint_poses = p.calculateInverseKinematics(self.urdf,
                                                        endeffector_id,
                                                        target_position,
-                                                       lowerLimits=self._lower_joint_limit,
+                                                       lowerLimits=self.lower_joint_limit,
                                                        upperLimits=self._upper_joint_limit)
         else:
             joint_poses = p.calculateInverseKinematics(self.urdf,
                                                        endeffector_id,
                                                        target_position,
                                                        targetOrientation=target_orientation,
-                                                       lowerLimits=self._lower_joint_limit,
+                                                       lowerLimits=self.lower_joint_limit,
                                                        upperLimits=self._upper_joint_limit)
 
         for index, joint_position in enumerate(joint_poses):
@@ -195,8 +217,8 @@ class RobotBase:
                 joint_value = joint_values[index]
 
                 # Check if the joint value is within the limits
-                lower_limit = self._lower_joint_limit[joint_number]
-                upper_limit = self._upper_joint_limit[joint_number]
+                lower_limit = self.lower_joint_limit[joint_number]
+                upper_limit = self.upper_joint_limit[joint_number]
 
                 if joint_value < lower_limit or joint_value > upper_limit:
                     raise ValueError(
@@ -208,6 +230,8 @@ class RobotBase:
                                   targetValue=joint_value)
                 index += 1
 
+        self.state = joint_values
+        
     def reset_robot(self, start_position: np.array, start_orientation: np.array,
                     joint_values: list = None):
         """resets the robots joints to 0 and the base to a specified position and orientation

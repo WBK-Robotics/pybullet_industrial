@@ -22,14 +22,16 @@ class PbOMPL:
         self.obstacles = obstacles
 
         # Define the state space with dimensionality matching the robot's degrees of freedom
-        self.space = ob.RealVectorStateSpace(robot.num_dim)
+        self.space = ob.RealVectorStateSpace(robot.dof)
 
         # Set bounds for the state space based on the robot's joint limits
-        bounds = ob.RealVectorBounds(robot.num_dim)
-        joint_bounds = self.robot.get_joint_bounds()
-        for i, bound in enumerate(joint_bounds):
-            bounds.setLow(i, bound[0])
-            bounds.setHigh(i, bound[1])
+        lower_limit, upper_limit = robot.get_joint_limits()
+        bounds = ob.RealVectorBounds(robot.dof)
+
+        for i, (lower, upper) in enumerate(zip(lower_limit, upper_limit)):
+            bounds.setLow(i, lower)
+            bounds.setHigh(i, upper)
+
         self.space.setBounds(bounds)
 
         # Initialize the motion planning problem setup
@@ -70,7 +72,7 @@ class PbOMPL:
         Checks if a given state is valid by ensuring no collisions with the environment
         or self-collisions.
         """
-        self.robot.set_robot(self.state_to_list(state))
+        self.robot.reset_joint_positions(state)
 
         # Check for self-collisions
         for link1, link2 in self.check_link_pairs:
@@ -99,11 +101,11 @@ class PbOMPL:
         """
         Configures the collision detection settings, including self-collision and environment checks.
         """
-        self.check_link_pairs = utils.get_self_link_pairs(robot.urdf, robot.joint_idx) if self_collisions else []
+        self.check_link_pairs = utils.get_self_link_pairs(robot.urdf, robot.moving_joint_index) if self_collisions else []
         self.check_link_pairs = [pair for pair in self.check_link_pairs if pair not in allow_collision_links]
 
         moving_links = frozenset(
-            [item for item in utils.get_moving_links(robot.urdf, robot.joint_idx) if item not in allow_collision_links])
+            [item for item in utils.get_moving_links(robot.urdf, robot.moving_joint_index) if item not in allow_collision_links])
         moving_bodies = [(robot.urdf, moving_links)]
         self.check_body_pairs = list(product(moving_bodies, obstacles))
 
@@ -140,7 +142,7 @@ class PbOMPL:
         Returns:
             Tuple (bool, list): Success flag and the interpolated solution path.
         """
-        orig_robot_state = self.robot.get_cur_state()
+        orig_robot_state = self.robot.moving_joint_positions
 
         # Set start and goal states
         s = ob.State(self.space)
@@ -164,7 +166,7 @@ class PbOMPL:
             print("No solution found")
 
         # Restore original robot state
-        self.robot.set_robot(orig_robot_state)
+        self.robot.reset_joint_positions(orig_robot_state)
         return res, sol_path_list
 
     def plan(self, goal, allowed_time=DEFAULT_PLANNING_TIME):
@@ -175,11 +177,11 @@ class PbOMPL:
             goal: List of joint values representing the goal configuration.
             allowed_time: Time allowed for the planner to find a solution.
         """
-        start = self.robot.get_cur_state()
+        start = self.robot.moving_joint_positions
         return self.plan_start_goal(start, goal, allowed_time=allowed_time)
 
     def state_to_list(self, state):
         """
         Converts an OMPL state object to a list of joint values.
         """
-        return [state[i] for i in range(self.robot.num_dim)]
+        return [state[i] for i in range(self.robot.dof)]

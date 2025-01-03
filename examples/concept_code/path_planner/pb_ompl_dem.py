@@ -101,7 +101,7 @@ if __name__ == "__main__":
     # Define start and goal configurations for the robot
     start = [-0.5, 0, -(np.pi/2), -(np.pi-0.001), -(np.pi/2), 0]
     goal = [0.5, 0.3, -(np.pi/2), -(np.pi-0.001), -(np.pi/2), 0]
-    robot.set_robot(start)
+    robot.reset_joint_positions(start)
 
     # Configure collision detection
     self_collisions = True
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     if res:
         print("Solution found. Executing path...")
         for line in path:
-            robot.set_robot(line)
+            robot.reset_joint_positions(line)
             time.sleep(0.01)
     else:
         print("No solution found.")

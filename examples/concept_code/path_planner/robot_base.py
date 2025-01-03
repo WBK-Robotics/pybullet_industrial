@@ -27,6 +27,7 @@ class RobotBase:
 
         self.number_of_joints = p.getNumJoints(self.urdf)
         self._joint_state_shape = self.get_joint_state()
+        self.moving_joint_index = []
         self._joint_name_to_index = {}
         self._link_name_to_index = {}
         kinematic_solver_map = []
@@ -41,6 +42,7 @@ class RobotBase:
             if joint_info[2] != 4:  # checks if the joint is not fixed
                 joint_name = joint_info[1].decode("utf-8")
                 self._joint_name_to_index[joint_name] = joint_number
+                self.moving_joint_index.append(joint_number)
 
                 kinematic_solver_map.append(joint_number)
 
@@ -51,6 +53,8 @@ class RobotBase:
                     upper_limit = np.inf
                 self._lower_joint_limit[joint_number] = lower_limit
                 self._upper_joint_limit[joint_number] = upper_limit
+
+        self.dof = len(self.moving_joint_index)
 
         self._kinematic_solver_map = np.array(kinematic_solver_map)
 
@@ -189,6 +193,18 @@ class RobotBase:
             p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
                                     force=self.max_joint_force[joint_number],
                                     targetPosition=joint_position)
+
+    def reset_joint_positions(self, joint_values: np.array):
+        """Resets the robots joints to a specified position
+
+        Args:
+            joint_values (np.array): A list of joint positions
+        """
+        for joint_index, joint_value in zip(self.moving_joint_index, joint_values):
+            p.resetJointState(self.urdf, joint_index,
+                              targetValue=joint_value)
+
+        self.moving_joint_positions = joint_values
 
     def reset_robot(self, start_position: np.array, start_orientation: np.array,
                     joint_values: list = None):

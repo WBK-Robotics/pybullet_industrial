@@ -10,6 +10,7 @@ import utils
 from itertools import product
 import time
 
+
 def seting_up_enviroment():
     """
     Sets up the simulation environment, including paths to URDF files and the PyBullet physics simulation.
@@ -48,6 +49,7 @@ def seting_up_enviroment():
 
     return urdf_robot, start_pos, start_orientation
 
+
 def clear_obstacles(obstacles):
     """
     Removes all obstacles from the simulation.
@@ -57,6 +59,7 @@ def clear_obstacles(obstacles):
     """
     for obstacle in obstacles:
         p.removeBody(obstacle)
+
 
 def add_box(box_pos, half_box_size):
     """
@@ -74,12 +77,14 @@ def add_box(box_pos, half_box_size):
                                basePosition=box_pos, baseOrientation=p.getQuaternionFromEuler([-np.pi/2, 0, 0]))
     return box_id
 
+
 if __name__ == "__main__":
     # Initialize the simulation environment
     urdf_robot, start_pos, start_orientation = seting_up_enviroment()
 
     # Create a robot instance and position it in the simulation
     robot = RobotBase(urdf_robot, start_pos, start_orientation)
+    lower_limit, upper_limit = robot.get_joint_limits()
 
     # Set up motion planning interface with obstacles
     obstacles = []

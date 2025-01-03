@@ -65,6 +65,22 @@ class RobotBase:
         for joint_number in range(self.number_of_joints):
             p.resetJointState(self.urdf, joint_number, targetValue=0)
 
+    def get_joint_limits(self):
+        """Returns the lower and upper joint limits of the robots moiving joints
+
+        Returns:
+            Tuple[np.array, np.array]: The lower and upper joint limits
+        """
+        lower_joint_limit = []
+        upper_joint_limit = []
+
+        for joint_name in self._joint_name_to_index:
+            lower_joint_limit.append(
+                self._lower_joint_limit[self._joint_name_to_index[joint_name]])
+            upper_joint_limit.append(
+                self._upper_joint_limit[self._joint_name_to_index[joint_name]])
+
+        return np.array(lower_joint_limit), np.array(upper_joint_limit)
 
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name

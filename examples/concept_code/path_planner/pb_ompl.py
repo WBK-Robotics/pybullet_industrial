@@ -18,7 +18,6 @@ class PbOMPL:
             obstacles: List of obstacle IDs present in the environment (optional).
         """
         self.robot = robot
-        self.robot_id = robot.urdf
         self.obstacles = obstacles
 
         # Define the state space with dimensionality matching the robot's degrees of freedom
@@ -74,7 +73,8 @@ class PbOMPL:
 
         # Check for self-collisions
         for link1, link2 in self.check_link_pairs:
-            if utils.pairwise_link_collision(self.robot_id, link1, self.robot_id, link2):
+            if utils.pairwise_link_collision(self.robot.urdf, link1,
+                                             self.robot.urdf, link2):
                 return False
 
         # Check for collisions with the environment

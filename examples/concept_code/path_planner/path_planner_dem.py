@@ -3,7 +3,7 @@ import pybullet as p
 import pybullet_data
 import numpy as np
 from robot_base import RobotBase
-from pb_ompl import PbOMPL
+from path_planner import PathPlanner
 from collision_checker import CollisionChecker
 import time
 
@@ -80,10 +80,10 @@ if __name__ == "__main__":
     collision_checker = CollisionChecker(robot, obstacles)
 
     # Set up motion planning interface with the CollisionChecker
-    pb_ompl_interface = PbOMPL(robot, collision_checker)
+    path_planner = PathPlanner(robot, collision_checker)
 
     # Select a motion planner
-    pb_ompl_interface.set_planner("BITstar")
+    path_planner.set_planner("BITstar")
 
     # Define start and goal configurations for the robot
     start = [-0.5, 0, -(np.pi/2), -(np.pi-0.001), -(np.pi/2), 0]
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     collision_checker.update_collision_settings()
 
     # Plan a path to the goal
-    res, path = pb_ompl_interface.plan(goal)
+    res, path = path_planner.plan(goal)
     if res:
         print("Solution found. Executing path...")
         for line in path:

@@ -5,7 +5,8 @@ from collision_checker import CollisionChecker
 INTERPOLATE_NUM = 500  # Number of segments for interpolating the solution path
 DEFAULT_PLANNING_TIME = 5.0  # Default maximum allowed time for planning
 
-class PbOMPL:
+
+class PathPlanner:
     def __init__(self, robot, collision_checker: CollisionChecker):
         """
         Initializes the motion planning setup for a given robot in a constrained environment.

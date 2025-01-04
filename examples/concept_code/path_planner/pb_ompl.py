@@ -1,25 +1,21 @@
 from ompl import base as ob
 from ompl import geometric as og
-import pybullet as p
-import utils
-from itertools import product
-from robot_base import RobotBase
+from collision_checker import CollisionChecker
 
 INTERPOLATE_NUM = 500  # Number of segments for interpolating the solution path
 DEFAULT_PLANNING_TIME = 5.0  # Default maximum allowed time for planning
 
-
 class PbOMPL:
-    def __init__(self, robot: RobotBase, obstacles: list = []) -> None:
+    def __init__(self, robot, collision_checker: CollisionChecker):
         """
         Initializes the motion planning setup for a given robot in a constrained environment.
 
         Args:
             robot: Instance of RobotBase representing the robot model and its kinematics.
-            obstacles: List of obstacle IDs present in the environment (optional).
+            collision_checker: An instance of CollisionChecker for managing collision detection.
         """
         self.robot = robot
-        self.obstacles = obstacles
+        self.collision_checker = collision_checker
 
         # Define the state space with dimensionality matching the robot's degrees of freedom
         self.space = ob.RealVectorStateSpace(robot.dof)
@@ -39,75 +35,28 @@ class PbOMPL:
 
         # Define a state validity checker to ensure collision-free states
         self.ss.setStateValidityChecker(
-            ob.StateValidityCheckerFn(self.is_state_valid))
+            ob.StateValidityCheckerFn(self.is_state_valid)
+        )
 
         # Retrieve the space information object for further configuration
         self.si = self.ss.getSpaceInformation()
 
-        # Configure collision detection and default planner
-        self.set_obstacles(obstacles)
-        self.set_planner("RRT")  # Default planner is RRT
-
-    def set_obstacles(self, obstacles):
-        """
-        Updates the list of obstacles and reconfigures collision detection.
-        """
-        self.obstacles = obstacles
-        self.setup_collision_detection(self.robot, self.obstacles)
-
-    def add_obstacles(self, obstacle_id):
-        """
-        Adds a new obstacle to the list of tracked obstacles.
-        """
-        self.obstacles.append(obstacle_id)
-
-    def remove_obstacles(self, obstacle_id):
-        """
-        Removes an obstacle from the list of tracked obstacles.
-        """
-        self.obstacles.remove(obstacle_id)
+        # Set the default planner
+        self.set_planner("RRT")
 
     def is_state_valid(self, state):
         """
         Checks if a given state is valid by ensuring no collisions with the environment
         or self-collisions.
+
+        Args:
+            state: The state of the robot (list of joint positions).
+
+        Returns:
+            bool: True if the state is valid (collision-free), False otherwise.
         """
-        self.robot.reset_joint_positions(state)
-
-        # Check for self-collisions
-        for link1, link2 in self.check_link_pairs:
-            if utils.pairwise_link_collision(self.robot.urdf, link1,
-                                             self.robot.urdf, link2):
-                return False
-
-        # Check for collisions with the environment
-        for body1, body2 in self.check_body_pairs:
-            if utils.pairwise_collision(body1, body2):
-                return False
-
-        return True
-
-    def get_collision_links(self, robot: RobotBase):
-        """
-        Returns a list of robot links that are currently in collision.
-        """
-        allowed_collision_links = []
-        for link1, link2 in self.check_link_pairs:
-            if utils.pairwise_link_collision(robot.urdf, link1, robot.urdf, link2):
-                allowed_collision_links.append((link1, link2))
-        return allowed_collision_links
-
-    def setup_collision_detection(self, robot: RobotBase, obstacles, self_collisions=True, allow_collision_links=[]):
-        """
-        Configures the collision detection settings, including self-collision and environment checks.
-        """
-        self.check_link_pairs = utils.get_self_link_pairs(robot.urdf, robot.moving_joint_index) if self_collisions else []
-        self.check_link_pairs = [pair for pair in self.check_link_pairs if pair not in allow_collision_links]
-
-        moving_links = frozenset(
-            [item for item in utils.get_moving_links(robot.urdf, robot.moving_joint_index) if item not in allow_collision_links])
-        moving_bodies = [(robot.urdf, moving_links)]
-        self.check_body_pairs = list(product(moving_bodies, obstacles))
+        joint_positions = [state[i] for i in range(self.robot.dof)]
+        return self.collision_checker.is_state_valid(joint_positions)
 
     def set_planner(self, planner_name):
         """
@@ -183,5 +132,11 @@ class PbOMPL:
     def state_to_list(self, state):
         """
         Converts an OMPL state object to a list of joint values.
+
+        Args:
+            state: An OMPL state object.
+
+        Returns:
+            list: A list of joint values.
         """
         return [state[i] for i in range(self.robot.dof)]

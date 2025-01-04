@@ -2,12 +2,9 @@ import os
 import pybullet as p
 import pybullet_data
 import numpy as np
-import pybullet_industrial as pi
 from robot_base import RobotBase
 from pb_ompl import PbOMPL
-from g_code_processor import GCodeProcessor
-import utils
-from itertools import product
+from collision_checker import CollisionChecker
 import time
 
 
@@ -50,17 +47,6 @@ def seting_up_enviroment():
     return urdf_robot, start_pos, start_orientation
 
 
-def clear_obstacles(obstacles):
-    """
-    Removes all obstacles from the simulation.
-
-    Args:
-        obstacles: List of obstacle IDs to remove.
-    """
-    for obstacle in obstacles:
-        p.removeBody(obstacle)
-
-
 def add_box(box_pos, half_box_size):
     """
     Adds a box-shaped obstacle to the simulation.
@@ -84,16 +70,17 @@ if __name__ == "__main__":
 
     # Create a robot instance and position it in the simulation
     robot = RobotBase(urdf_robot, start_pos, start_orientation)
-    lower_limit, upper_limit = robot.get_joint_limits()
-
-    # Set up motion planning interface with obstacles
-    obstacles = []
-    pb_ompl_interface = PbOMPL(robot, obstacles)
 
     # Add a box obstacle to the environment
+    obstacles = []
     obstacle = add_box(start_pos + [1.8, 0, 1.8], [0.5, 0.5, 0.05])
     obstacles.append(obstacle)
-    pb_ompl_interface.set_obstacles(obstacles)
+
+    # Initialize CollisionChecker
+    collision_checker = CollisionChecker(robot, obstacles)
+
+    # Set up motion planning interface with the CollisionChecker
+    pb_ompl_interface = PbOMPL(robot, collision_checker)
 
     # Select a motion planner
     pb_ompl_interface.set_planner("BITstar")
@@ -103,13 +90,9 @@ if __name__ == "__main__":
     goal = [0.5, 0.3, -(np.pi/2), -(np.pi-0.001), -(np.pi/2), 0]
     robot.reset_joint_positions(start)
 
-    # Configure collision detection
-    self_collisions = True
-    pb_ompl_interface.setup_collision_detection(robot, obstacles, self_collisions)
-
     # Allow specific collisions and reconfigure detection
-    allowed_collisions = pb_ompl_interface.get_collision_links(robot)
-    pb_ompl_interface.setup_collision_detection(robot, obstacles, self_collisions, allowed_collisions)
+    collision_checker.allow_collision_links = collision_checker.get_collision_links()
+    collision_checker.update_collision_settings()
 
     # Plan a path to the goal
     res, path = pb_ompl_interface.plan(goal)

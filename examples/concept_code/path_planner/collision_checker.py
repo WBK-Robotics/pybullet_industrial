@@ -32,9 +32,10 @@ class CollisionChecker:
         - Filters out allowed collision link pairs from the self-collision checks.
         - Defines pairs of the robot and obstacles for environment collision checks.
         """
+
         # Define link pairs for self-collision checks
         self.check_link_pairs = self.get_self_link_pairs(
-            self.robot.urdf, self.robot.moving_joint_index
+            self.robot.urdf, self.robot.joint_name_to_index.values()
         ) if self.self_collisions else []
         self.check_link_pairs = [
             pair for pair in self.check_link_pairs if pair not in self.allow_collision_links
@@ -42,7 +43,7 @@ class CollisionChecker:
 
         # Define body pairs for collision checks with obstacles
         moving_links = frozenset(
-            item for item in self.get_moving_links(self.robot.urdf, self.robot.moving_joint_index)
+            item for item in self.get_moving_links(self.robot.urdf, self.robot.joint_name_to_index.values())
             if item not in self.allow_collision_links
         )
         moving_bodies = [(self.robot.urdf, moving_links)]
@@ -58,7 +59,7 @@ class CollisionChecker:
         self.obstacles = obstacles
         self.update_collision_settings()
 
-    def is_state_valid(self, state):
+    def check_collision(self):
         """
         Checks if a given state is valid by ensuring no collisions with the environment
         or self-collisions.
@@ -69,7 +70,6 @@ class CollisionChecker:
         Returns:
             bool: True if the state is valid (collision-free), False otherwise.
         """
-        self.robot.reset_joint_positions(state)
 
         # Self-collision checks
         for link1, link2 in self.check_link_pairs:

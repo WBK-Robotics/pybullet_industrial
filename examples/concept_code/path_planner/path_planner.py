@@ -1,13 +1,14 @@
 from ompl import base as ob
 from ompl import geometric as og
 from collision_checker import CollisionChecker
+from robot_base import RobotBase
 
 INTERPOLATE_NUM = 500  # Number of segments for interpolating the solution path
 DEFAULT_PLANNING_TIME = 5.0  # Default maximum allowed time for planning
 
 
 class PathPlanner:
-    def __init__(self, robot, collision_checker: CollisionChecker, planner_name="RRT"):
+    def __init__(self, robot: RobotBase, collision_checker: CollisionChecker, planner_name="RRT", selected_joints: set = None):
         """
         Initializes the motion planning setup for a given robot in a constrained environment.
 
@@ -18,17 +19,21 @@ class PathPlanner:
         self.robot = robot
         self.collision_checker = collision_checker
 
-        # Define the state space with dimensionality matching the robot's degrees of freedom
-        self.space = ob.RealVectorStateSpace(robot.dof)
-
+        if selected_joints is None:
+            lower_limit, upper_limit = robot.get_joint_limits()
+            self.selected_joints = robot.joint_name_to_index.keys()
+        else:
+            lower_limit, upper_limit = robot.get_joint_limits(selected_joints)
+            self.selected_joints = selected_joints
         # Set bounds for the state space based on the robot's joint limits
-        lower_limit, upper_limit = robot.get_joint_limits()
-        bounds = ob.RealVectorBounds(robot.dof)
+        self.dimensions = len(lower_limit)
+        bounds = ob.RealVectorBounds(self.dimensions)
 
-        for i, (lower, upper) in enumerate(zip(lower_limit, upper_limit)):
+        for i, (lower, upper) in enumerate(zip(lower_limit.values(), upper_limit.values())):
             bounds.setLow(i, lower)
             bounds.setHigh(i, upper)
-
+        # Define the state space with dimensionality matching the robot's degrees of freedom
+        self.space = ob.RealVectorStateSpace(self.dimensions)
         self.space.setBounds(bounds)
 
         # Initialize the motion planning problem setup
@@ -56,8 +61,12 @@ class PathPlanner:
         Returns:
             bool: True if the state is valid (collision-free), False otherwise.
         """
-        joint_positions = [state[i] for i in range(self.robot.dof)]
-        return self.collision_checker.is_state_valid(joint_positions)
+        target = {}
+        joint_positions = [state[i] for i in range(self.dimensions)]
+        for joint_name, joint_position  in zip(self.selected_joints, joint_positions):
+            target[joint_name] = joint_position
+        self.robot.reset_joint_position(target)
+        return self.collision_checker.check_collision()
 
     def set_planner(self, planner_name):
         """
@@ -80,7 +89,7 @@ class PathPlanner:
         else:
             print(f"{planner_name} not recognized. Please add it first.")
 
-    def plan_start_goal(self, start, goal, allowed_time=DEFAULT_PLANNING_TIME):
+    def plan_start_goal(self, start: dict, goal: dict, allowed_time=DEFAULT_PLANNING_TIME):
         """
         Plans a path between a start and goal state within the allowed time.
 
@@ -92,14 +101,14 @@ class PathPlanner:
         Returns:
             Tuple (bool, list): Success flag and the interpolated solution path.
         """
-        orig_robot_state = self.robot.moving_joint_positions
+        orig_robot_state = start
 
         # Set start and goal states
         s = ob.State(self.space)
         g = ob.State(self.space)
-        for i in range(len(start)):
-            s[i] = start[i]
-            g[i] = goal[i]
+        for i, (start_joint_value, goal_joint_value) in enumerate(zip(start.values(), goal.values())):
+            s[i] = start_joint_value
+            g[i] = goal_joint_value
         self.ss.setStartAndGoalStates(s, g)
 
         # Solve the planning problem
@@ -116,19 +125,8 @@ class PathPlanner:
             print("No solution found")
 
         # Restore original robot state
-        self.robot.reset_joint_positions(orig_robot_state)
+        self.robot.reset_joint_position(orig_robot_state)
         return res, sol_path_list
-
-    def plan(self, goal, allowed_time=DEFAULT_PLANNING_TIME):
-        """
-        Plans a path to the goal state from the robot's current state.
-
-        Args:
-            goal: List of joint values representing the goal configuration.
-            allowed_time: Time allowed for the planner to find a solution.
-        """
-        start = self.robot.moving_joint_positions
-        return self.plan_start_goal(start, goal, allowed_time=allowed_time)
 
     def state_to_list(self, state):
         """
@@ -140,4 +138,4 @@ class PathPlanner:
         Returns:
             list: A list of joint values.
         """
-        return [state[i] for i in range(self.robot.dof)]
+        return [state[i] for i in range(self.dimensions)]

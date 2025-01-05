@@ -27,8 +27,7 @@ class RobotBase:
 
         self.number_of_joints = p.getNumJoints(self.urdf)
         self._joint_state_shape = self.get_joint_state()
-        self.moving_joint_index = []
-        self._joint_name_to_index = {}
+        self.joint_name_to_index = {}
         self._link_name_to_index = {}
         kinematic_solver_map = []
         self._lower_joint_limit = np.zeros(self.number_of_joints)
@@ -41,8 +40,7 @@ class RobotBase:
 
             if joint_info[2] != 4:  # checks if the joint is not fixed
                 joint_name = joint_info[1].decode("utf-8")
-                self._joint_name_to_index[joint_name] = joint_number
-                self.moving_joint_index.append(joint_number)
+                self.joint_name_to_index[joint_name] = joint_number
 
                 kinematic_solver_map.append(joint_number)
 
@@ -53,8 +51,6 @@ class RobotBase:
                     upper_limit = np.inf
                 self._lower_joint_limit[joint_number] = lower_limit
                 self._upper_joint_limit[joint_number] = upper_limit
-
-        self.dof = len(self.moving_joint_index)
 
         self._kinematic_solver_map = np.array(kinematic_solver_map)
 
@@ -69,22 +65,34 @@ class RobotBase:
         for joint_number in range(self.number_of_joints):
             p.resetJointState(self.urdf, joint_number, targetValue=0)
 
-    def get_joint_limits(self):
-        """Returns the lower and upper joint limits of the robots moiving joints
+    def get_joint_limits(self, selected_joint_names: set = None):
+        """Returns the lower and upper joint limits of the robot's moving joints as dictionaries.
+
+        Args:
+            selected_joint_names (set, optional): A set of joint names to retrieve limits for.
+                                                Defaults to None, which retrieves all joint limits.
 
         Returns:
-            Tuple[np.array, np.array]: The lower and upper joint limits
+            Tuple[dict, dict]: Two dictionaries containing lower and upper joint limits keyed by joint names.
         """
-        lower_joint_limit = []
-        upper_joint_limit = []
+        lower_joint_limit = {}
+        upper_joint_limit = {}
 
-        for joint_name in self._joint_name_to_index:
-            lower_joint_limit.append(
-                self._lower_joint_limit[self._joint_name_to_index[joint_name]])
-            upper_joint_limit.append(
-                self._upper_joint_limit[self._joint_name_to_index[joint_name]])
+        if selected_joint_names is None:
+            # Iterate over all joint names
+            for joint_name in self.joint_name_to_index:
+                lower_joint_limit[joint_name] = self._lower_joint_limit[self.joint_name_to_index[joint_name]]
+                upper_joint_limit[joint_name] = self._upper_joint_limit[self.joint_name_to_index[joint_name]]
+        else:
+            # Iterate over only the selected joint names
+            for joint_name in selected_joint_names:
+                if joint_name in self.joint_name_to_index:
+                    lower_joint_limit[joint_name] = self._lower_joint_limit[self.joint_name_to_index[joint_name]]
+                    upper_joint_limit[joint_name] = self._upper_joint_limit[self.joint_name_to_index[joint_name]]
+                else:
+                    raise ValueError(f"Joint name '{joint_name}' not found in the robot's joint index.")
 
-        return np.array(lower_joint_limit), np.array(upper_joint_limit)
+        return lower_joint_limit, upper_joint_limit
 
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name
@@ -123,7 +131,7 @@ class RobotBase:
                            'correct keys are: '+str(self._joint_state_shape.keys()))
 
         for joint, joint_position in target.items():
-            joint_number = self._joint_name_to_index[joint]
+            joint_number = self.joint_name_to_index[joint]
 
             if ignore_limits is False:
                 lower_joint_limit = self._lower_joint_limit[joint_number]
@@ -136,6 +144,29 @@ class RobotBase:
             p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
                                     force=self.max_joint_force[joint_number],
                                     targetPosition=joint_position)
+
+    def reset_joint_position(self, target: Dict[str,  float], ignore_limits=False):
+        """Resets the robots joints to a specified position
+
+        Args:
+            joint_values (np.array): A list of joint positions
+        """
+        if not all(key in self._joint_state_shape for key in target):
+            raise KeyError('One or more joints are not part of the robot. ' +
+                           'correct keys are: '+str(self._joint_state_shape.keys()))
+
+        for joint_name, joint_position in target.items():
+            if ignore_limits is False:
+                lower_joint_limit = self._lower_joint_limit[self.joint_name_to_index[joint_name]]
+                upper_joint_limit = self._upper_joint_limit[self.joint_name_to_index[joint_name]]
+                if joint_position > upper_joint_limit or joint_position < lower_joint_limit:
+                    raise ValueError('The joint position '+str(joint_position) +
+                                     ' is out of limit for joint '+joint_name+'. Its limits are:\n' +
+                                     str(lower_joint_limit)+' and '+str(upper_joint_limit))
+            p.resetJointState(self.urdf, self.joint_name_to_index[joint_name],
+                              targetValue=joint_position)
+
+        return target
 
     def get_endeffector_pose(self, endeffector_name: str = None):
         """Returns the position of the endeffector in world coordinates
@@ -193,18 +224,6 @@ class RobotBase:
             p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
                                     force=self.max_joint_force[joint_number],
                                     targetPosition=joint_position)
-
-    def reset_joint_positions(self, joint_values: np.array):
-        """Resets the robots joints to a specified position
-
-        Args:
-            joint_values (np.array): A list of joint positions
-        """
-        for joint_index, joint_value in zip(self.moving_joint_index, joint_values):
-            p.resetJointState(self.urdf, joint_index,
-                              targetValue=joint_value)
-
-        self.moving_joint_positions = joint_values
 
     def reset_robot(self, start_position: np.array, start_orientation: np.array,
                     joint_values: list = None):

@@ -83,20 +83,23 @@ if __name__ == "__main__":
     path_planner = PathPlanner(robot, collision_checker, "BITstar")
 
     # Define start and goal configurations for the robot
-    start = [-0.5, 0, -(np.pi/2), -(np.pi-0.001), -(np.pi/2), 0]
-    goal = [0.5, 0.3, -(np.pi/2), -(np.pi-0.001), -(np.pi/2), 0]
-    robot.reset_joint_positions(start)
+    start = {'q1': -0.5, 'q2': 0, 'q3': -(np.pi/2), 'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}
+    goal = {'q1': 0.5, 'q2': 0.3, 'q3': -(np.pi/2), 'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}
+    robot.reset_joint_position(start)
 
     # Allow specific collisions and reconfigure detection
     collision_checker.allow_collision_links = collision_checker.get_collision_links()
     collision_checker.update_collision_settings()
 
     # Plan a path to the goal
-    res, path = path_planner.plan(goal)
+    res, path = path_planner.plan_start_goal(start, goal)
     if res:
         print("Solution found. Executing path...")
+        target = {}
         for line in path:
-            robot.reset_joint_positions(line)
+            for joint_name, joint_key in zip(robot.joint_name_to_index.keys(), line):
+                target[joint_name] = joint_key
+            robot.reset_joint_position(target)
             time.sleep(0.01)
     else:
         print("No solution found.")

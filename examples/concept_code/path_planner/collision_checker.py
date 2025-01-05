@@ -1,14 +1,14 @@
 import pybullet as p
 from itertools import product, combinations
 from collections import defaultdict, deque, namedtuple
+from robot_base import RobotBase
 
 BASE_LINK = -1
 MAX_DISTANCE = 0.
 
-
 class CollisionChecker:
 
-    def __init__(self, robot, obstacles, self_collisions=True, allow_collision_links=[]):
+    def __init__(self, robot: RobotBase, obstacles, self_collisions=True, allow_collision_links=[]):
         """
         Initializes the CollisionChecker class, setting up collision detection configurations.
 
@@ -27,8 +27,12 @@ class CollisionChecker:
     def update_collision_settings(self):
         """
         Updates collision detection settings based on the robot and obstacles.
+
+        - Identifies link pairs for self-collision checks based on robot's moving joints.
+        - Filters out allowed collision link pairs from the self-collision checks.
+        - Defines pairs of the robot and obstacles for environment collision checks.
         """
-        # Setup collision detection
+        # Define link pairs for self-collision checks
         self.check_link_pairs = self.get_self_link_pairs(
             self.robot.urdf, self.robot.moving_joint_index
         ) if self.self_collisions else []
@@ -36,6 +40,7 @@ class CollisionChecker:
             pair for pair in self.check_link_pairs if pair not in self.allow_collision_links
         ]
 
+        # Define body pairs for collision checks with obstacles
         moving_links = frozenset(
             item for item in self.get_moving_links(self.robot.urdf, self.robot.moving_joint_index)
             if item not in self.allow_collision_links
@@ -66,12 +71,12 @@ class CollisionChecker:
         """
         self.robot.reset_joint_positions(state)
 
-        # Check for self-collisions
+        # Self-collision checks
         for link1, link2 in self.check_link_pairs:
             if self.pairwise_link_collision(self.robot.urdf, link1, self.robot.urdf, link2):
                 return False
 
-        # Check for collisions with the environment
+        # Environment collision checks
         for body1, body2 in self.check_body_pairs:
             if self.pairwise_collision(body1, body2):
                 return False
@@ -93,11 +98,34 @@ class CollisionChecker:
 
     @staticmethod
     def pairwise_link_collision(body1, link1, body2, link2=BASE_LINK, max_distance=MAX_DISTANCE):
+        """
+        Checks for collisions between two specific links of two bodies.
+
+        Args:
+            body1: First body ID.
+            link1: Link index of the first body.
+            body2: Second body ID.
+            link2: Link index of the second body (defaults to base link).
+            max_distance: Maximum distance for considering collision proximity.
+
+        Returns:
+            bool: True if the links are in collision, False otherwise.
+        """
         return len(p.getClosestPoints(bodyA=body1, bodyB=body2, distance=max_distance,
                                       linkIndexA=link1, linkIndexB=link2)) != 0
 
     @staticmethod
     def pairwise_collision(body1, body2, **kwargs):
+        """
+        Checks for collisions between two bodies, expanding their links if necessary.
+
+        Args:
+            body1: First body ID or a tuple of (body ID, list of links).
+            body2: Second body ID or a tuple of (body ID, list of links).
+
+        Returns:
+            bool: True if any link pairs are in collision, False otherwise.
+        """
         if isinstance(body1, tuple) or isinstance(body2, tuple):
             body1, links1 = CollisionChecker.expand_links(body1)
             body2, links2 = CollisionChecker.expand_links(body2)
@@ -106,6 +134,15 @@ class CollisionChecker:
 
     @staticmethod
     def expand_links(body):
+        """
+        Expands a body ID to include all its links if none are explicitly provided.
+
+        Args:
+            body: Body ID or tuple of (body ID, list of links).
+
+        Returns:
+            tuple: Body ID and a list of its links.
+        """
         body, links = body if isinstance(body, tuple) else (body, None)
         if links is None:
             links = CollisionChecker.get_all_links(body)
@@ -113,6 +150,18 @@ class CollisionChecker:
 
     @staticmethod
     def any_link_pair_collision(body1, links1, body2, links2=None, **kwargs):
+        """
+        Checks for collisions between any pair of links from two bodies.
+
+        Args:
+            body1: First body ID.
+            links1: List of links for the first body.
+            body2: Second body ID.
+            links2: List of links for the second body (defaults to all links).
+
+        Returns:
+            bool: True if any link pair is in collision, False otherwise.
+        """
         if links1 is None:
             links1 = CollisionChecker.get_all_links(body1)
         if links2 is None:
@@ -126,10 +175,33 @@ class CollisionChecker:
 
     @staticmethod
     def body_collision(body1, body2, max_distance=MAX_DISTANCE):
+        """
+        Checks for collisions between two bodies as a whole.
+
+        Args:
+            body1: First body ID.
+            body2: Second body ID.
+            max_distance: Maximum distance for considering collision proximity.
+
+        Returns:
+            bool: True if the bodies are in collision, False otherwise.
+        """
         return len(p.getClosestPoints(bodyA=body1, bodyB=body2, distance=max_distance)) != 0
 
     @staticmethod
     def get_self_link_pairs(body, joints, disabled_collisions=set(), only_moving=True):
+        """
+        Retrieves pairs of links for self-collision checks.
+
+        Args:
+            body: Body ID of the robot.
+            joints: List of joint indices defining the robot's kinematics.
+            disabled_collisions: Set of link pairs to ignore in self-collision checks.
+            only_moving: Whether to include only moving links in the checks.
+
+        Returns:
+            list: List of link pairs to check for self-collisions.
+        """
         moving_links = CollisionChecker.get_moving_links(body, joints)
         fixed_links = list(set(CollisionChecker.get_joints(body)) - set(moving_links))
         check_link_pairs = list(product(moving_links, fixed_links))
@@ -145,6 +217,16 @@ class CollisionChecker:
 
     @staticmethod
     def get_moving_links(body, joints):
+        """
+        Retrieves all moving links influenced by the given joints.
+
+        Args:
+            body: Body ID of the robot.
+            joints: List of joint indices defining the robot's kinematics.
+
+        Returns:
+            list: List of indices of moving links.
+        """
         moving_links = set()
         for joint in joints:
             link = CollisionChecker.child_link_from_joint(joint)
@@ -154,12 +236,24 @@ class CollisionChecker:
 
     @staticmethod
     def get_moving_pairs(body, moving_joints):
+        """
+        Retrieves pairs of moving links for self-collision checks.
+
+        Args:
+            body: Body ID of the robot.
+            moving_joints: List of joint indices influencing the robot's moving links.
+
+        Yields:
+            tuple: A pair of moving link indices.
+        """
         moving_links = CollisionChecker.get_moving_links(body, moving_joints)
         for link1, link2 in combinations(moving_links, 2):
             ancestors1 = set(CollisionChecker.get_joint_ancestors(body, link1)) & set(moving_joints)
             ancestors2 = set(CollisionChecker.get_joint_ancestors(body, link2)) & set(moving_joints)
             if ancestors1 != ancestors2:
                 yield link1, link2
+
+    # Methods for querying the robot's structure and hierarchy (static utility functions)
 
     JointInfo = namedtuple('JointInfo', ['jointIndex', 'jointName', 'jointType',
                                          'qIndex', 'uIndex', 'flags',

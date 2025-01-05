@@ -80,10 +80,7 @@ if __name__ == "__main__":
     collision_checker = CollisionChecker(robot, obstacles)
 
     # Set up motion planning interface with the CollisionChecker
-    path_planner = PathPlanner(robot, collision_checker)
-
-    # Select a motion planner
-    path_planner.set_planner("BITstar")
+    path_planner = PathPlanner(robot, collision_checker, "BITstar")
 
     # Define start and goal configurations for the robot
     start = [-0.5, 0, -(np.pi/2), -(np.pi-0.001), -(np.pi/2), 0]

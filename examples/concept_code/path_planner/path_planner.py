@@ -7,7 +7,7 @@ DEFAULT_PLANNING_TIME = 5.0  # Default maximum allowed time for planning
 
 
 class PathPlanner:
-    def __init__(self, robot, collision_checker: CollisionChecker):
+    def __init__(self, robot, collision_checker: CollisionChecker, planner_name="RRT"):
         """
         Initializes the motion planning setup for a given robot in a constrained environment.
 
@@ -43,7 +43,7 @@ class PathPlanner:
         self.si = self.ss.getSpaceInformation()
 
         # Set the default planner
-        self.set_planner("RRT")
+        self.set_planner(planner_name)
 
     def is_state_valid(self, state):
         """

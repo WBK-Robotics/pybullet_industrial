@@ -26,24 +26,11 @@ class PathPlanner:
     """
 
     def __init__(self, robot: RobotBase, collision_checker: CollisionChecker,
-                 planner_name="RRT", selected_joints: set = None):
+                 planner_name="RRT", selected_joint_names: set = None):
         self.robot = robot
         self.collision_checker = collision_checker
 
-        # Determine the joint order
-        if selected_joints is None:
-            joint_items = self.robot.joint_name_to_index.items()
-        else:
-            joint_items = [
-                (joint_name, self.robot.joint_name_to_index[joint_name])
-                for joint_name in selected_joints
-            ]
-
-        # Sort the joints by their indices
-        sorted_joint_items = sorted(joint_items, key=lambda item: item[1])
-
-        # Extract the joint names in the correct order
-        self.joint_order = tuple(key for key, _ in sorted_joint_items)
+        self.joint_order = robot.get_joint_order(selected_joint_names)
 
         # Retrieve joint limits from the robot
         lower_limit, upper_limit = self.robot.get_joint_limits(

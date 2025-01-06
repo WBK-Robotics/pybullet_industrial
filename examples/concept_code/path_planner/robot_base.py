@@ -111,6 +111,29 @@ class RobotBase:
 
         return lower_joint_limit, upper_joint_limit
 
+    def get_joint_order(self, selected_joint_names: set = None):
+        """Returns the order of the robot's moveable joints.
+
+        Returns:
+            Tuple[str]: The joint names in the order they are indexed.
+        """
+        # Retrieve the joint names and indices as a list of tuples
+        if selected_joint_names is None:
+            joint_items = self.joint_name_to_index.items()
+        else:
+            joint_items = [
+                (joint_name, self.joint_name_to_index[joint_name])
+                for joint_name in selected_joint_names
+            ]
+
+        # Sort the joints by their indices
+        sorted_joint_items = sorted(joint_items, key=lambda item: item[1])
+
+        # Extract the joint names in the correct order
+        joint_order = tuple(key for key, _ in sorted_joint_items)
+
+        return joint_order
+
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name
 

@@ -19,21 +19,29 @@ class PathPlanner:
         self.robot = robot
         self.collision_checker = collision_checker
 
+        # Set the joint order for the state space
         if selected_joints is None:
-            lower_limit, upper_limit = robot.get_joint_limits()
-            self.selected_joints = robot.joint_name_to_index.keys()
+            joint_items = self.robot.joint_name_to_index.items()
         else:
-            lower_limit, upper_limit = robot.get_joint_limits(selected_joints)
-            self.selected_joints = selected_joints
-        # Set bounds for the state space based on the robot's joint limits
-        self.dimensions = len(lower_limit)
-        bounds = ob.RealVectorBounds(self.dimensions)
+            joint_items = [(joint_name, self.robot.joint_name_to_index[joint_name]) for joint_name in selected_joints]
 
-        for i, (lower, upper) in enumerate(zip(lower_limit.values(), upper_limit.values())):
-            bounds.setLow(i, lower)
-            bounds.setHigh(i, upper)
+        # Step 2: Sort the pairs by their index (value)
+        sorted_joint_items = sorted(joint_items, key=lambda item: item[1])
+
+        # Step 3: Extract only the joint names and convert to a tuple
+        self.joint_order = tuple(key for key, _ in sorted_joint_items)
+
+        # Get the joint limits from the robot model
+        lower_limit, upper_limit = self.robot.get_joint_limits(set(self.joint_order))
+        # Set bounds for the state space based on the robot's joint limits
+        number_of_dimensions = len(self.joint_order)
+        bounds = ob.RealVectorBounds(number_of_dimensions)
+
+        for i, joint_name in enumerate(self.joint_order):
+            bounds.setLow(i, lower_limit[joint_name])
+            bounds.setHigh(i, upper_limit[joint_name])
         # Define the state space with dimensionality matching the robot's degrees of freedom
-        self.space = ob.RealVectorStateSpace(self.dimensions)
+        self.space = ob.RealVectorStateSpace(number_of_dimensions)
         self.space.setBounds(bounds)
 
         # Initialize the motion planning problem setup
@@ -62,8 +70,8 @@ class PathPlanner:
             bool: True if the state is valid (collision-free), False otherwise.
         """
         target = {}
-        joint_positions = [state[i] for i in range(self.dimensions)]
-        for joint_name, joint_position  in zip(self.selected_joints, joint_positions):
+        joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
+        for joint_name, joint_position in zip(self.joint_order, joint_positions):
             target[joint_name] = joint_position
         self.robot.reset_joint_position(target)
         return self.collision_checker.check_collision()
@@ -106,9 +114,9 @@ class PathPlanner:
         # Set start and goal states
         s = ob.State(self.space)
         g = ob.State(self.space)
-        for i, (start_joint_value, goal_joint_value) in enumerate(zip(start.values(), goal.values())):
-            s[i] = start_joint_value
-            g[i] = goal_joint_value
+        for i, joint_name in enumerate(self.joint_order):
+            s[i] = start[joint_name]
+            g[i] = goal[joint_name]
         self.ss.setStartAndGoalStates(s, g)
 
         # Solve the planning problem
@@ -138,4 +146,4 @@ class PathPlanner:
         Returns:
             list: A list of joint values.
         """
-        return [state[i] for i in range(self.dimensions)]
+        return [state[i] for i, _ in enumerate(self.joint_order)]

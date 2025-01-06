@@ -10,7 +10,8 @@ import time
 
 def seting_up_enviroment():
     """
-    Sets up the simulation environment, including paths to URDF files and the PyBullet physics simulation.
+    Sets up the simulation environment, including paths to URDF files
+    and the PyBullet physics simulation.
 
     Returns:
         urdf_robot: Path to the robot URDF file.
@@ -83,8 +84,10 @@ if __name__ == "__main__":
     path_planner = PathPlanner(robot, collision_checker, "BITstar")
 
     # Define start and goal configurations for the robot
-    start = {'q1': -0.5, 'q2': 0, 'q3': -(np.pi/2), 'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}
-    goal = {'q1': 0.5, 'q2': 0.3, 'q3': -(np.pi/2), 'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}
+    start = {'q1': -0.5, 'q2': 0, 'q3': -(np.pi/2),
+             'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}
+    goal = {'q1': 0.5, 'q2': 0.3, 'q3': -(np.pi/2),
+            'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}
     robot.reset_joint_position(start)
 
     # Allow specific collisions and reconfigure detection
@@ -92,13 +95,9 @@ if __name__ == "__main__":
     collision_checker.update_collision_settings()
 
     # Plan a path to the goal
-    res, path = path_planner.plan_start_goal(start, goal)
+    res, joint_path = path_planner.plan_start_goal(start, goal)
     if res:
-        print("Solution found. Executing path...")
-        target = {}
-        for line in path:
-            for joint_name, joint_key in zip(robot.joint_name_to_index.keys(), line):
-                target[joint_name] = joint_key
+        for target, _ in joint_path:
             robot.reset_joint_position(target)
             time.sleep(0.01)
     else:

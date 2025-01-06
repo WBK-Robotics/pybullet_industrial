@@ -66,31 +66,48 @@ class RobotBase:
             p.resetJointState(self.urdf, joint_number, targetValue=0)
 
     def get_joint_limits(self, selected_joint_names: set = None):
-        """Returns the lower and upper joint limits of the robot's moving joints as dictionaries.
+        """Returns the lower and upper joint limits of the robot's moving joints.
 
         Args:
-            selected_joint_names (set, optional): A set of joint names to retrieve limits for.
-                                                Defaults to None, which retrieves all joint limits.
+            selected_joint_names (set, optional): A set of joint names to retrieve
+                                                limits for. Defaults to None,
+                                                which retrieves all joint limits.
 
         Returns:
-            Tuple[dict, dict]: Two dictionaries containing lower and upper joint limits keyed by joint names.
+            Tuple[dict, dict]: Two dictionaries containing lower and upper joint
+                            limits keyed by joint names.
+
+        Raises:
+            ValueError: If a joint name in `selected_joint_names` is not found in
+                        the robot's joint index.
         """
         lower_joint_limit = {}
         upper_joint_limit = {}
 
         if selected_joint_names is None:
-            # Iterate over all joint names
+            # Retrieve limits for all joints
             for joint_name in self.joint_name_to_index:
-                lower_joint_limit[joint_name] = self._lower_joint_limit[self.joint_name_to_index[joint_name]]
-                upper_joint_limit[joint_name] = self._upper_joint_limit[self.joint_name_to_index[joint_name]]
+                lower_joint_limit[joint_name] = self._lower_joint_limit[
+                    self.joint_name_to_index[joint_name]
+                ]
+                upper_joint_limit[joint_name] = self._upper_joint_limit[
+                    self.joint_name_to_index[joint_name]
+                ]
         else:
-            # Iterate over only the selected joint names
+            # Retrieve limits only for selected joints
             for joint_name in selected_joint_names:
                 if joint_name in self.joint_name_to_index:
-                    lower_joint_limit[joint_name] = self._lower_joint_limit[self.joint_name_to_index[joint_name]]
-                    upper_joint_limit[joint_name] = self._upper_joint_limit[self.joint_name_to_index[joint_name]]
+                    lower_joint_limit[joint_name] = self._lower_joint_limit[
+                        self.joint_name_to_index[joint_name]
+                    ]
+                    upper_joint_limit[joint_name] = self._upper_joint_limit[
+                        self.joint_name_to_index[joint_name]
+                    ]
                 else:
-                    raise ValueError(f"Joint name '{joint_name}' not found in the robot's joint index.")
+                    raise ValueError(
+                        f"Joint name '{joint_name}' not found in the robot's "
+                        f"joint index."
+                    )
 
         return lower_joint_limit, upper_joint_limit
 
@@ -145,28 +162,55 @@ class RobotBase:
                                     force=self.max_joint_force[joint_number],
                                     targetPosition=joint_position)
 
-    def reset_joint_position(self, target: Dict[str,  float], ignore_limits=False):
-        """Resets the robots joints to a specified position
+    def reset_joint_position(self, target: Dict[str, float], ignore_limits=False):
+        """Resets the robot's joints to specified positions.
 
         Args:
-            joint_values (np.array): A list of joint positions
-        """
-        if not all(key in self._joint_state_shape for key in target):
-            raise KeyError('One or more joints are not part of the robot. ' +
-                           'correct keys are: '+str(self._joint_state_shape.keys()))
+            target (Dict[str, float]): A dictionary mapping joint names to their
+                                    desired positions.
+            ignore_limits (bool, optional): If True, bypasses joint limit checks.
+                                            Defaults to False.
 
+        Raises:
+            KeyError: If one or more joints in `target` are not part of the robot.
+            ValueError: If a joint position in `target` is outside its limits and
+                        `ignore_limits` is False.
+
+        Returns:
+            Dict[str, float]: The input target dictionary for reference.
+        """
+        # Ensure all specified joints exist in the robot's joint state
+        if not all(key in self._joint_state_shape for key in target):
+            raise KeyError(
+                "One or more joints are not part of the robot. Correct keys are: "
+                + str(self._joint_state_shape.keys())
+            )
+
+        # Iterate over target joint positions and reset each joint
         for joint_name, joint_position in target.items():
-            if ignore_limits is False:
-                lower_joint_limit = self._lower_joint_limit[self.joint_name_to_index[joint_name]]
-                upper_joint_limit = self._upper_joint_limit[self.joint_name_to_index[joint_name]]
+            if not ignore_limits:
+                lower_joint_limit = self._lower_joint_limit[
+                    self.joint_name_to_index[joint_name]
+                ]
+                upper_joint_limit = self._upper_joint_limit[
+                    self.joint_name_to_index[joint_name]
+                ]
+                # Check if the joint position is within the defined limits
                 if joint_position > upper_joint_limit or joint_position < lower_joint_limit:
-                    raise ValueError('The joint position '+str(joint_position) +
-                                     ' is out of limit for joint '+joint_name+'. Its limits are:\n' +
-                                     str(lower_joint_limit)+' and '+str(upper_joint_limit))
-            p.resetJointState(self.urdf, self.joint_name_to_index[joint_name],
-                              targetValue=joint_position)
+                    raise ValueError(
+                        f"The joint position {joint_position} is out of limits "
+                        f"for joint '{joint_name}'. Its limits are: "
+                        f"{lower_joint_limit} and {upper_joint_limit}."
+                    )
+            # Reset the joint state in the simulation
+            p.resetJointState(
+                self.urdf,
+                self.joint_name_to_index[joint_name],
+                targetValue=joint_position,
+            )
 
         return target
+
 
     def get_endeffector_pose(self, endeffector_name: str = None):
         """Returns the position of the endeffector in world coordinates

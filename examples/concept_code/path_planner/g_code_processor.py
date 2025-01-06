@@ -3,6 +3,7 @@ from robot_base import RobotBase
 from pybullet_industrial import linear_interpolation
 from pybullet_industrial import circular_interpolation
 from pybullet_industrial import ToolPath
+from joint_path import JointPath
 import numpy as np
 import re
 
@@ -112,6 +113,24 @@ class GCodeProcessor:
 
             g_code.append(new_line)
 
+        return g_code
+
+    def joint_path_to_g_code(self, joint_path: JointPath):
+        """Converts a joint path to a G-code string.
+
+        Args:
+            joint_path (JointPath): Joint path to convert
+
+        Returns:
+            str: G-code string
+        """
+        g_code = []
+        for joint_positions in joint_path:
+            g_code_line = {}
+            g_code_line['G'] = 1
+            for i, _ in enumerate(self.joint_order):
+                g_code_line[JOINT_KEY + str(i + 1)] = joint_positions[i]
+            g_code.append(g_code_line)
         return g_code
 
     def __iter__(self):

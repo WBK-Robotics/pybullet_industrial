@@ -27,7 +27,7 @@ class RobotBase:
 
         self.number_of_joints = p.getNumJoints(self.urdf)
         self._joint_state_shape = self.get_joint_state()
-        self.joint_name_to_index = {}
+        self._joint_name_to_index = {}
         self._link_name_to_index = {}
         kinematic_solver_map = []
         self._lower_joint_limit = np.zeros(self.number_of_joints)
@@ -40,7 +40,7 @@ class RobotBase:
 
             if joint_info[2] != 4:  # checks if the joint is not fixed
                 joint_name = joint_info[1].decode("utf-8")
-                self.joint_name_to_index[joint_name] = joint_number
+                self._joint_name_to_index[joint_name] = joint_number
 
                 kinematic_solver_map.append(joint_number)
 
@@ -86,22 +86,22 @@ class RobotBase:
 
         if selected_joint_names is None:
             # Retrieve limits for all joints
-            for joint_name in self.joint_name_to_index:
+            for joint_name in self._joint_name_to_index:
                 lower_joint_limit[joint_name] = self._lower_joint_limit[
-                    self.joint_name_to_index[joint_name]
+                    self._joint_name_to_index[joint_name]
                 ]
                 upper_joint_limit[joint_name] = self._upper_joint_limit[
-                    self.joint_name_to_index[joint_name]
+                    self._joint_name_to_index[joint_name]
                 ]
         else:
             # Retrieve limits only for selected joints
             for joint_name in selected_joint_names:
-                if joint_name in self.joint_name_to_index:
+                if joint_name in self._joint_name_to_index:
                     lower_joint_limit[joint_name] = self._lower_joint_limit[
-                        self.joint_name_to_index[joint_name]
+                        self._joint_name_to_index[joint_name]
                     ]
                     upper_joint_limit[joint_name] = self._upper_joint_limit[
-                        self.joint_name_to_index[joint_name]
+                        self._joint_name_to_index[joint_name]
                     ]
                 else:
                     raise ValueError(
@@ -111,18 +111,28 @@ class RobotBase:
 
         return lower_joint_limit, upper_joint_limit
 
-    def get_joint_order(self, selected_joint_names: set = None):
-        """Returns the order of the robot's moveable joints.
+    def get_moveable_joints(self, selected_joint_names: set = None):
+        """
+        Retrieves the names and indices of the robot's moveable joints,
+        sorted by their indices.
+
+        Args:
+            selected_joint_names (set, optional): A set of joint names to
+                                                filter the results.
+                                                If None, all moveable joints
+                                                are included.
 
         Returns:
-            Tuple[str]: The joint names in the order they are indexed.
+            Tuple[Tuple[str], Tuple[int]]:
+                - A tuple of joint names (`joint_order`)
+                - A tuple of corresponding joint indices (`joint_index`)
         """
         # Retrieve the joint names and indices as a list of tuples
         if selected_joint_names is None:
-            joint_items = self.joint_name_to_index.items()
+            joint_items = self._joint_name_to_index.items()
         else:
             joint_items = [
-                (joint_name, self.joint_name_to_index[joint_name])
+                (joint_name, self._joint_name_to_index[joint_name])
                 for joint_name in selected_joint_names
             ]
 
@@ -131,8 +141,9 @@ class RobotBase:
 
         # Extract the joint names in the correct order
         joint_order = tuple(key for key, _ in sorted_joint_items)
+        joint_index = tuple(self._joint_name_to_index[key] for key in joint_order)
 
-        return joint_order
+        return joint_order, joint_index
 
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name
@@ -171,7 +182,7 @@ class RobotBase:
                            'correct keys are: '+str(self._joint_state_shape.keys()))
 
         for joint, joint_position in target.items():
-            joint_number = self.joint_name_to_index[joint]
+            joint_number = self._joint_name_to_index[joint]
 
             if ignore_limits is False:
                 lower_joint_limit = self._lower_joint_limit[joint_number]
@@ -213,10 +224,10 @@ class RobotBase:
         for joint_name, joint_position in target.items():
             if not ignore_limits:
                 lower_joint_limit = self._lower_joint_limit[
-                    self.joint_name_to_index[joint_name]
+                    self._joint_name_to_index[joint_name]
                 ]
                 upper_joint_limit = self._upper_joint_limit[
-                    self.joint_name_to_index[joint_name]
+                    self._joint_name_to_index[joint_name]
                 ]
                 # Check if the joint position is within the defined limits
                 if joint_position > upper_joint_limit or joint_position < lower_joint_limit:
@@ -228,7 +239,7 @@ class RobotBase:
             # Reset the joint state in the simulation
             p.resetJointState(
                 self.urdf,
-                self.joint_name_to_index[joint_name],
+                self._joint_name_to_index[joint_name],
                 targetValue=joint_position,
             )
 

@@ -50,7 +50,7 @@ class JointPath:
                 )
             self.tool_activations = tool_activations
 
-    def translate(self, offsets: dict):
+    def offset(self, offsets: dict):
         """Translates the joint values by adding specified offsets.
 
         Args:

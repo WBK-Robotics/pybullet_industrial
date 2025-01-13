@@ -30,7 +30,7 @@ class PathPlanner:
         self.robot = robot
         self.collision_checker = collision_checker
 
-        self.joint_order = robot.get_joint_order(selected_joint_names)
+        self.joint_order = robot.get_moveable_joints(selected_joint_names)[0]
 
         # Retrieve joint limits from the robot
         lower_limit, upper_limit = self.robot.get_joint_limits(

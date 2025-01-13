@@ -36,7 +36,7 @@ class CollisionChecker:
 
         # Define link pairs for self-collision checks
         self.check_link_pairs = self.get_self_link_pairs(
-            self.robot.urdf, self.robot.joint_name_to_index.values()
+            self.robot.urdf, self.robot.get_moveable_joints()[1]
         ) if self.self_collisions else []
         self.check_link_pairs = [
             pair for pair in self.check_link_pairs if pair not in self.allow_collision_links
@@ -44,7 +44,7 @@ class CollisionChecker:
 
         # Define body pairs for collision checks with obstacles
         moving_links = frozenset(
-            item for item in self.get_moving_links(self.robot.urdf, self.robot.joint_name_to_index.values())
+            item for item in self.get_moving_links(self.robot.urdf, self.robot.get_moveable_joints()[1])
             if item not in self.allow_collision_links
         )
         moving_bodies = [(self.robot.urdf, moving_links)]

@@ -1,7 +1,7 @@
 import pybullet as p
 from itertools import product, combinations
 from collections import namedtuple
-from robot_base import RobotBase
+from pybullet_industrial import RobotBase
 
 BASE_LINK = -1
 MAX_DISTANCE = 0.

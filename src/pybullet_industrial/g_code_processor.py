@@ -3,8 +3,11 @@ from pybullet_industrial import RobotBase
 from pybullet_industrial import linear_interpolation
 from pybullet_industrial import circular_interpolation
 from pybullet_industrial import ToolPath
+from pybullet_industrial import JointPath
 import numpy as np
 import re
+
+JOINT_KEY = ('RA') # G-Code Key for running joint commands
 
 
 class GCodeProcessor:
@@ -29,6 +32,7 @@ class GCodeProcessor:
                  endeffector_list: list = None,
                  m_commands: dict = None,
                  t_commands: dict = None,
+                 selected_joint_names: set = None,
                  offset: np.array = np.array([[0.0, 0.0, 0.0],
                                               [0.0, 0.0, 0.0]]),
                  axis: int = 2, interpolation_precision: int = 0.01,
@@ -53,6 +57,7 @@ class GCodeProcessor:
         self.interpolation_approach = interpolation_approach
         self.m_commands = m_commands
         self.t_commands = t_commands
+        self.joint_order = robot.get_joint_order(selected_joint_names)
 
         # Setting the default G-commands
         self.g_commands = {
@@ -111,6 +116,24 @@ class GCodeProcessor:
 
         return g_code
 
+    def joint_path_to_g_code(self, joint_path: JointPath):
+        """Converts a joint path to a G-code string.
+
+        Args:
+            joint_path (JointPath): Joint path to convert
+
+        Returns:
+            str: G-code string
+        """
+        g_code = []
+        for joint_positions in joint_path:
+            g_code_line = {}
+            g_code_line['G'] = 1
+            for i, _ in enumerate(self.joint_order):
+                g_code_line[JOINT_KEY + str(i + 1)] = joint_positions[i]
+            g_code.append(g_code_line)
+        return g_code
+
     def __iter__(self):
         """ Initialization of the the class variables which are responsible
         for the iteration
@@ -167,15 +190,14 @@ class GCodeProcessor:
             cmd_int(int): Current G-command integer
         """
 
-        interpolation_movement = ['X', 'Y', 'Z', 'A', 'B', 'C', 'R']
-        joint_movement = ['RA1', 'RA2', 'RA3', 'RA4', 'RA5', 'RA6']
+        interpolation_keys = {'X', 'Y', 'Z', 'A', 'B', 'C', 'R'}
 
         if 'G' in g_code_line:
-            if any(key in g_code_line for key in interpolation_movement):
+            if any(key in g_code_line for key in interpolation_keys):
                 path = self.__build_path()
                 self.elementary_operations = \
                     self.__create_movement_operations(path)
-            elif any(key in g_code_line for key in joint_movement):
+            elif any(key.startswith(JOINT_KEY) for key in g_code_line):
                 self.elementary_operations = \
                     self.__create_joint_movement_operations(g_code_line)
             elif g_code_line.get('G') > 3:
@@ -413,9 +435,12 @@ class GCodeProcessor:
         Returns:
             elementary_operations(list)
         """
+        joint_positions = {}
+        for key, value in g_code_line.items():
+            if key.startswith(JOINT_KEY):
+                joint_name = self.joint_order[int(key[len(JOINT_KEY):])-1]
+                joint_positions[joint_name] = value
 
-        joint_positions = {'q' + key[2:]: value for key,
-                           value in g_code_line.items() if key.startswith('R')}
         elementary_operations = [
             lambda: self.robot.set_joint_position(joint_positions)]
 

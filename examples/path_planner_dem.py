@@ -2,9 +2,7 @@ import os
 import pybullet as p
 import pybullet_data
 import numpy as np
-from robot_base import RobotBase
-from path_planner import PathPlanner
-from collision_checker import CollisionChecker
+import pybullet_industrial as pi
 import time
 
 
@@ -21,9 +19,9 @@ def seting_up_enviroment():
     # Define paths to robot and environment objects
     working_dir = os.path.dirname(__file__)
     urdf_robot = os.path.join(
-        working_dir, '..', '..', 'robot_descriptions', 'comau_nj290_robot.urdf')
+        working_dir, 'robot_descriptions', 'comau_nj290_robot.urdf')
     urdf_fofa = os.path.join(
-        working_dir, '..', '..', 'Objects', 'FoFa', 'FoFa.urdf')
+        working_dir, 'Objects', 'FoFa', 'FoFa.urdf')
 
     # Initialize the robot's starting orientation and position
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
@@ -70,7 +68,7 @@ if __name__ == "__main__":
     urdf_robot, start_pos, start_orientation = seting_up_enviroment()
 
     # Create a robot instance and position it in the simulation
-    robot = RobotBase(urdf_robot, start_pos, start_orientation)
+    robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
 
     # Add a box obstacle to the environment
     obstacles = []
@@ -78,10 +76,10 @@ if __name__ == "__main__":
     obstacles.append(obstacle)
 
     # Initialize CollisionChecker
-    collision_checker = CollisionChecker(robot, obstacles)
+    collision_checker = pi.CollisionChecker(robot, obstacles)
 
     # Set up motion planning interface with the CollisionChecker
-    path_planner = PathPlanner(robot, collision_checker, "BITstar")
+    path_planner = pi.PathPlanner(robot, collision_checker, "BITstar")
 
     # Define start and goal configurations for the robot
     start = {'q1': -0.5, 'q2': 0, 'q3': -(np.pi/2),

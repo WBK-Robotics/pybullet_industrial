@@ -1,8 +1,8 @@
 from ompl import base as ob
 from ompl import geometric as og
-from collision_checker import CollisionChecker
-from robot_base import RobotBase
-from joint_path import JointPath
+from pybullet_industrial import CollisionChecker
+from pybullet_industrial import RobotBase
+from pybullet_industrial import JointPath
 import numpy as np
 
 INTERPOLATE_NUM = 500  # Number of segments for interpolating the solution path

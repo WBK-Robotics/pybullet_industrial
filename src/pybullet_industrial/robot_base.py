@@ -65,6 +65,85 @@ class RobotBase:
         for joint_number in range(self.number_of_joints):
             p.resetJointState(self.urdf, joint_number, targetValue=0)
 
+    def get_joint_limits(self, selected_joint_names: set = None):
+        """Returns the lower and upper joint limits of the robot's moving joints.
+
+        Args:
+            selected_joint_names (set, optional): A set of joint names to retrieve
+                                                limits for. Defaults to None,
+                                                which retrieves all joint limits.
+
+        Returns:
+            Tuple[dict, dict]: Two dictionaries containing lower and upper joint
+                            limits keyed by joint names.
+
+        Raises:
+            ValueError: If a joint name in `selected_joint_names` is not found in
+                        the robot's joint index.
+        """
+        lower_joint_limit = {}
+        upper_joint_limit = {}
+
+        if selected_joint_names is None:
+            # Retrieve limits for all joints
+            for joint_name in self._joint_name_to_index:
+                lower_joint_limit[joint_name] = self._lower_joint_limit[
+                    self._joint_name_to_index[joint_name]
+                ]
+                upper_joint_limit[joint_name] = self._upper_joint_limit[
+                    self._joint_name_to_index[joint_name]
+                ]
+        else:
+            # Retrieve limits only for selected joints
+            for joint_name in selected_joint_names:
+                if joint_name in self._joint_name_to_index:
+                    lower_joint_limit[joint_name] = self._lower_joint_limit[
+                        self._joint_name_to_index[joint_name]
+                    ]
+                    upper_joint_limit[joint_name] = self._upper_joint_limit[
+                        self._joint_name_to_index[joint_name]
+                    ]
+                else:
+                    raise ValueError(
+                        f"Joint name '{joint_name}' not found in the robot's "
+                        f"joint index."
+                    )
+
+        return lower_joint_limit, upper_joint_limit
+
+    def get_moveable_joints(self, selected_joint_names: set = None):
+        """
+        Retrieves the names and indices of the robot's moveable joints,
+        sorted by their indices.
+
+        Args:
+            selected_joint_names (set, optional): A set of joint names to
+                                                filter the results.
+                                                If None, all moveable joints
+                                                are included.
+
+        Returns:
+            Tuple[Tuple[str], Tuple[int]]:
+                - A tuple of joint names (`joint_order`)
+                - A tuple of corresponding joint indices (`joint_index`)
+        """
+        # Retrieve the joint names and indices as a list of tuples
+        if selected_joint_names is None:
+            joint_items = self._joint_name_to_index.items()
+        else:
+            joint_items = [
+                (joint_name, self._joint_name_to_index[joint_name])
+                for joint_name in selected_joint_names
+            ]
+
+        # Sort the joints by their indices
+        sorted_joint_items = sorted(joint_items, key=lambda item: item[1])
+
+        # Extract the joint names in the correct order
+        joint_order = tuple(key for key, _ in sorted_joint_items)
+        joint_index = tuple(self._joint_name_to_index[key] for key in joint_order)
+
+        return joint_order, joint_index
 
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name
@@ -116,6 +195,56 @@ class RobotBase:
             p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
                                     force=self.max_joint_force[joint_number],
                                     targetPosition=joint_position)
+
+    def reset_joint_position(self, target: Dict[str, float], ignore_limits=False):
+        """Resets the robot's joints to specified positions.
+
+        Args:
+            target (Dict[str, float]): A dictionary mapping joint names to their
+                                    desired positions.
+            ignore_limits (bool, optional): If True, bypasses joint limit checks.
+                                            Defaults to False.
+
+        Raises:
+            KeyError: If one or more joints in `target` are not part of the robot.
+            ValueError: If a joint position in `target` is outside its limits and
+                        `ignore_limits` is False.
+
+        Returns:
+            Dict[str, float]: The input target dictionary for reference.
+        """
+        # Ensure all specified joints exist in the robot's joint state
+        if not all(key in self._joint_state_shape for key in target):
+            raise KeyError(
+                "One or more joints are not part of the robot. Correct keys are: "
+                + str(self._joint_state_shape.keys())
+            )
+
+        # Iterate over target joint positions and reset each joint
+        for joint_name, joint_position in target.items():
+            if not ignore_limits:
+                lower_joint_limit = self._lower_joint_limit[
+                    self._joint_name_to_index[joint_name]
+                ]
+                upper_joint_limit = self._upper_joint_limit[
+                    self._joint_name_to_index[joint_name]
+                ]
+                # Check if the joint position is within the defined limits
+                if joint_position > upper_joint_limit or joint_position < lower_joint_limit:
+                    raise ValueError(
+                        f"The joint position {joint_position} is out of limits "
+                        f"for joint '{joint_name}'. Its limits are: "
+                        f"{lower_joint_limit} and {upper_joint_limit}."
+                    )
+            # Reset the joint state in the simulation
+            p.resetJointState(
+                self.urdf,
+                self._joint_name_to_index[joint_name],
+                targetValue=joint_position,
+            )
+
+        return target
+
 
     def get_endeffector_pose(self, endeffector_name: str = None):
         """Returns the position of the endeffector in world coordinates

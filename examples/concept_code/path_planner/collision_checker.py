@@ -1,10 +1,11 @@
 import pybullet as p
 from itertools import product, combinations
-from collections import defaultdict, deque, namedtuple
+from collections import namedtuple
 from robot_base import RobotBase
 
 BASE_LINK = -1
 MAX_DISTANCE = 0.
+
 
 class CollisionChecker:
 

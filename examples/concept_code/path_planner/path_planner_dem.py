@@ -97,8 +97,8 @@ if __name__ == "__main__":
     # Plan a path to the goal
     res, joint_path = path_planner.plan_start_goal(start, goal)
     if res:
-        for target, _ in joint_path:
-            robot.reset_joint_position(target)
+        for joint_configuration, tool_activation in joint_path:
+            robot.reset_joint_position(joint_configuration)
             time.sleep(0.01)
     else:
         print("No solution found.")

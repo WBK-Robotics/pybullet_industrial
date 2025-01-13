@@ -9,6 +9,7 @@ import re
 
 JOINT_KEY = ('RA') # G-Code Key for running joint commands
 
+
 class GCodeProcessor:
     """Initializes a GCodeProcessor object with the provided parameters.
 
@@ -437,7 +438,7 @@ class GCodeProcessor:
         joint_positions = {}
         for key, value in g_code_line.items():
             if key.startswith(JOINT_KEY):
-                joint_name = self.joint_order[int(key[2:])-1]
+                joint_name = self.joint_order[int(key[len(JOINT_KEY):])-1]
                 joint_positions[joint_name] = value
 
         elementary_operations = [

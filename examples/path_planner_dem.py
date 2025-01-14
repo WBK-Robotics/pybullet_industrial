@@ -60,5 +60,5 @@ if __name__ == "__main__":
 
     # Create the GUI
     root = tk.Tk()
-    gui = PathPlannerGUI(root, robot, path_planner, collision_checker)
+    gui = PathPlannerGUI(root, robot, path_planner, collision_checker, obstacle)
     root.mainloop()

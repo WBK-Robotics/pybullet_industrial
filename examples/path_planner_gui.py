@@ -10,7 +10,7 @@ class PathPlannerGUI:
     GUI for the Path Planner, allowing users to control joints and execute paths.
     """
 
-    def __init__(self, root, robot: pi.RobotBase, path_planner: pi.PathPlanner, collision_checker: pi.CollisionChecker):
+    def __init__(self, root, robot: pi.RobotBase, path_planner: pi.PathPlanner, collision_checker: pi.CollisionChecker, obstacle):
         """
         Initializes the PathPlanner GUI.
 
@@ -19,27 +19,31 @@ class PathPlannerGUI:
             robot: The robot instance from PyBullet Industrial.
             path_planner: The PathPlanner instance for motion planning.
             collision_checker: The CollisionChecker instance for collision management.
+            obstacle: The obstacle to manipulate.
         """
         self.root = root
         self.robot = robot
         self.path_planner = path_planner
         self.collision_checker = collision_checker
+        self.obstacle = obstacle
         self.start = self.robot.get_joint_state()  # Start configuration
         self.goal = self.robot.get_joint_state()  # Goal configuration
         self.joint_order = self.robot.get_moveable_joints()[0]  # Order of movable joints
         self.joint_limits = self.robot.get_joint_limits()  # Joint limits as dictionaries
         self.root.title("PyBullet Path Planning")
         self.joint_values = [tk.StringVar(value="0") for _ in range(len(self.joint_order))]  # Initialize joint values
+        self.obstacle_values = [tk.StringVar(value="0") for _ in range(6)]  # Initialize obstacle values (X, Y, Z, A, B, C)
         self.light_color = tk.StringVar(value="green")  # Light color indicator
         self.create_widgets()
         self.set_allowed_collision()
         self.update_joint_positions()
+        self.set_initial_obstacle_values()
 
     def create_widgets(self):
         """
         Creates and arranges the widgets in the GUI.
         """
-        # Create the layout for the joints
+        # Create the layout for the robot's joints
         for i, joint_name in enumerate(self.joint_order):
             # Label for the joint
             tk.Label(self.root, text=f"{joint_name}").grid(row=i, column=0, padx=5, pady=5)
@@ -55,6 +59,24 @@ class PathPlannerGUI:
             # Text field for displaying the joint value
             tk.Entry(self.root, textvariable=self.joint_values[i], width=10).grid(
                 row=i, column=3, padx=5, pady=5)
+
+        # Create the layout for the obstacle's position and orientation
+        obstacle_labels = ["X", "Y", "Z", "A", "B", "C"]
+        for i, label in enumerate(obstacle_labels):
+            # Label for the obstacle axis
+            tk.Label(self.root, text=f"{label}").grid(row=i, column=4, padx=5, pady=5)
+
+            # "+" button for incrementing obstacle value
+            tk.Button(self.root, text="+", command=lambda i=i: self.increment_obstacle(i)).grid(
+                row=i, column=5, padx=5, pady=5)
+
+            # "-" button for decrementing obstacle value
+            tk.Button(self.root, text="-", command=lambda i=i: self.decrement_obstacle(i)).grid(
+                row=i, column=6, padx=5, pady=5)
+
+            # Text field for displaying the obstacle value
+            tk.Entry(self.root, textvariable=self.obstacle_values[i], width=10).grid(
+                row=i, column=7, padx=5, pady=5)
 
         # Collision Light Indicator
         tk.Label(self.root, text="Collision Status:").grid(row=len(self.joint_order), column=0, padx=5, pady=10)
@@ -80,6 +102,19 @@ class PathPlannerGUI:
         # Exit Button
         tk.Button(self.root, text="Exit", command=self.root.quit).grid(
             row=len(self.joint_order) + 3, column=0, columnspan=4, pady=20)
+
+    def set_initial_obstacle_values(self):
+        """
+        Sets the initial position and orientation of the obstacle into the text fields.
+        """
+        position, orientation_quat = p.getBasePositionAndOrientation(self.obstacle)
+        orientation_euler = p.getEulerFromQuaternion(orientation_quat)
+
+        # Update obstacle values
+        for i in range(3):
+            self.obstacle_values[i].set(f"{position[i]:.2f}")
+        for i in range(3, 6):
+            self.obstacle_values[i].set(f"{orientation_euler[i - 3]:.2f}")
 
     def update_light_status(self):
         """
@@ -132,6 +167,44 @@ class PathPlannerGUI:
         if new_value >= self.joint_limits[0][joint_name]:
             self.joint_values[index].set(f"{new_value:.2f}")
             self.apply_joint_position(index, new_value)
+
+    def increment_obstacle(self, index):
+        """
+        Increments the obstacle value and updates its position or orientation.
+
+        Args:
+            index (int): Index of the obstacle parameter to increment.
+        """
+        current_value = float(self.obstacle_values[index].get())
+        new_value = current_value + 0.1
+        self.obstacle_values[index].set(f"{new_value:.2f}")
+        self.update_obstacle()
+
+    def decrement_obstacle(self, index):
+        """
+        Decrements the obstacle value and updates its position or orientation.
+
+        Args:
+            index (int): Index of the obstacle parameter to decrement.
+        """
+        current_value = float(self.obstacle_values[index].get())
+        new_value = current_value - 0.1
+        self.obstacle_values[index].set(f"{new_value:.2f}")
+        self.update_obstacle()
+
+    def update_obstacle(self):
+        """
+        Updates the obstacle's position and orientation in the simulation and
+        refreshes the collision status light.
+        """
+        position = [float(self.obstacle_values[i].get()) for i in range(3)]
+        orientation_euler = [float(self.obstacle_values[i].get()) for i in range(3, 6)]
+        orientation_quat = p.getQuaternionFromEuler(orientation_euler)
+
+        p.resetBasePositionAndOrientation(self.obstacle, position, orientation_quat)
+
+        # Update the collision status light
+        self.update_light_status()
 
     def apply_joint_position(self, index, position):
         """

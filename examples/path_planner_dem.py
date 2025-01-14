@@ -55,11 +55,10 @@ if __name__ == "__main__":
     path_planner = pi.PathPlanner(robot, collision_checker, "BITstar")
 
     # Define start and goal positions
-    start = {'q1': -0.5, 'q2': 0, 'q3': -(np.pi/2), 'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}
-    goal = {'q1': 0.5, 'q2': 0.3, 'q3': -(np.pi/2), 'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}
-    robot.reset_joint_position(start)
+    inital_state = {'q1': -0.5, 'q2': 0, 'q3': -(np.pi/2), 'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}
+    robot.reset_joint_position(inital_state)
 
     # Create the GUI
     root = tk.Tk()
-    gui = PathPlannerGUI(root, robot, path_planner, collision_checker, start, goal)
+    gui = PathPlannerGUI(root, robot, path_planner, collision_checker)
     root.mainloop()

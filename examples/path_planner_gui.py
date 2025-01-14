@@ -19,8 +19,6 @@ class PathPlannerGUI:
             robot: The robot instance from PyBullet Industrial.
             path_planner: The PathPlanner instance for motion planning.
             collision_checker: The CollisionChecker instance for collision management.
-            start (dict): The starting joint positions.
-            goal (dict): The goal joint positions.
         """
         self.root = root
         self.robot = robot
@@ -32,6 +30,7 @@ class PathPlannerGUI:
         self.joint_limits = self.robot.get_joint_limits()  # Joint limits as dictionaries
         self.root.title("PyBullet Path Planning")
         self.joint_values = [tk.StringVar(value="0") for _ in range(len(self.joint_order))]  # Initialize joint values
+        self.light_color = tk.StringVar(value="green")  # Light color indicator
         self.create_widgets()
         self.set_allowed_collision()
         self.update_joint_positions()
@@ -57,25 +56,40 @@ class PathPlannerGUI:
             tk.Entry(self.root, textvariable=self.joint_values[i], width=10).grid(
                 row=i, column=3, padx=5, pady=5)
 
+        # Collision Light Indicator
+        tk.Label(self.root, text="Collision Status:").grid(row=len(self.joint_order), column=0, padx=5, pady=10)
+        self.light_label = tk.Label(self.root, bg=self.light_color.get(), width=10, height=2)
+        self.light_label.grid(row=len(self.joint_order), column=1, padx=5, pady=10)
+
         # Add Control Buttons
         tk.Button(self.root, text="Set as Start", command=self.set_as_start).grid(
-            row=len(self.joint_order), column=0, pady=10)
+            row=len(self.joint_order) + 1, column=0, pady=10)
 
         tk.Button(self.root, text="Set as End", command=self.set_as_goal).grid(
-            row=len(self.joint_order), column=1, pady=10)
+            row=len(self.joint_order) + 1, column=1, pady=10)
 
         tk.Button(self.root, text="Set Allowed Collision", command=self.set_allowed_collision).grid(
-            row=len(self.joint_order), column=2, pady=10)
+            row=len(self.joint_order) + 1, column=2, pady=10)
 
         tk.Button(self.root, text="Plan and Execute", command=self.plan_and_execute).grid(
-            row=len(self.joint_order), column=3, pady=10)
+            row=len(self.joint_order) + 1, column=3, pady=10)
 
         tk.Button(self.root, text="Update Joint Positions", command=self.update_joint_positions).grid(
-            row=len(self.joint_order) + 1, column=0, columnspan=2, pady=10)
+            row=len(self.joint_order) + 2, column=0, columnspan=2, pady=10)
 
         # Exit Button
         tk.Button(self.root, text="Exit", command=self.root.quit).grid(
-            row=len(self.joint_order) + 2, column=0, columnspan=4, pady=20)
+            row=len(self.joint_order) + 3, column=0, columnspan=4, pady=20)
+
+    def update_light_status(self):
+        """
+        Updates the light color based on the collision status.
+        """
+        if self.collision_checker.check_collision():
+            self.light_color.set("green")
+        else:
+            self.light_color.set("red")
+        self.light_label.config(bg=self.light_color.get())
 
     def update_joint_positions(self):
         """
@@ -85,6 +99,7 @@ class PathPlannerGUI:
         for i, joint_name in enumerate(self.joint_order):
             position = joint_state[joint_name]['position']
             self.joint_values[i].set(f"{position:.2f}")
+        self.update_light_status()
 
     def increment_joint(self, index):
         """
@@ -129,6 +144,7 @@ class PathPlannerGUI:
         joint_name = self.joint_order[index]
         target = {joint_name: position}
         self.robot.reset_joint_position(target)
+        self.update_light_status()
 
     def set_as_start(self):
         """

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Contributing to Pybullet Industrial - </title>
+<meta name="description" content="We love your input! We want to make contributing to this project as easy and transparent as possible, whether it&#x27;s: Reporting a bug Discussing the current…">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<style>
+body{font-family:Helvetica,sans-serif;margin:0}
+header,main,footer{padding:2em}
+header{background:darkslategray} header a{color:white;text-decoration:none}
+h1{margin-top:0} main{max-width:60em}
+</style>
+
+<link rel="canonical" href="/CONTRIBUTING">
+<link rel="alternate" href="/feed.xml" type="application/rss+xml" title="RSS">
+
+</head>
+<body class="page page__CONTRIBUTING">
+<header><a href="/"></a></header>
+<main class="content">
+
+
+
+
+
+<h1>Contributing to Pybullet Industrial</h1>
+
+
+<p>We love your input! We want to make contributing to this project as easy and transparent as possible, whether it's:</p>
+
+<ul>
+<li>Reporting a bug</li>
+<li>Discussing the current state of the code</li>
+<li>Submitting a fix</li>
+<li>Proposing new features</li>
+</ul>
+
+<p>or just spotting spelling mistakes in the documentation.</p>
+
+<h2>Report bugs using Github's <a href="https://github.com/briandk/transcriptase-atom/issues">issues</a></h2>
+
+<p>We use GitHub issues to track public bugs. Report a bug by <a href="https://github.com/WBK-Robotics/pybullet_industrial/issues/new/choose">opening a new issue</a>; it's that easy!</p>
+
+<h2>Making changes</h2>
+
+<p>In order to avoid multiple people working on the same problem please first discuss the change you wish to make via GitHub issue,
+email, or any other method with the owners of this repository before making a change.</p>
+
+<p>Once changes are discussed the actual changes to the codebase are proposed using pull requests (see  <a href="https://guides.github.com/introduction/flow/index.html">Github Flow</a> for more information):</p>
+
+<ol>
+<li>Fork the repo and create your branch from <code>main</code>.</li>
+<li>If you've added code that should be tested, add tests.</li>
+<li>If you've changed APIs, update the documentation.</li>
+<li>Ensure that all tests pass.</li>
+<li>Make sure your code  follows the <a href="https://www.python.org/dev/peps/pep-0008/">PEP 8</a> code style.</li>
+<li>Issue that pull request!</li>
+</ol>
+
+<p>Once the pull request is issued, automatic tests will check that the code follows all code conventions, and passes all tests.
+Once these tests give their ok, one of the repositorie maintainers will review the code.
+If he is satisfied the code will be merged with the main branch.
+Otherwise the maintainer might suggest changes that should be made to the code before it is accepted.
+These changes might include, deleting unnecessairy comments, deleting unused files or refractoring overly complicated code passages.
+These suggestions are generally designed to ensure the continued usability and maintainability of the code base.</p>
+
+<h2>Seeking support</h2>
+
+<p>If you have questions about how to use this project, please open a GitHub issue using the <a href="https://github.com/WBK-Robotics/pybullet_industrial/issues/new/choose">question template</a>.
+This will help us keep track of how people are using the project, and help us improve the documentation.
+Please dont contact the maintainers directly with questions about how to use the project.</p>
+
+<p>If you dont have a question but something is not working as expected, please open a GitHub issue using the <a href="https://github.com/WBK-Robotics/pybullet_industrial/issues/new/choose">bug report template</a>.
+This will not only help keep track of bugs but only prevents you from wasting time on a bug that is already known.</p>
+
+<h2>Any contributions you make will be under the MIT Software License</h2>
+
+<p>In short, when you submit code changes, your submissions are understood to be under the same <a href="http://choosealicense.com/licenses/mit/">MIT License</a> that covers the project. Feel free to contact the maintainers if that's a concern.</p>
+
+
+
+
+    <ul class="page__list">
+    
+        <li><a href="&#x2f;LICENSE">MIT License
+
+Copyright (c) 2022 Jan Baumgärtner, Malte Hansjosten
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and&#x2f;or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</a></li>
+    
+        <li><a href="&#x2f;README">
+![pybullet_industrial_logo](docs&#x2f;source&#x2f;logo.png)
+[![DOI](https:&#x2f;&#x2f;joss.theoj.org&#x2f;papers&#x2f;10.21105&#x2f;joss.05174&#x2f;status.svg)](https:&#x2f;&#x2f;doi.org&#x2f;10.21105&#x2f;joss.05174)
+[![codecov](https:&#x2f;&#x2f;codecov.io&#x2f;gh&#x2f;WBK-Robotics&#x2f;pybullet_industrial&#x2f;branch&#x2f;main&#x2f;graph&#x2f;badge.svg?token=CZ9HJY2PKN)](https:&#x2f;&#x2f;codecov.io&#x2f;gh&#x2f;WBK-Robotics&#x2f;pybullet_industrial)
+[![codiga](https:&#x2f;&#x2f;api.codiga.io&#x2f;project&#x2f;34121&#x2f;score&#x2f;svg)](https:&#x2f;&#x2f;app.codiga.io&#x2f;project&#x2f;34121&#x2f;dashboard)
+[![Documentation Status](https:&#x2f;&#x2f;readthedocs.org&#x2f;projects&#x2f;pybullet-industrial&#x2f;badge&#x2f;?version=latest)](https:&#x2f;&#x2f;pybullet-industrial.readthedocs.io&#x2f;en&#x2f;latest&#x2f;?badge=latest)
+
+
+Pybullet_industrial is a process-aware robot simulation.
+It aims to enable scientists and researchers to easily simulate robotics scenarios where a robot is participating in a manufacturing process.
+It achieves this by combining the world of classical robot simulations with the world of industrial processes.
+The library is capable of simulating different manufacturing tools and workpieces, as well as the robot itself.
+With the help of the pybullet_industrial package you will be able to:
+
+- simulate additive manufacturing processes
+- simulate milling processes and how the resulting forces impact the robot
+- simulating paint coating scenarios
+- simulate the handling of complex tasks using a variety of grippers
+
+![example_gif](docs&#x2f;source&#x2f;images&#x2f;intro_sim.gif)
+## Documentation
+
+You can find the documentation [here](https:&#x2f;&#x2f;pybullet-industrial.readthedocs.io&#x2f;en&#x2f;latest&#x2f;).
+
+
+## Getting Started
+
+There are two ways to get started with the library. The first is to use the newest source version from the repository.
+The second is to use the latest release version from pip. The source version is the most up-to-date, but it is also the most unstable.
+The release version is the most stable, but it is also the least up-to-date.
+The release version is recommended for most users, but the source version is recommended for developers.
+
+
+### Getting started with the release version
+
+The release version is the most stable version of the library. It is recommended for most users. To install the release version, run the following command:
+
+```
+pip install pybullet_industrial
+```
+
+### Getting started with the source version
+
+The source version is the most up-to-date version of the library. It is recommended for developers. To install the source version from the repository, run the following commands:
+
+```
+    git clone https:&#x2f;&#x2f;github.com&#x2f;WBK-Robotics&#x2f;pybullet_industrial
+    cd pybullet_industrial
+    pip install src&#x2f;
+```
+
+Note that if you are on windows, you may need to use the command `pip install src\\` instead.
+And depending on how you have installed your python environment, you may need to first install `wheel` using `pip install wheel`.
+
+
+
+## Citing the Package
+
+If you find the package useful, please consider citing it using the citation information on the right side of this page.
+</a></li>
+    
+        <li><a href="&#x2f;ISSUE_TEMPLATE&#x2f;bug_report">---
+name: Bug report
+about: Create a report to help us improve
+title: &#x27;&#x27;
+labels: bug
+assignees: &#x27;&#x27;
+
+---
+
+**Describe the bug**
+A clear and concise description of what the bug is.
+
+**To Reproduce**
+Steps to reproduce the behavior:
+1. Go to &#x27;...&#x27;
+2. Click on &#x27;....&#x27;
+3. Scroll down to &#x27;....&#x27;
+4. See error
+
+**Expected behavior**
+A clear and concise description of what you expected to happen.
+
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
+
+**Device Setup**
+ - OS: [e.g. iOS]
+ - Python Version
+ - Version of pybullet_industrial (commit hash)
+
+
+
+**Additional context**
+Add any other context about the problem here.
+</a></li>
+    
+        <li><a href="&#x2f;ISSUE_TEMPLATE&#x2f;feature_request">---
+name: Feature request
+about: Suggest an idea for this project
+title: &#x27;&#x27;
+labels: enhancement
+assignees: &#x27;&#x27;
+
+---
+
+**Is your feature request related to a problem? Please describe.**
+A clear and concise description of what the problem is. Ex. I&#x27;m always frustrated when [...]
+
+**Describe the solution you&#x27;d like**
+A clear and concise description of what you want to happen.
+
+**Describe alternatives you&#x27;ve considered**
+A clear and concise description of any alternative solutions or features you&#x27;ve considered.
+
+**Additional context**
+Add any other context or screenshots about the feature request here.
+</a></li>
+    
+        <li><a href="&#x2f;ISSUE_TEMPLATE&#x2f;question">---
+name: Questions
+about: Ask a question about pybullet_industrial
+title: &#x27;&#x27;
+labels: bug
+assignees: &#x27;&#x27;
+
+---
+
+**Describe the question**
+
+A clear and concise description of what the question is.
+
+**Screenshots**
+
+If applicable, add screenshots to help explain your problem.
+
+
+**Device Setup**
+
+ - OS: [e.g. iOS]
+ - Python Version
+ - Version of pybullet_industrial (commit hash)
+
+**Additional context**
+
+</a></li>
+    
+        <li><a href="&#x2f;docs&#x2f;pull_request_template">&lt;!--- Provide a general summary of your changes in the Title above --&gt;
+
+## Description
+&lt;!--- Describe your changes in detail --&gt;
+
+## Motivation and Context
+&lt;!--- Why is this change required? What problem does it solve? --&gt;
+&lt;!--- If it fixes an open issue, please link to the issue here. --&gt;
+
+## How has this been tested?
+&lt;!--- Please describe in detail how you tested your changes. --&gt;
+&lt;!--- Include details of your testing environment, tests ran to see how --&gt;
+&lt;!--- your change affects other areas of the code, etc. --&gt;
+
+## Screenshots (if appropriate):
+
+## Types of changes
+&lt;!--- What types of changes does your code introduce? Put an `x` in all the boxes that apply: --&gt;
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+
+## Checklist:
+&lt;!--- Go over all the following points, and put an `x` in all the boxes that apply. --&gt;
+&lt;!--- If you&#x27;re unsure about any of these, don&#x27;t hesitate to ask. We&#x27;re here to help! --&gt;
+- [ ] My code follows the code style of this project.
+- [ ] My change requires a change to the documentation.
+- [ ] I have updated the documentation accordingly.
+</a></li>
+    
+    </ul>
+
+
+
+</main>
+<footer><p>&copy; </footer>
+</body>
+</html>

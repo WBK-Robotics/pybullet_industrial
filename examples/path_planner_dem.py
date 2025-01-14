@@ -4,6 +4,8 @@ import pybullet_data
 import numpy as np
 import pybullet_industrial as pi
 import time
+import tkinter as tk
+from threading import Thread
 
 
 def seting_up_enviroment():
@@ -63,6 +65,25 @@ def add_box(box_pos, half_box_size):
     return box_id
 
 
+def plan_and_execute():
+    """
+    Function to plan and execute the robot's path.
+    """
+    global path_planner, collision_checker, start, goal, robot
+
+    print("Button clicked. Planning and executing path...")
+    collision_checker.allow_collision_links = collision_checker.get_collision_links()
+    collision_checker.update_collision_settings()
+
+    res, joint_path = path_planner.plan_start_goal(start, goal)
+    if res:
+        for joint_configuration, tool_activation in joint_path:
+            robot.reset_joint_position(joint_configuration)
+            time.sleep(0.01)
+    else:
+        print("No solution found.")
+
+
 if __name__ == "__main__":
     # Initialize the simulation environment
     urdf_robot, start_pos, start_orientation = seting_up_enviroment()
@@ -88,15 +109,21 @@ if __name__ == "__main__":
             'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}
     robot.reset_joint_position(start)
 
-    # Allow specific collisions and reconfigure detection
-    collision_checker.allow_collision_links = collision_checker.get_collision_links()
-    collision_checker.update_collision_settings()
+    # # Run the PyBullet simulation in a separate thread
+    # sim_thread = Thread(target=pybullet_simulation)
+    # sim_thread.daemon = True
+    # sim_thread.start()
 
-    # Plan a path to the goal
-    res, joint_path = path_planner.plan_start_goal(start, goal)
-    if res:
-        for joint_configuration, tool_activation in joint_path:
-            robot.reset_joint_position(joint_configuration)
-            time.sleep(0.01)
-    else:
-        print("No solution found.")
+    # Create the GUI using Tkinter
+    root = tk.Tk()
+    root.title("PyBullet Path Planning")
+
+    plan_button = tk.Button(root, text="Plan and Execute Path",
+                            command=plan_and_execute)
+    plan_button.pack(pady=20)
+
+    exit_button = tk.Button(root, text="Exit", command=root.quit)
+    exit_button.pack(pady=20)
+
+    # Run the Tkinter GUI loop
+    root.mainloop()

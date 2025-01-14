@@ -33,6 +33,8 @@ class PathPlannerGUI:
         self.root.title("PyBullet Path Planning")
         self.joint_values = [tk.StringVar(value="0") for _ in range(len(self.joint_order))]  # Initialize joint values
         self.create_widgets()
+        self.set_allowed_collision()
+        self.update_joint_positions()
 
     def create_widgets(self):
         """
@@ -68,9 +70,8 @@ class PathPlannerGUI:
         tk.Button(self.root, text="Plan and Execute", command=self.plan_and_execute).grid(
             row=len(self.joint_order), column=3, pady=10)
 
-        # Add "Update Joint Positions" button
         tk.Button(self.root, text="Update Joint Positions", command=self.update_joint_positions).grid(
-            row=len(self.joint_order) + 1, column=0, columnspan=4, pady=10)
+            row=len(self.joint_order) + 1, column=0, columnspan=2, pady=10)
 
         # Exit Button
         tk.Button(self.root, text="Exit", command=self.root.quit).grid(
@@ -78,13 +79,12 @@ class PathPlannerGUI:
 
     def update_joint_positions(self):
         """
-        Updates the joint positions displayed in the text fields based on the robot's current state.
+        Updates the joint positions displayed in the text fields.
         """
         joint_state = self.robot.get_joint_state()
         for i, joint_name in enumerate(self.joint_order):
             position = joint_state[joint_name]['position']
             self.joint_values[i].set(f"{position:.2f}")
-        print("Joint positions updated.")
 
     def increment_joint(self, index):
         """
@@ -165,6 +165,8 @@ class PathPlannerGUI:
                 self.robot.reset_joint_position(joint_configuration)
                 time.sleep(0.01)
 
+            # Update joint positions after path execution
+            self.update_joint_positions()
             print("Path execution completed.")
         else:
             print("No solution found.")

@@ -13,6 +13,7 @@ def seting_up_enviroment():
     """
     working_dir = os.path.dirname(__file__)
     urdf_robot = os.path.join(working_dir, 'robot_descriptions', 'comau_nj290_robot.urdf')
+    urdf_robot = os.path.join(working_dir, 'robot_descriptions', 'scara_control.urdf')
     urdf_fofa = os.path.join(working_dir, 'Objects', 'FoFa', 'FoFa.urdf')
 
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
@@ -44,6 +45,7 @@ def add_box(box_pos, half_box_size):
 if __name__ == "__main__":
     # Initialize the simulation environment
     urdf_robot, start_pos, start_orientation = seting_up_enviroment()
+    # robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
     robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
     # Add a box obstacle
     obstacles = []

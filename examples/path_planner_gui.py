@@ -5,6 +5,9 @@ import pybullet as p
 import numpy as np
 
 
+JOINT_INCREMENT = 0.02
+
+
 class PathPlannerGUI:
     """
     GUI for the Path Planner, allowing users to control joints and execute paths.
@@ -144,7 +147,7 @@ class PathPlannerGUI:
             index (int): Index of the joint to increment.
         """
         current_value = float(self.joint_values[index].get())
-        new_value = current_value + 0.2
+        new_value = current_value + JOINT_INCREMENT
 
         # Ensure the new value is within limits
         joint_name = self.joint_order[index]
@@ -160,7 +163,7 @@ class PathPlannerGUI:
             index (int): Index of the joint to decrement.
         """
         current_value = float(self.joint_values[index].get())
-        new_value = current_value - 0.2
+        new_value = current_value - JOINT_INCREMENT
 
         # Ensure the new value is within limits
         joint_name = self.joint_order[index]

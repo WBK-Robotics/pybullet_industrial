@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simplified URDF for a gantry robot -->
+<robot name="gantry_robot">
+
+  <link name="world"/>
+  <joint
+    name="world_to_dummy_joint"
+    type="fixed">
+    <parent link="world"/>
+    <child link="dummy_link"/>
+  </joint>
+
+  <link name="dummy_link"/>
+  <joint
+    name="dummy_joint"
+    type="fixed">
+    <parent link="dummy_link"/>
+    <child link="gantry_base"/>
+  </joint>
+
+  <link
+    name="gantry_base">
+    <inertial>
+      <origin xyz="0.761999999999998 1.0414 1.12896315789474" rpy="0 0 0" />
+      <mass value="261.537541439999" />
+      <inertia ixx="250.903905040112" ixy="2.77435019402361E-13" ixz="-1.47257562822484E-13" iyy="163.69656521287" iyz="-2.95263846178068E-13" izz="276.537389580734" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="gantry_meshes/gantry_base.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="gantry_meshes/gantry_base.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="h_slider">
+    <inertial>
+      <origin xyz="-0.184255400209413 0.0635000000000032 -3.10862446895044E-15" rpy="0 0 0" />
+      <mass value="11.96255672" />
+      <inertia ixx="2.27659914886572" ixy="-1.31950083718528E-18" ixz="-6.53826116987587E-16" iyy="2.26399170710001" iyz="-8.84639806254247E-19" izz="0.0246245979980174" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="gantry_meshes/h_slider.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="gantry_meshes/h_slider.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint
+    name="h_slider_joint"
+    type="prismatic">
+    <origin xyz="0.761999999999999 1.651 1.4986" rpy="1.5707963267949 0 1.5707963267949" />
+    <parent link="gantry_base" />
+    <child link="h_slider" />
+    <axis xyz="1 0 0" />
+    <limit lower="-1.04" upper="0.22" effort="1" velocity="1" />
+  </joint>
+
+  <link name="v_slider">
+    <inertial>
+      <origin xyz="-2.22044604925031E-16 0.0412906505115238 -0.247755400209413" rpy="0 0 0" />
+      <mass value="7.49764372086085" />
+      <inertia ixx="0.81898723375128" ixy="3.10681166828544E-17" ixz="9.58825360543054E-19" iyy="0.014274274403217" iyz="-8.75329203593836E-18" izz="0.830051122898296" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="gantry_meshes/v_slider.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="gantry_meshes/v_slider.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint
+    name="v_slider_joint"
+    type="prismatic">
+    <origin xyz="0.0635000000000001 0.501641895675784 0" rpy="0 1.5707963267949 0" />
+    <parent link="h_slider" />
+    <child link="v_slider" />
+    <axis xyz="0 1 0" />
+    <limit lower="-0.80" upper="-0.02" effort="0" velocity="1" />
+    <dynamics damping="1" friction="1"/>
+  </joint>
+
+</robot>

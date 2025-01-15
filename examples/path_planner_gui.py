@@ -37,6 +37,7 @@ class PathPlannerGUI:
         self.joint_values = [tk.StringVar(value="0") for _ in range(len(self.joint_order))]  # Initialize joint values
         self.obstacle_values = [tk.StringVar(value="0") for _ in range(6)]  # Initialize obstacle values (X, Y, Z, A, B, C)
         self.light_color = tk.StringVar(value="green")  # Light color indicator
+        self.current_box_size = [0.5, 0.5, 0.05]
         self.create_widgets()
         self.set_allowed_collision()
         self.update_joint_positions()
@@ -102,9 +103,56 @@ class PathPlannerGUI:
         tk.Button(self.root, text="Update Joint Positions", command=self.update_joint_positions).grid(
             row=len(self.joint_order) + 2, column=0, columnspan=2, pady=10)
 
+        # New Buttons for Obstacle Size
+        tk.Button(self.root, text="Shrink Obstacle", command=self.shrink_obstacle).grid(
+            row=len(self.joint_order) + 3, column=4, pady=10)
+
+        tk.Button(self.root, text="Grow Obstacle", command=self.grow_obstacle).grid(
+            row=len(self.joint_order) + 3, column=5, pady=10)
+
         # Exit Button
         tk.Button(self.root, text="Exit", command=self.root.quit).grid(
             row=len(self.joint_order) + 3, column=0, columnspan=4, pady=20)
+
+    def shrink_obstacle(self):
+        """
+        Shrinks the obstacle by reducing its size in all dimensions.
+        """
+        current_position, current_orientation = p.getBasePositionAndOrientation(self.obstacle)
+
+        # Reduce the size of the obstacle
+        self.current_box_size = [(extent - (extent*0.2)) for extent in self.current_box_size]
+
+        # Remove the current obstacle and recreate it with new dimensions
+        p.removeBody(self.obstacle)
+        self.obstacle = p.createMultiBody(
+            baseMass=0,
+            baseCollisionShapeIndex=p.createCollisionShape(p.GEOM_BOX, halfExtents=self.current_box_size),
+            basePosition=current_position,
+            baseOrientation=current_orientation
+        )
+        self.set_initial_obstacle_values()
+        self.update_light_status()
+
+    def grow_obstacle(self):
+        """
+        Grows the obstacle by increasing its size in all dimensions.
+        """
+        current_position, current_orientation = p.getBasePositionAndOrientation(self.obstacle)
+
+        # Increase the size of the obstacle
+        self.current_box_size = [(extent + (extent*0.2)) for extent in self.current_box_size]
+
+        # Remove the current obstacle and recreate it with new dimensions
+        p.removeBody(self.obstacle)
+        self.obstacle = p.createMultiBody(
+            baseMass=0,
+            baseCollisionShapeIndex=p.createCollisionShape(p.GEOM_BOX, halfExtents=self.current_box_size),
+            basePosition=current_position,
+            baseOrientation=current_orientation
+        )
+        self.set_initial_obstacle_values()
+        self.update_light_status()
 
     def set_initial_obstacle_values(self):
         """

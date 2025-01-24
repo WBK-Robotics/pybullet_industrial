@@ -166,6 +166,7 @@ class PathPlanner:
         res = False
         joint_path = None
         if solved:
+            self.ss.simplifySolution()
             sol_path_geometric = self.ss.getSolutionPath()
             sol_path_geometric.interpolate(INTERPOLATE_NUM)
             sol_path_states = sol_path_geometric.getStates()

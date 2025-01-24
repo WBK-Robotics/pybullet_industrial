@@ -116,7 +116,6 @@ class PathPlanner:
             for joint_name, joint_position in zip(self.joint_order, joint_positions):
                 target[joint_name] = joint_position
             self.robot.reset_joint_position(target, True)
-        # return self.collision_checker.check_collision()
 
         # Check for collisions
         if not self.collision_checker.check_collision():

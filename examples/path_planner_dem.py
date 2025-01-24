@@ -79,10 +79,10 @@ if __name__ == "__main__":
 
     # Initialize CollisionChecker and PathPlanner
     collision_checker = pi.CollisionChecker(robot, obstacles)
-    path_planner = pi.PathPlanner(robot, collision_checker, "RRTstar")
+    path_planner = pi.PathPlanner(robot, collision_checker, "BITstar")
 
     # Setting up Comau
-    inital_state = {'q1': -0.5, 'q2': 0, 'q3': -(np.pi/2), 'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}
+    inital_state = {'q1': -0.5, 'q2': 0, 'q3': -(np.pi/2), 'q4': 0, 'q5': np.pi/2, 'q6': 0}
     robot.reset_joint_position(inital_state)
 
     # Setting up Scara

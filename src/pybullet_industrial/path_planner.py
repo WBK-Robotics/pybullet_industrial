@@ -4,6 +4,7 @@ from pybullet_industrial import CollisionChecker
 from pybullet_industrial import RobotBase
 from pybullet_industrial import JointPath
 import numpy as np
+import pybullet as p
 
 INTERPOLATE_NUM = 500  # Number of segments for interpolating the solution path
 DEFAULT_PLANNING_TIME = 5.0  # Default maximum allowed time for planning
@@ -59,8 +60,8 @@ class PathPlanner:
         lower_limit, upper_limit = self.robot.get_joint_limits(set(self.joint_order))
 
         for i, joint_name in enumerate(self.joint_order):
-            bounds.setLow(i, lower_limit[joint_name])
-            bounds.setHigh(i, upper_limit[joint_name])
+            bounds.setLow(i, lower_limit[joint_name]-.1)
+            bounds.setHigh(i, upper_limit[joint_name]+.1)
 
         # Define the state space with dimensions matching the joint order
         space = ob.RealVectorStateSpace(number_of_dimensions)
@@ -105,16 +106,44 @@ class PathPlanner:
         Returns:
             bool: True if the state is valid (collision-free), False otherwise.
         """
-        target = {}
-        if not self.real_vecotr:
-            joint_positions = self.coumpound_state_to_list(state)
-        else:
-            joint_positions = self.realvector_state_to_list(state)
+        if state is not None:
+            target = {}
+            if not self.real_vecotr:
+                joint_positions = self.coumpound_state_to_list(state)
+            else:
+                joint_positions = self.realvector_state_to_list(state)
 
-        for joint_name, joint_position in zip(self.joint_order, joint_positions):
-            target[joint_name] = joint_position
-        self.robot.reset_joint_position(target)
-        return self.collision_checker.check_collision()
+            for joint_name, joint_position in zip(self.joint_order, joint_positions):
+                target[joint_name] = joint_position
+            self.robot.reset_joint_position(target, True)
+        # return self.collision_checker.check_collision()
+
+        # Check for collisions
+        if not self.collision_checker.check_collision():
+            return False
+
+        # Check if end-effector is upright
+        if not self.check_endeffector_upright():
+            return False
+
+        return True
+
+    def check_endeffector_upright(self):
+        """
+        Constraint function
+        """
+        orientation = p.getEulerFromQuaternion(self.robot.get_endeffector_pose()[1])
+        # Target orientation
+        target_orientation = np.array([-np.pi / 2, 0, 0])
+
+        # Tolerance of ±0.1
+        tolerance = np.array([0.3, 0.3, 2*np.pi])
+
+        # Current orientation
+        if np.all(np.abs(orientation - target_orientation) <= tolerance):
+            return True
+        else:
+            return False
 
     def set_planner(self, planner_name):
         """
@@ -182,7 +211,7 @@ class PathPlanner:
             print("No solution found")
 
         # Restore original robot state
-        self.robot.reset_joint_position(orig_robot_state)
+        self.robot.reset_joint_position(orig_robot_state, True)
         return res, joint_path
 
     def set_start_goal_states(self, start, goal):

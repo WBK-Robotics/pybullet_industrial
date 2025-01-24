@@ -114,6 +114,36 @@ class PathPlannerGUI:
         tk.Button(self.root, text="Exit", command=self.root.quit).grid(
             row=len(self.joint_order) + 3, column=0, columnspan=4, pady=20)
 
+        tk.Button(self.root, text="Check Endeffector", command=self.check_endeffector_upright).grid(
+            row=len(self.joint_order) + 3, column=6, pady=20)
+        tk.Button(self.root, text="Upright Endeffedtor", command=self.make_endeffector_upright).grid(
+            row=len(self.joint_order) + 3, column=7, pady=20)
+
+    def make_endeffector_upright(self):
+        position = self.robot.get_endeffector_pose()[0]
+        orientation = p.getQuaternionFromEuler([-np.pi/2, 0, 0])
+        self.robot.set_endeffector_pose(position, orientation)
+        self.update_joint_positions()
+
+    def check_endeffector_upright(self):
+        """
+        Checks if the end effector is upright.
+        """
+        orientation = p.getEulerFromQuaternion(self.robot.get_endeffector_pose()[1])
+        # Target orientation
+        target_orientation = np.array([-np.pi / 2, 0, 0])
+
+        # Tolerance of ±0.1
+        tolerance = np.array([0.3, 0.3, 2*np.pi])
+
+        # Current orientation
+        if np.all(np.abs(orientation - target_orientation) <= tolerance):
+            print("Upright")
+            print(np.abs(orientation - target_orientation))
+        else:
+            print("Fail")
+            print(np.abs(orientation - target_orientation))
+
     def shrink_obstacle(self):
         """
         Shrinks the obstacle by reducing its size in all dimensions.
@@ -171,7 +201,7 @@ class PathPlannerGUI:
         """
         Updates the light color based on the collision status.
         """
-        if self.collision_checker.check_collision():
+        if self.path_planner.is_state_valid(None):
             self.light_color.set("green")
         else:
             self.light_color.set("red")
@@ -302,7 +332,7 @@ class PathPlannerGUI:
         res, joint_path = self.path_planner.plan_start_goal(self.start, self.goal)
         if res:
             for joint_configuration, tool_activation in joint_path:
-                self.robot.reset_joint_position(joint_configuration)
+                self.robot.reset_joint_position(joint_configuration, True)
                 time.sleep(0.01)
 
             # Update joint positions after path execution

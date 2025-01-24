@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     # Initialize CollisionChecker and PathPlanner
     collision_checker = pi.CollisionChecker(robot, obstacles)
-    path_planner = pi.PathPlanner(robot, collision_checker, "BITstar")
+    path_planner = pi.PathPlanner(robot, collision_checker, "RRTstar")
 
     # Setting up Comau
     inital_state = {'q1': -0.5, 'q2': 0, 'q3': -(np.pi/2), 'q4': -(np.pi-0.001), 'q5': -(np.pi/2), 'q6': 0}

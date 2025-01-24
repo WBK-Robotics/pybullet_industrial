@@ -5,7 +5,7 @@ import pybullet as p
 import numpy as np
 
 
-JOINT_INCREMENT = 0.02
+JOINT_INCREMENT = 0.2
 
 
 class PathPlannerGUI:

@@ -31,23 +31,12 @@ class PathPlanner:
         self.collision_checker = collision_checker
 
         self.joint_order = robot.get_moveable_joints(selected_joint_names)[0]
-
-        # Retrieve joint limits from the robot
-        lower_limit, upper_limit = self.robot.get_joint_limits(
-            set(self.joint_order)
-        )
-
-        # Configure bounds for the state space
-        number_of_dimensions = len(self.joint_order)
-        bounds = ob.RealVectorBounds(number_of_dimensions)
-
-        for i, joint_name in enumerate(self.joint_order):
-            bounds.setLow(i, lower_limit[joint_name])
-            bounds.setHigh(i, upper_limit[joint_name])
-
-        # Define the state space with dimensions matching the joint order
-        self.space = ob.RealVectorStateSpace(number_of_dimensions)
-        self.space.setBounds(bounds)
+        self.real_vecotr = True
+        if any(value == np.inf for value in robot.get_joint_limits(self.joint_order)[1].values()):
+            self.real_vecotr = False
+            self.space = self.build_compound_space()
+        else:
+            self.space = self.build_realvecotr_space()
 
         # Initialize the motion planning problem setup
         self.ss = og.SimpleSetup(self.space)
@@ -63,6 +52,48 @@ class PathPlanner:
         # Set the default planner
         self.set_planner(planner_name)
 
+    def build_realvecotr_space(self):
+        # Configure bounds for the state space
+        number_of_dimensions = len(self.joint_order)
+        bounds = ob.RealVectorBounds(number_of_dimensions)
+        lower_limit, upper_limit = self.robot.get_joint_limits(set(self.joint_order))
+
+        for i, joint_name in enumerate(self.joint_order):
+            bounds.setLow(i, lower_limit[joint_name])
+            bounds.setHigh(i, upper_limit[joint_name])
+
+        # Define the state space with dimensions matching the joint order
+        space = ob.RealVectorStateSpace(number_of_dimensions)
+        space.setBounds(bounds)
+        return space
+
+    def build_compound_space(self):
+        """
+        Builds the appropriate state space based on the robot's joint limits and types.
+
+        Args:
+            robot: Instance of RobotBase representing the robot model and its kinematics.
+            joint_order: List of joint names to include in the planning space.
+
+        Returns:
+            ob.CompoundStateSpace: The constructed state space for planning.
+        """
+        # Retrieve joint limits and joint types from the robot
+        lower_limit, upper_limit = self.robot.get_joint_limits(set(self.joint_order))
+
+        # Define a compound state space to handle different joint types
+        space = ob.CompoundStateSpace()
+
+        for joint_name in self.joint_order:
+            if lower_limit[joint_name] == -np.inf and upper_limit[joint_name] == np.inf:
+                space.addSubspace(ob.SO2StateSpace(), 1.0)  # Continuous joint
+            else:
+                subspace = ob.RealVectorStateSpace(1)
+                subspace.setBounds(lower_limit[joint_name], upper_limit[joint_name])
+                space.addSubspace(subspace, 1.0)  # Revolute joint with limits
+
+        return space
+
     def is_state_valid(self, state):
         """
         Checks if a given state is valid by ensuring no collisions with the
@@ -75,7 +106,11 @@ class PathPlanner:
             bool: True if the state is valid (collision-free), False otherwise.
         """
         target = {}
-        joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
+        if not self.real_vecotr:
+            joint_positions = self.coumpound_state_to_list(state)
+        else:
+            joint_positions = self.realvector_state_to_list(state)
+
         for joint_name, joint_position in zip(self.joint_order, joint_positions):
             target[joint_name] = joint_position
         self.robot.reset_joint_position(target)
@@ -123,13 +158,7 @@ class PathPlanner:
                                     path as a JointPath object.
         """
         orig_robot_state = start
-
-        # Set start and goal states
-        s = ob.State(self.space)
-        g = ob.State(self.space)
-        for i, joint_name in enumerate(self.joint_order):
-            s[i] = start[joint_name]
-            g[i] = goal[joint_name]
+        s, g = self.set_start_goal_states(start, goal)
         self.ss.setStartAndGoalStates(s, g)
 
         # Solve the planning problem
@@ -140,9 +169,12 @@ class PathPlanner:
             sol_path_geometric = self.ss.getSolutionPath()
             sol_path_geometric.interpolate(INTERPOLATE_NUM)
             sol_path_states = sol_path_geometric.getStates()
-            sol_path_list = np.array(
-                [self.state_to_list(state) for state in sol_path_states]
-            )
+            if self.real_vecotr:
+                sol_path_list = np.array(
+                [self.realvector_state_to_list(state) for state in sol_path_states])
+            else:
+                sol_path_list = np.array(
+                    [self.coumpound_state_to_list(state) for state in sol_path_states])
             joint_path = JointPath(sol_path_list.transpose(), self.joint_order)
             res = True
         else:
@@ -152,7 +184,35 @@ class PathPlanner:
         self.robot.reset_joint_position(orig_robot_state)
         return res, joint_path
 
-    def state_to_list(self, state):
+    def set_start_goal_states(self, start, goal):
+        # Set start and goal states
+        s = ob.State(self.space)
+        g = ob.State(self.space)
+        for i, joint_name in enumerate(self.joint_order):
+            s[i] = start[joint_name]
+            g[i] = goal[joint_name]
+        return s, g
+
+    def coumpound_state_to_list(self, state):
+        """
+        Converts an OMPL state object to a list of joint values.
+
+        Args:
+            state: An OMPL state object.
+
+        Returns:
+            list: A list of joint values.
+        """
+        joint_values = []
+        for i in range(self.space.getSubspaceCount()):
+            subspace = self.space.getSubspace(i)
+            if isinstance(subspace, ob.SO2StateSpace):
+                joint_values.append(state[i].value)
+            elif isinstance(subspace, ob.RealVectorStateSpace):
+                joint_values.append(state[i][0])
+        return joint_values
+
+    def realvector_state_to_list(self, state):
         """
         Converts an OMPL state object to a list of joint values.
 

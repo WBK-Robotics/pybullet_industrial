@@ -2,7 +2,7 @@
 <robot name="example_robot">
 
 	<!-- * * * Link Definitions * * * -->
-	
+
 	<link name="link0_passive">
 		<visual>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -23,7 +23,7 @@
             </geometry>
 		</collision>
 	</link>
-	
+
 	<link name="link0_x_axis">
 		<visual>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
@@ -125,7 +125,7 @@
 			</geometry>
 		</visual>
 	</link>
-	
+
 	<link name="link4"/>
 	<link name="link4_x_axis">
 		<visual>
@@ -143,7 +143,7 @@
             </geometry>
 		</collision>
 	</link>
-	
+
 	<link name="link4_passive">
 		<visual>
 			<origin xyz="0 0 0.05" rpy="0 0 0"/>
@@ -171,7 +171,7 @@
             </geometry>
 		</collision>
 	</link>
-	
+
 	<link name="link5_passive">
 		<visual>
 			<origin xyz="0 0 0.05" rpy="0 0 0"/>
@@ -218,14 +218,21 @@
 			</geometry>
 		</visual>
 	</link>
-	
-	<joint name="q1" type="revolute">
+
+	<joint name="q1" type="continuous">
+    <parent link="link0_passive"/>
+    <child link="link1"/>
+    <origin xyz="0 0 1.14" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+	</joint>
+
+	<!-- <joint name="q1" type="revolute">
 		<parent link="link0_passive"/>
 		<child link="link1"/>
 		<origin xyz="0 0 1.14" rpy="0 0 0"/>
 		<axis xyz="0 0 1"/>
 		<limit effort="204" lower="-3.14159265358" upper="3.14159265358" velocity="1.91986217719"/>
-	</joint>
+	</joint> -->
 	<joint name="q2" type="revolute">
 		<parent link="link1_passive"/>
 		<child link="link2"/>
@@ -253,14 +260,14 @@
 		<origin xyz="0 0 0" rpy="0 0 0"/>
 		<axis xyz="0 0 1"/>
 		<limit effort="204" lower="-2.1816615645" upper="2.1816615645" velocity="1.91986217719"/>
-	</joint>	
+	</joint>
 	<joint name="q6" type="revolute">
 		<parent link="link5_passive"/>
 		<child link="link6"/>
 		<origin xyz="0 0 0.282" rpy="0 0 0"/>
 		<axis xyz="0 0 1"/>
 		<limit effort="204" lower="-3.14159265358" upper="3.14159265358" velocity="1.91986217719"/>
-	</joint>	
+	</joint>
 	<joint name="q0_x" type="fixed">
 		<parent link="link0_passive"/>
 		<child link="link0_x_axis"/>

@@ -165,6 +165,16 @@ class ValidityChecker(ob.StateValidityChecker):
         self.collision_checker = collision_checker
         self.joint_order = joint_order
 
+    # Has to be applied
+    def clearance(self, state: ob.State):
+        # Extract the robot's (x,y) position from its state
+        x = state[0]
+        y = state[1]
+
+        # Distance formula between two points, offset by the circle's
+        # radius
+        return np.sqrt((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5)) - 0.25
+
     def isValid(self, state: ob.State):
         """Checks if the provided state is valid.
 

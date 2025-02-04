@@ -12,11 +12,13 @@ DEFAULT_PLANNING_TIME = 5.0  # Maximum planning time in seconds
 
 class SamplingSpace:
     """Creates an OMPL state space based on robot joint limits and provides
-    state conversion utilities.
+    state conversion and state creation utilities.
 
-    This class constructs either a RealVectorStateSpace or a
-    CompoundStateSpace (if some joint limits are infinite) and offers
-    methods to convert an OMPL state into a list of joint values.
+    This class always creates a RealVectorStateSpace. If a joint is
+    continuous (i.e. has an infinite limit), its bounds are set to [-3π, 3π].
+    Otherwise, a small margin is added to the joint limits.
+
+    It also includes a helper method to set the start and goal states.
 
     Args:
         robot (RobotBase): The robot model and its kinematics.
@@ -28,18 +30,17 @@ class SamplingSpace:
         self.joint_order = joint_order
         self.robot = robot
 
-        # Determine state space type based on joint limits.
-        if any(np.isinf(lower_limit[joint]) or
-               np.isinf(upper_limit[joint])
-               for joint in joint_order):
-            self.real_vector = False
-            self.space = self.build_compound_space(lower_limit, upper_limit)
-        else:
-            self.real_vector = True
-            self.space = self.build_realvector_space(lower_limit, upper_limit)
+        # Always use a RealVectorStateSpace.
+        self.real_vector = True
+        self.space = self.build_realvector_space(lower_limit, upper_limit)
 
     def build_realvector_space(self, lower_limit: dict, upper_limit: dict):
-        """Builds a RealVectorStateSpace with a margin added to the joint limits.
+        """Builds a RealVectorStateSpace with special handling for
+        continuous joints.
+
+        For each joint:
+          - If a joint limit is infinite, set the bounds to [-3π, 3π].
+          - Otherwise, use the provided limit with a small margin (±0.1).
 
         Args:
             lower_limit (dict): Lower limits for each joint.
@@ -51,59 +52,15 @@ class SamplingSpace:
         num_dims = len(self.joint_order)
         bounds = ob.RealVectorBounds(num_dims)
         for i, joint in enumerate(self.joint_order):
-            bounds.setLow(i, lower_limit[joint] - 0.1)
-            bounds.setHigh(i, upper_limit[joint] + 0.1)
+            if np.isinf(lower_limit[joint]) or np.isinf(upper_limit[joint]):
+                bounds.setLow(i, -3 * np.pi)
+                bounds.setHigh(i, 3 * np.pi)
+            else:
+                bounds.setLow(i, lower_limit[joint] - 0.1)
+                bounds.setHigh(i, upper_limit[joint] + 0.1)
         space = ob.RealVectorStateSpace(num_dims)
         space.setBounds(bounds)
         return space
-
-    def build_compound_space(self, lower_limit: dict, upper_limit: dict):
-        """Builds a CompoundStateSpace that handles multiple joint types.
-
-        Args:
-            lower_limit (dict): Lower limits for each joint.
-            upper_limit (dict): Upper limits for each joint.
-
-        Returns:
-            ob.CompoundStateSpace: The constructed compound state space.
-        """
-        space = ob.CompoundStateSpace()
-        for joint in self.joint_order:
-            if lower_limit[joint] == -np.inf and \
-               upper_limit[joint] == np.inf:
-                # Use SO2 for continuous (unbounded) joints.
-                space.addSubspace(ob.SO2StateSpace(), 1.0)
-            else:
-                subspace = ob.RealVectorStateSpace(1)
-                subspace.setBounds(lower_limit[joint], upper_limit[joint])
-                space.addSubspace(subspace, 1.0)
-        return space
-
-    def get_space(self):
-        """Returns the constructed OMPL state space.
-
-        Returns:
-            ob.StateSpace: The state space used for planning.
-        """
-        return self.space
-
-    def compound_state_to_list(self, state: ob.State):
-        """Converts a compound OMPL state into a list of joint values.
-
-        Args:
-            state (ob.State): An OMPL state object.
-
-        Returns:
-            list: Joint values extracted from the state.
-        """
-        joint_vals = []
-        for i in range(self.space.getSubspaceCount()):
-            subspace = self.space.getSubspace(i)
-            if isinstance(subspace, ob.SO2StateSpace):
-                joint_vals.append(state[i].value)
-            elif isinstance(subspace, ob.RealVectorStateSpace):
-                joint_vals.append(state[i][0])
-        return joint_vals
 
     def realvector_state_to_list(self, state: ob.State):
         """Converts a RealVector OMPL state into a list of joint values.
@@ -115,6 +72,31 @@ class SamplingSpace:
             list: Joint values extracted from the state.
         """
         return [state[i] for i, _ in enumerate(self.joint_order)]
+
+    def get_space(self):
+        """Returns the constructed OMPL state space.
+
+        Returns:
+            ob.StateSpace: The state space used for planning.
+        """
+        return self.space
+
+    def set_start_goal_states(self, start: dict, goal: dict):
+        """Creates and returns the start and goal states for planning.
+
+        Args:
+            start (dict): Joint values for the start configuration.
+            goal (dict): Joint values for the goal configuration.
+
+        Returns:
+            tuple(ob.State, ob.State): The start and goal states.
+        """
+        s = ob.State(self.space)
+        g = ob.State(self.space)
+        for i, joint in enumerate(self.joint_order):
+            s[i] = start[joint]
+            g[i] = goal[joint]
+        return s, g
 
 
 class ClearanceObjective(ob.StateCostIntegralObjective):
@@ -142,8 +124,10 @@ class ClearanceObjective(ob.StateCostIntegralObjective):
         Returns:
             ob.Cost: The computed cost.
         """
-        return ob.Cost(1 / (self.si_.getStateValidityChecker().clearance(s) +
-                            sys.float_info.min))
+        return ob.Cost(
+            1 / (self.si_.getStateValidityChecker().clearance(s) +
+                 sys.float_info.min)
+        )
 
 
 class ValidityChecker(ob.StateValidityChecker):
@@ -165,21 +149,20 @@ class ValidityChecker(ob.StateValidityChecker):
         self.collision_checker = collision_checker
         self.joint_order = joint_order
 
-    # Has to be applied
     def clearance(self, state: ob.State):
-        # Extract the robot's (x,y) position from its state
+        # Extract the robot's (x,y) position from its state (assumes the first two
+        # joints correspond to x, y).
         x = state[0]
         y = state[1]
-
-        # Distance formula between two points, offset by the circle's
-        # radius
-        return np.sqrt((x-0.5)*(x-0.5) + (y-0.5)*(y-0.5)) - 0.25
+        # Compute clearance as the distance from a circle centered at (0.5, 0.5)
+        # with radius 0.25.
+        return np.sqrt((x - 0.5)**2 + (y - 0.5)**2) - 0.25
 
     def isValid(self, state: ob.State):
         """Checks if the provided state is valid.
 
-        A state is valid if it is collision-free and the end-effector is
-        correctly oriented.
+        A state is valid if it is collision-free and the end-effector is correctly
+        oriented.
 
         Args:
             state (ob.State): The state to validate.
@@ -190,7 +173,8 @@ class ValidityChecker(ob.StateValidityChecker):
         # Extract joint positions from the state.
         joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
         self.robot.reset_joint_position(
-            dict(zip(self.joint_order, joint_positions)), True)
+            dict(zip(self.joint_order, joint_positions)), True
+        )
 
         if not self.collision_checker.check_collision():
             return False
@@ -207,7 +191,8 @@ class ValidityChecker(ob.StateValidityChecker):
             bool: True if upright, False otherwise.
         """
         orientation = p.getEulerFromQuaternion(
-            self.robot.get_endeffector_pose()[1])
+            self.robot.get_endeffector_pose()[1]
+        )
         target = np.array([-np.pi / 2, 0, 0])
         tol = np.array([0.3, 0.3, 2 * np.pi])
         return np.all(np.abs(orientation - target) <= tol)
@@ -217,9 +202,8 @@ class PathPlanner:
     """Sets up and executes motion planning for a robot in a constrained
     environment.
 
-    This class configures the state space, sets up the planning problem,
-    and provides methods to solve for a path between start and goal
-    configurations.
+    This class configures the state space, sets up the planning problem, and
+    provides methods to solve for a path between start and goal configurations.
 
     Args:
         robot (RobotBase): The robot instance for which to plan.
@@ -238,7 +222,9 @@ class PathPlanner:
         self.collision_checker = collision_checker
 
         # Determine the joint order from the robot.
-        self.joint_order = robot.get_moveable_joints(selected_joint_names)[0]
+        self.joint_order = robot.get_moveable_joints(
+            selected_joint_names
+        )[0]
 
         # Create the state space using SamplingSpace.
         self.sampling_space = SamplingSpace(robot, self.joint_order)
@@ -247,17 +233,17 @@ class PathPlanner:
 
         # Set up OMPL space information and validity checking.
         self.space_information = ob.SpaceInformation(self.space)
-        self.validity_checker = ValidityChecker(self.space_information, robot,
-                                                collision_checker,
-                                                self.joint_order)
-        self.space_information.setStateValidityChecker(
-            self.validity_checker)
+        self.validity_checker = ValidityChecker(
+            self.space_information, robot, collision_checker, self.joint_order
+        )
+        self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()
 
         # Configure the problem definition and objective.
         self.problem_definition = ob.ProblemDefinition(self.space_information)
         self.problem_definition.setOptimizationObjective(
-            self.allocateObjective(objective))
+            self.allocateObjective(objective)
+        )
 
         # Allocate the desired planner.
         self.planner = self.allocatePlanner(planner_name)
@@ -274,10 +260,7 @@ class PathPlanner:
         """
         if state is not None:
             target = {}
-            if not self.real_vector:
-                joint_pos = self.sampling_space.compound_state_to_list(state)
-            else:
-                joint_pos = self.sampling_space.realvector_state_to_list(state)
+            joint_pos = self.sampling_space.realvector_state_to_list(state)
             for name, pos in zip(self.joint_order, joint_pos):
                 target[name] = pos
             self.robot.reset_joint_position(target, True)
@@ -297,7 +280,8 @@ class PathPlanner:
             bool: True if upright, False otherwise.
         """
         orientation = p.getEulerFromQuaternion(
-            self.robot.get_endeffector_pose()[1])
+            self.robot.get_endeffector_pose()[1]
+        )
         target = np.array([-np.pi / 2, 0, 0])
         tol = np.array([0.3, 0.3, 2 * np.pi])
         return np.all(np.abs(orientation - target) <= tol)
@@ -316,23 +300,28 @@ class PathPlanner:
             return ClearanceObjective(self.space_information)
         elif objectiveType.lower() == "pathlength":
             return ob.PathLengthOptimizationObjective(
-                self.space_information)
+                self.space_information
+            )
         elif objectiveType.lower() == "thresholdpathlength":
             obj = ob.PathLengthOptimizationObjective(
-                self.space_information)
+                self.space_information
+            )
             obj.setCostThreshold(ob.Cost(1.51))
             return obj
         elif objectiveType.lower() == "weightedlengthandclearancecombo":
             length_obj = ob.PathLengthOptimizationObjective(
-                self.space_information)
+                self.space_information
+            )
             clear_obj = ClearanceObjective(self.space_information)
             opt = ob.MultiOptimizationObjective(self.space_information)
             opt.addObjective(length_obj, 5.0)
             opt.addObjective(clear_obj, 1.0)
             return opt
         else:
-            ou.OMPL_ERROR("Optimization-objective is not implemented in "
-                          "allocation function.")
+            ou.OMPL_ERROR(
+                "Optimization-objective is not implemented in allocation "
+                "function."
+            )
 
     def allocatePlanner(self, plannerType: str):
         """Allocates and returns a planner based on the specified type.
@@ -358,8 +347,9 @@ class PathPlanner:
         elif plannerType.lower() == "sorrtstar":
             return og.SORRTstar(self.space_information)
         else:
-            ou.OMPL_ERROR("Planner-type is not implemented in allocation "
-                          "function.")
+            ou.OMPL_ERROR(
+                "Planner-type is not implemented in allocation function."
+            )
 
     def plan_start_goal(self, start: dict, goal: dict,
                         allowed_time: float = DEFAULT_PLANNING_TIME):
@@ -380,7 +370,8 @@ class PathPlanner:
             joint path.
         """
         orig_state = start
-        s, g = self.set_start_goal_states(start, goal)
+        # Use the SamplingSpace helper to create start and goal states.
+        s, g = self.sampling_space.set_start_goal_states(start, goal)
         self.problem_definition.setStartAndGoalStates(s, g)
 
         self.planner.setProblemDefinition(self.problem_definition)
@@ -393,36 +384,16 @@ class PathPlanner:
             sol_path = self.problem_definition.getSolutionPath()
             sol_path.interpolate(INTERPOLATE_NUM)
             states = sol_path.getStates()
-            if self.real_vector:
-                path_list = np.array(
-                    [self.sampling_space.realvector_state_to_list(st)
-                     for st in states])
-            else:
-                path_list = np.array(
-                    [self.sampling_space.compound_state_to_list(st)
-                     for st in states])
-            joint_path = JointPath(path_list.transpose(),
-                                   tuple(self.joint_order))
+            path_list = np.array(
+                [self.sampling_space.realvector_state_to_list(st)
+                 for st in states]
+            )
+            joint_path = JointPath(
+                path_list.transpose(), tuple(self.joint_order)
+            )
             res = True
         else:
             print("No solution found")
 
         self.robot.reset_joint_position(orig_state, True)
         return res, joint_path
-
-    def set_start_goal_states(self, start: dict, goal: dict):
-        """Creates and returns the start and goal states for planning.
-
-        Args:
-            start (dict): Joint values for the start configuration.
-            goal (dict): Joint values for the goal configuration.
-
-        Returns:
-            tuple(ob.State, ob.State): The start and goal states.
-        """
-        s = ob.State(self.space)
-        g = ob.State(self.space)
-        for i, joint in enumerate(self.joint_order):
-            s[i] = start[joint]
-            g[i] = goal[joint]
-        return s, g

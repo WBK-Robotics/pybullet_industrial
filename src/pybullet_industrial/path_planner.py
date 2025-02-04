@@ -124,6 +124,8 @@ class ClearanceObjective(ob.StateCostIntegralObjective):
         Returns:
             ob.Cost: The computed cost.
         """
+        # Uses the clearance computed by the ValidityChecker, which now
+        # relies on the refactored collision checker.
         return ob.Cost(
             1 / (self.si_.getStateValidityChecker().clearance(s) +
                  sys.float_info.min)
@@ -150,19 +152,31 @@ class ValidityChecker(ob.StateValidityChecker):
         self.joint_order = joint_order
 
     def clearance(self, state: ob.State):
-        # Extract the robot's (x,y) position from its state (assumes the first two
-        # joints correspond to x, y).
-        x = state[0]
-        y = state[1]
-        # Compute clearance as the distance from a circle centered at (0.5, 0.5)
-        # with radius 0.25.
-        return np.sqrt((x - 0.5)**2 + (y - 0.5)**2) - 0.25
+        """Computes the clearance of a given state using the refactored
+        collision checker.
+
+        The robot is reset to the state provided and the collision checker's
+        get_max_distance() is used to obtain the minimum distance (clearance)
+        from obstacles.
+
+        Args:
+            state (ob.State): The state for which to compute clearance.
+
+        Returns:
+            float: The clearance value.
+        """
+        # Extract joint positions and reset the robot.
+        joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
+        self.robot.reset_joint_position(dict(zip(self.joint_order,
+                                                 joint_positions)), True)
+        # Use the refactored collision checker to obtain the clearance.
+        return self.collision_checker.get_max_distance()
 
     def isValid(self, state: ob.State):
         """Checks if the provided state is valid.
 
-        A state is valid if it is collision-free and the end-effector is correctly
-        oriented.
+        A state is valid if it is collision-free and the end-effector is
+        correctly oriented.
 
         Args:
             state (ob.State): The state to validate.
@@ -222,9 +236,7 @@ class PathPlanner:
         self.collision_checker = collision_checker
 
         # Determine the joint order from the robot.
-        self.joint_order = robot.get_moveable_joints(
-            selected_joint_names
-        )[0]
+        self.joint_order = robot.get_moveable_joints(selected_joint_names)[0]
 
         # Create the state space using SamplingSpace.
         self.sampling_space = SamplingSpace(robot, self.joint_order)
@@ -233,9 +245,9 @@ class PathPlanner:
 
         # Set up OMPL space information and validity checking.
         self.space_information = ob.SpaceInformation(self.space)
-        self.validity_checker = ValidityChecker(
-            self.space_information, robot, collision_checker, self.joint_order
-        )
+        self.validity_checker = ValidityChecker(self.space_information, robot,
+                                                collision_checker,
+                                                self.joint_order)
         self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()
 

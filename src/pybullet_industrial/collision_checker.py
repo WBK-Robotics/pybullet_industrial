@@ -137,6 +137,8 @@ class CollisionChecker:
             query_distance = self.clearance_obstacles[obs]
             d = self.body_distance(body1, links1, obs, query_distance)
             if d < min_dist:
+                if d <= 0:
+                    return 0
                 min_dist = d
         if min_dist == float('inf'):
             return max(self.clearance_obstacles.values())
@@ -260,7 +262,8 @@ class CollisionChecker:
                 linkIndexB=BASE_LINK
             )
             for pt in pts:
-                d = pt.get("contactDistance", query_distance)
+                # Always assume that the contact distance is stored at index 8.
+                d = pt[8]
                 if d < min_d:
                     min_d = d
         if min_d == float('inf'):

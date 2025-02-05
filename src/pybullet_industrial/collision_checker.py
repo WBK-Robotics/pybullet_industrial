@@ -20,7 +20,8 @@ class CollisionChecker:
       - 'collision_pairs': Internal collision pairs built from the links.
     """
 
-    def __init__(self):
+    def __init__(self, ignored_internal_collisions: list = [],
+                 ignored_external_collisions: list = []):
         """
         Initializes the CollisionChecker and builds the list of
         bodies with collision information.
@@ -28,7 +29,12 @@ class CollisionChecker:
         self.bodies_information = []
         self.external_collisions = []
         self.build_collision_objects()
-        self.uppdate_collision_settings()
+        self.ignored_internal_collisions = ignored_internal_collisions
+        self.ignored_external_collisions = ignored_external_collisions
+        self.pairs_internal_collisions = []
+        self.pairs_external_collisions = []
+        self.uppdate_internal_collision_pairs()
+        self.uppddate_external_collionn_pairs()
         print("stop")
 
     def build_collision_objects(self):
@@ -55,17 +61,80 @@ class CollisionChecker:
                 'collision_pairs': self.build_internal_collision_pairs(links)
             })
 
-    def uppdate_collision_settings(self):
-        """
-        Checks for internal collisions for each body based on its
-        collision pairs.
-        """
+    def uppdate_internal_collision_pairs(self):
+        # For each body in bodies_information that is a robot,
+        # adjust its collision pairs by removing any ignored pairs,
+        # then add a record to check_internal_collisions.
         for body in self.bodies_information:
-            body['active_collisions'] = self.collision_pairs(
-                body['urdf_id'],
-                body['urdf_id'],
-                body['collision_pairs']
-            )
+            if body['body_typ'] == 'robot':
+                # Work on a copy to avoid modifying the original list.
+                check_pairs = body['collision_pairs'].copy()
+                # Look for a matching ignored record for this body.
+                for ignored in self.ignored_internal_collisions:
+                    if ignored['urdf_id'] == body['urdf_id']:
+                        for pair in ignored['ignored_pairs']:
+                            if pair in check_pairs:
+                                check_pairs.remove(pair)
+                # Append the result once per robot.
+                self.pairs_internal_collisions.append({
+                    'urdf_id': body['urdf_id'],
+                    'check_pairs': check_pairs
+                })
+
+    def uppddate_external_collionn_pairs(self):
+        """
+        Builds a list of external collision pairs. Each entry is a list:
+        [(bodyA, bodyB), [ (linkA, linkB), (linkA, linkB), ... ]].
+
+        Bodies in a pair are skipped if they appear in ignored_external_collisions.
+        """
+        # Get all body ids from the collision bodies.
+        body_ids = [body['urdf_id'] for body in self.bodies_information]
+        potential_body_pairs = list(combinations(body_ids, 2))
+
+        self.pairs_external_collisions = []
+        for bodyA, bodyB in potential_body_pairs:
+            # Skip this pair if it's in the ignored list (in either order).
+            if ((bodyA, bodyB) in self.ignored_external_collisions or
+                    (bodyB, bodyA) in self.ignored_external_collisions):
+                continue
+
+            # Get the collision links for each body.
+            linksA = CollisionChecker.get_collision_links_for_body(bodyA)
+            linksB = CollisionChecker.get_collision_links_for_body(bodyB)
+            # Build all link pairs between these bodies.
+            link_pairs = CollisionChecker.build_external_collision_pairs(linksA, linksB)
+            self.pairs_external_collisions.append([(bodyA, bodyB), link_pairs])
+
+    def check_internal_collisions(self):
+        """
+        Checks internal collisions for all robot bodies.
+
+        Returns:
+            bool: True if no collisions are detected,
+                False if at least one collision is found.
+        """
+        for body_entry in self.pairs_internal_collisions:
+            body_id = body_entry['urdf_id']
+            for linkA, linkB in body_entry['check_pairs']:
+                if CollisionChecker.single_collision(body_id, body_id, linkA, linkB):
+                    return False
+        return True
+
+    def check_external_collisions(self):
+        """
+        Checks external collisions between all body pairs.
+
+        Returns:
+            bool: True if no collisions are detected, False if at least one is found.
+        """
+        for pair_info in self.pairs_external_collisions:
+            # Unpack the body pair and its link combinations.
+            (bodyA, bodyB), link_pairs = pair_info
+            for linkA, linkB in link_pairs:
+                if CollisionChecker.single_collision(bodyA, bodyB, linkA, linkB):
+                    return False
+        return True
 
     @staticmethod
     def has_moving_joint(body_id):

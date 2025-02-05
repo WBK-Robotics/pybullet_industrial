@@ -31,10 +31,13 @@ class CollisionChecker:
         self.build_collision_objects()
         self.ignored_internal_collisions = ignored_internal_collisions
         self.ignored_external_collisions = ignored_external_collisions
+        # Only her for test purposes
+        self.ignore_current_internal_collisions(0)
         self.pairs_internal_collisions = []
         self.pairs_external_collisions = []
         self.uppdate_internal_collision_pairs()
         self.uppddate_external_collionn_pairs()
+        self.check_internal_collisions()
         print("stop")
 
     def build_collision_objects(self):
@@ -100,11 +103,20 @@ class CollisionChecker:
                 continue
 
             # Get the collision links for each body.
-            linksA = CollisionChecker.get_collision_links_for_body(bodyA)
-            linksB = CollisionChecker.get_collision_links_for_body(bodyB)
+            linksA = self.bodies_information[bodyA]['collision_links']
+            linksB = self.bodies_information[bodyB]['collision_links']
             # Build all link pairs between these bodies.
             link_pairs = CollisionChecker.build_external_collision_pairs(linksA, linksB)
             self.pairs_external_collisions.append([(bodyA, bodyB), link_pairs])
+
+    def check_collision(self):
+        """
+        Checks for collisions between all robot bodies and external objects.
+
+        Returns:
+            bool: True if no collisions are detected, False if at least one is found.
+        """
+        return self.check_internal_collisions() and self.check_external_collisions()
 
     def check_internal_collisions(self):
         """
@@ -135,6 +147,26 @@ class CollisionChecker:
                 if CollisionChecker.single_collision(bodyA, bodyB, linkA, linkB):
                     return False
         return True
+
+    def ignore_current_internal_collisions(self, urdf_id):
+        """
+        Ignores all current collisions for the given body.
+
+        Args:
+            urdf_id (int): Unique body identifier.
+        """
+        # Use the precomputed collision pairs instead of the collision links.
+        ignore_pairs = self.collision_pairs(
+            urdf_id, urdf_id,
+            self.bodies_information[urdf_id]['collision_pairs']
+        )
+        # Create a dictionary entry rather than a list.
+        ignored_entry = {
+            'urdf_id': urdf_id,
+            'ignored_pairs': ignore_pairs
+        }
+        self.ignored_internal_collisions.append(ignored_entry)
+        self.uppdate_internal_collision_pairs()
 
     @staticmethod
     def has_moving_joint(body_id):

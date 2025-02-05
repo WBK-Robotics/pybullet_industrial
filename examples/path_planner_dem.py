@@ -76,6 +76,7 @@ if __name__ == "__main__":
 
     # Initialize CollisionChecker with the custom clearance_obstacles.
     collision_checker = pi.CollisionChecker()
+    collision_checker.ignore_current_internal_collisions(robot.urdf)
 
     # Initialize PathPlanner with the clearance objective.
     path_planner = pi.PathPlanner(robot, collision_checker, "BITstar",

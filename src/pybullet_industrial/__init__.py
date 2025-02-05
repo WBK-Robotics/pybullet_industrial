@@ -18,3 +18,4 @@ from pybullet_industrial.g_code_logger import *
 from pybullet_industrial.collision_checker import *
 from pybullet_industrial.path_planner import *
 from pybullet_industrial.robot_base import * #Remove when final
+from pybullet_industrial.collision_checker import * #Remove when final

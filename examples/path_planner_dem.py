@@ -74,13 +74,12 @@ if __name__ == "__main__":
     # Here, we set a clearance query distance of 1.0 for the obstacle.
     clearance_obstacles = {obstacle: 1.0}
 
-    # Initialize CollisionChecker with the custom clearance_obstacles
-    collision_checker = pi.CollisionChecker(
-        robot, obstacles, clearance_obstacles=clearance_obstacles
-    )
+    # Initialize CollisionChecker with the custom clearance_obstacles.
+    collision_checker = pi.CollisionChecker()
 
-    # Initialize PathPlanner with the refactored collision checker.
-    path_planner = pi.PathPlanner(robot, collision_checker, "BITstar")
+    # Initialize PathPlanner with the clearance objective.
+    path_planner = pi.PathPlanner(robot, collision_checker, "BITstar",
+                                  objective="pathclearance")
 
     # Set up initial state (for Comau)
     inital_state = {

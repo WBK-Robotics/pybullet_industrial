@@ -12,29 +12,31 @@ DEFAULT_PLANNING_TIME = 5.0  # Maximum planning time in seconds
 
 def seting_up_enviroment():
     """
-    Sets up the simulation environment, including paths to URDF files and the
-    PyBullet physics simulation.
+    Sets up the simulation environment, including paths to URDF files and
+    the PyBullet physics simulation.
     """
     working_dir = os.path.dirname(__file__)
     urdf_robot = os.path.join(working_dir, 'robot_descriptions',
                               'comau_nj290_robot.urdf')
     urdf_fofa = os.path.join(working_dir, 'Objects', 'FoFa', 'FoFa.urdf')
 
-    # Comau Start Position
+    # Comau start position.
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     start_pos = np.array([2.0, -6.5, 0])
 
-    # Set up the GUI camera
-    p.connect(p.GUI, options='--background_color_red=1 '
-                             '--background_color_green=1 '
-                             '--background_color_blue=1')
+    # Set up the GUI camera.
+    p.connect(p.GUI,
+              options='--background_color_red=1 '
+                      '--background_color_green=1 '
+                      '--background_color_blue=1')
     p.resetDebugVisualizerCamera(cameraDistance=2.0, cameraYaw=50.0,
                                  cameraPitch=-30,
-                                 cameraTargetPosition=np.array([1.9, 0, 1]) +
-                                 start_pos)
+                                 cameraTargetPosition=(
+                                     np.array([1.9, 0, 1]) + start_pos))
 
     p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-    p.setPhysicsEngineParameter(numSolverIterations=5000, enableFileCaching=0)
+    p.setPhysicsEngineParameter(numSolverIterations=5000,
+                                enableFileCaching=0)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
 
@@ -47,23 +49,24 @@ def add_box(box_pos, half_box_size):
     """
     Adds a box-shaped obstacle to the simulation.
     """
-    colBoxId = p.createCollisionShape(p.GEOM_BOX,
-                                      halfExtents=half_box_size)
-    box_id = p.createMultiBody(baseMass=0,
-                               baseCollisionShapeIndex=colBoxId,
-                               basePosition=box_pos,
-                               baseOrientation=p.getQuaternionFromEuler(
-                                   [-np.pi/2, 0, 0]))
+    colBoxId = p.createCollisionShape(
+        p.GEOM_BOX, halfExtents=half_box_size)
+    box_id = p.createMultiBody(
+        baseMass=0,
+        baseCollisionShapeIndex=colBoxId,
+        basePosition=box_pos,
+        baseOrientation=p.getQuaternionFromEuler([-np.pi/2, 0, 0])
+    )
     return box_id
 
 
 if __name__ == "__main__":
-    # Initialize the simulation environment
+    # Initialize the simulation environment.
     urdf_robot, start_pos, start_orientation = seting_up_enviroment()
 
     robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
 
-    # Add a box obstacle
+    # Add a box obstacle.
     obstacles = []
 
     # Create a box obstacle near the robot.
@@ -74,15 +77,19 @@ if __name__ == "__main__":
     # Here, we set a clearance query distance of 1.0 for the obstacle.
     clearance_obstacles = {obstacle: 1.0}
 
-    # Initialize CollisionChecker with the custom clearance_obstacles.
+    # Initialize CollisionChecker with the custom clearance.
     collision_checker = pi.CollisionChecker()
-    ignore_internal_collision_pairs = collision_checker.get_internal_collisions(robot.urdf)
-    collision_checker.ignored_internal_collisions = [[robot.urdf, ignore_internal_collision_pairs]]
+    ignore_internal = collision_checker.get_internal_collisions(
+        robot.urdf)
+    collision_checker.ignored_internal_collisions = [
+        [robot.urdf, ignore_internal]
+    ]
     collision_checker.update_internal_collision_pairs()
     internal_collision = collision_checker.check_internal_collisions()
     print("Internal Collision: ", internal_collision)
-    ignore_external_collisions = collision_checker.get_global_external_collisions()
-    collision_checker.ignored_external_collisions = ignore_external_collisions
+
+    ignore_external = collision_checker.get_global_external_collisions()
+    collision_checker.ignored_external_collisions = ignore_external
     collision_checker.update_external_collision_pairs()
     external_collision = collision_checker.check_external_collisions()
     print("External Collision: ", external_collision)
@@ -91,7 +98,7 @@ if __name__ == "__main__":
     path_planner = pi.PathPlanner(robot, collision_checker, "BITstar",
                                   objective="pathclearance")
 
-    # Set up initial state (for Comau)
+    # Set up initial state (for Comau).
     inital_state = {
         'q1': -0.5,
         'q2': 0,
@@ -104,5 +111,6 @@ if __name__ == "__main__":
 
     # Create the GUI for motion planning.
     root = tk.Tk()
-    gui = PathPlannerGUI(root, robot, path_planner, collision_checker, obstacle)
+    gui = PathPlannerGUI(root, robot, path_planner, collision_checker,
+                         obstacle)
     root.mainloop()

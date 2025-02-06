@@ -204,29 +204,6 @@ class CollisionChecker:
                 internal_collisions.append((entry[0], link_pair_collisions))
         return internal_collisions
 
-    def get_local_external_collisions(self, bodyA: int, bodyB: int):
-        """
-        Determines the external collision pairs that are colliding between two
-        specific bodies.
-
-        Args:
-            bodyA (int): Unique identifier of the first body.
-            bodyB (int): Unique identifier of the second body.
-
-        Returns:
-            list: A list of colliding link pairs (tuples).
-        """
-        linksA = CollisionChecker.get_collision_links_for_body(bodyA)
-        linksB = CollisionChecker.get_collision_links_for_body(bodyB)
-        external_collision_pairs = (
-            CollisionChecker.build_external_collision_pairs(linksA, linksB)
-        )
-        external_collisions = []
-        for linkA, linkB in external_collision_pairs:
-            if CollisionChecker.simple_collision(bodyA, bodyB, linkA, linkB):
-                external_collisions.append((linkA, linkB))
-        return external_collisions
-
     def get_global_external_collisions(self):
         """
         Checks all external collision pairs and returns the pairs that are
@@ -264,7 +241,31 @@ class CollisionChecker:
         self.update_external_collision_pairs()
 
     @staticmethod
-    def has_moving_joint(urdf_id: int) -> bool:
+    def get_local_external_collisions(bodyA: int, bodyB: int):
+        """
+        Determines the external collision pairs that are colliding between two
+        specific bodies.
+
+        Args:
+            bodyA (int): Unique identifier of the first body.
+            bodyB (int): Unique identifier of the second body.
+
+        Returns:
+            list: A list of colliding link pairs (tuples).
+        """
+        linksA = CollisionChecker.get_collision_links_for_body(bodyA)
+        linksB = CollisionChecker.get_collision_links_for_body(bodyB)
+        external_collision_pairs = (
+            CollisionChecker.build_external_collision_pairs(linksA, linksB)
+        )
+        external_collisions = []
+        for linkA, linkB in external_collision_pairs:
+            if CollisionChecker.simple_collision(bodyA, bodyB, linkA, linkB):
+                external_collisions.append((linkA, linkB))
+        return external_collisions
+
+    @staticmethod
+    def has_moving_joint(urdf_id: int):
         """
         Determines if the specified body has at least one movable joint.
 

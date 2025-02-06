@@ -38,8 +38,8 @@ class CollisionChecker:
         self.build_bodies_information()
         self.ignored_internal_collisions = ignored_internal_collisions
         self.ignored_external_collisions = ignored_external_collisions
-        self.pairs_internal_collisions = []
-        self.pairs_external_collisions = []
+        self.internal_collision_pairs = []
+        self.external_collision_pairs = []
         self.update_internal_collision_pairs()
         self.update_external_collision_pairs()
 
@@ -75,10 +75,10 @@ class CollisionChecker:
         Updates the list of internal collision pairs for each robot body.
         For each robot, any collision pair specified in the ignored list is
         removed. The result is stored in
-        `self.pairs_internal_collisions` as a list of tuples:
+        `self.internal_collision_pairs` as a list of tuples:
             (urdf_id, [list of link pairs])
         """
-        self.pairs_internal_collisions = []
+        self.internal_collision_pairs = []
 
         for body in self.bodies_information:
             if body['body_typ'] == 'robot':
@@ -90,14 +90,14 @@ class CollisionChecker:
                         for pair in ignored[1]:
                             if pair in valid_pairs:
                                 valid_pairs.remove(pair)
-                self.pairs_internal_collisions.append(
+                self.internal_collision_pairs.append(
                     (body['urdf_id'], valid_pairs)
                 )
 
     def update_external_collision_pairs(self):
         """
         Updates the list of external collision pairs between bodies.
-        Each entry in `self.pairs_external_collisions` is a tuple:
+        Each entry in `self.external_collision_pairs` is a tuple:
             ((bodyA, bodyB), [list of link pairs])
 
         For each pair of bodies, if the pair is specified in the ignored list,
@@ -107,7 +107,7 @@ class CollisionChecker:
         # Retrieve all body IDs from the collected collision information.
         body_ids = [body['urdf_id'] for body in self.bodies_information]
         potential_body_pairs = list(combinations(body_ids, 2))
-        self.pairs_external_collisions = []
+        self.external_collision_pairs = []
 
         # Process each potential body pair.
         for bodyA, bodyB in potential_body_pairs:
@@ -132,7 +132,7 @@ class CollisionChecker:
                 for ignore_pair in ignored_entry[1]:
                     if ignore_pair in link_pairs:
                         link_pairs.remove(ignore_pair)
-            self.pairs_external_collisions.append(
+            self.external_collision_pairs.append(
                 ((bodyA, bodyB), link_pairs)
             )
 
@@ -155,7 +155,7 @@ class CollisionChecker:
         Returns:
             bool: True if no internal collisions are detected, False otherwise.
         """
-        for urdf_id, pairs in self.pairs_internal_collisions:
+        for urdf_id, pairs in self.internal_collision_pairs:
             for linkA, linkB in pairs:
                 if CollisionChecker.simple_collision(
                         urdf_id, urdf_id, linkA, linkB):
@@ -169,7 +169,7 @@ class CollisionChecker:
         Returns:
             bool: True if no external collisions are detected, False otherwise.
         """
-        for (bodyA, bodyB), link_pairs in self.pairs_external_collisions:
+        for (bodyA, bodyB), link_pairs in self.external_collision_pairs:
             for linkA, linkB in link_pairs:
                 if CollisionChecker.simple_collision(bodyA, bodyB,
                                                      linkA, linkB):
@@ -189,7 +189,7 @@ class CollisionChecker:
                   colliding link pairs.
         """
         internal_collisions = []
-        for entry in self.pairs_internal_collisions:
+        for entry in self.internal_collision_pairs:
             link_pair_collisions = []
             for linkA, linkB in entry[1]:
                 if CollisionChecker.simple_collision(
@@ -233,7 +233,7 @@ class CollisionChecker:
         """
         global_external_collisions = []
 
-        for (bodyA, bodyB), link_pairs in self.pairs_external_collisions:
+        for (bodyA, bodyB), link_pairs in self.external_collision_pairs:
             colliding_links = []
             for linkA, linkB in link_pairs:
                 if CollisionChecker.simple_collision(bodyA, bodyB,

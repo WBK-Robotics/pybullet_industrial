@@ -29,7 +29,7 @@ class CollisionChecker:
         self.bodies_information = []
         self.build_bodies_information()
         self.ignored_internal_collisions = ignored_internal_collisions
-        self.ignored_external_collisions = ignored_external_collisions
+        self.ignored_external_collisions = []
         self.pairs_internal_collisions = []
         self.pairs_external_collisions = []
         self.update_internal_collision_pairs()
@@ -90,10 +90,20 @@ class CollisionChecker:
         potential_body_pairs = list(combinations(body_ids, 2))
 
         self.pairs_external_collisions = []
+        ignored_bodies = [sublist[0] for sublist in self.ignored_external_collisions]
         for bodyA, bodyB in potential_body_pairs:
             # Skip this pair if it's in the ignored list (in either order).
-            if ((bodyA, bodyB) in self.ignored_external_collisions or
-                    (bodyB, bodyA) in self.ignored_external_collisions):
+            if ((bodyA, bodyB) in ignored_bodies):
+                for entry in self.ignored_external_collisions:
+                    if entry[0] == (bodyA, bodyB):
+                        # Retrieve collision links directly from PyBullet.
+                        linksA = CollisionChecker.get_collision_links_for_body(bodyA)
+                        linksB = CollisionChecker.get_collision_links_for_body(bodyB)
+                        # Build all link pairs between these bodies.
+                        link_pairs = CollisionChecker.build_external_collision_pairs(linksA, linksB)
+                        for ignore_link_pairs in entry[1]:
+                            link_pairs.remove(ignore_link_pairs)
+                        self.pairs_external_collisions.append([(bodyA, bodyB), link_pairs])
                 continue
 
             # Retrieve collision links directly from PyBullet.
@@ -102,6 +112,7 @@ class CollisionChecker:
             # Build all link pairs between these bodies.
             link_pairs = CollisionChecker.build_external_collision_pairs(linksA, linksB)
             self.pairs_external_collisions.append([(bodyA, bodyB), link_pairs])
+        print("stopmark")
 
     def check_collision(self):
         """
@@ -139,6 +150,8 @@ class CollisionChecker:
             (bodyA, bodyB), link_pairs = pair_info
             for linkA, linkB in link_pairs:
                 if CollisionChecker.single_collision(bodyA, bodyB, linkA, linkB):
+                    print("Collision between body {} and body {}".format(bodyA, bodyB))
+                    print("Link {} and link {}".format(linkA, linkB))
                     return False
         return True
 
@@ -151,6 +164,32 @@ class CollisionChecker:
             if CollisionChecker.single_collision(urdf_id, urdf_id, linkA, linkB):
                 internal_collisions.append((linkA, linkB))
         return internal_collisions
+
+    @staticmethod
+    def get_local_external_collisions(urdf_id, other_urdf_id):
+        linksA = CollisionChecker.get_collision_links_for_body(urdf_id)
+        linksB = CollisionChecker.get_collision_links_for_body(other_urdf_id)
+        external_collision_pairs = CollisionChecker.build_external_collision_pairs(linksA, linksB)
+        external_collisions = []
+        for linkA, linkB in external_collision_pairs:
+            if CollisionChecker.single_collision(urdf_id, other_urdf_id, linkA, linkB):
+                external_collisions.append((linkA, linkB))
+        return external_collisions
+
+    def get_global_external_collisions(self):
+        global_external_collisions = []
+
+        for pair_info in self.pairs_external_collisions:
+            external_link_collision = []
+            # Unpack the body pair and its link combinations.
+            (bodyA, bodyB), link_pairs = pair_info
+            for linkA, linkB in link_pairs:
+                if CollisionChecker.single_collision(bodyA, bodyB, linkA, linkB):
+                    external_link_collision.append((linkA, linkB))
+            if len(external_link_collision) > 0:
+                global_external_collisions.append([(bodyA, bodyB), external_link_collision])
+
+        return global_external_collisions
 
     @staticmethod
     def has_moving_joint(body_id):

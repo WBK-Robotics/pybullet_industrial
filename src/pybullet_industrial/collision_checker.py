@@ -21,21 +21,24 @@ class CollisionChecker:
                            collision checks.
     """
 
-    def __init__(self, ignored_internal_collisions: list = [],
+    def __init__(self, ignored_urdf_ids: list = [],
+                 ignored_internal_collisions: list = [],
                  ignored_external_collisions: list = []):
         """
         Initializes the CollisionChecker by collecting collision data from all
-        bodies in the simulation, and building lists for both internal and
-        external collision pairs.
+        bodies in the simulation (except those specified in ignored_urdf_ids),
+        and building lists for both internal and external collision pairs.
 
         Args:
+            ignored_urdf_ids (list): List of urdf_ids to ignore (skip).
             ignored_internal_collisions (list): List of internal collision pairs
                                                 to ignore.
             ignored_external_collisions (list): List of external collision pair
                                                 specifications to ignore.
         """
+        self.ignored_urdf_ids = ignored_urdf_ids
         self.bodies_information = []
-        self.build_bodies_information()
+        self.build_bodies_information(ignored_urdf_ids)
         self.ignored_internal_collisions = ignored_internal_collisions
         self.ignored_external_collisions = ignored_external_collisions
         self.internal_collision_pairs = []
@@ -43,11 +46,11 @@ class CollisionChecker:
         self.update_internal_collision_pairs()
         self.update_external_collision_pairs()
 
-    def build_bodies_information(self):
+    def build_bodies_information(self, ignored_urdf_ids: list):
         """
         Iterates through all bodies in the simulation and collects collision
-        geometry information. Only bodies with collision geometry are
-        included.
+        geometry information. Only bodies with collision geometry are included,
+        and bodies with urdf_ids in ignored_urdf_ids are skipped.
 
         Determines whether a body is a 'robot' (if it has at least one movable
         joint) or a 'static_body'. Also precomputes internal collision pairs for
@@ -55,6 +58,8 @@ class CollisionChecker:
         """
         num_bodies = p.getNumBodies()
         for urdf_id in range(num_bodies):
+            if urdf_id in ignored_urdf_ids:
+                continue
             links = CollisionChecker.get_collision_links_for_body(urdf_id)
             # Skip bodies that lack any collision geometry.
             if not links:

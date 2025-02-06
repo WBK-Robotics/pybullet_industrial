@@ -78,7 +78,8 @@ if __name__ == "__main__":
     clearance_obstacles = {obstacle: 1.0}
 
     # Initialize CollisionChecker with the custom clearance.
-    collision_checker = pi.CollisionChecker()
+    ignored_urdfs = [0] # ignore Fofa
+    collision_checker = pi.CollisionChecker(ignored_urdfs)
     collision_checker.set_safe_state()
     internal_collision = collision_checker.check_internal_collisions()
     external_collision = collision_checker.check_external_collisions()

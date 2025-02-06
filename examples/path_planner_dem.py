@@ -79,20 +79,14 @@ if __name__ == "__main__":
 
     # Initialize CollisionChecker with the custom clearance.
     collision_checker = pi.CollisionChecker()
-    ignore_internal = collision_checker.get_internal_collisions(
-        robot.urdf)
-    collision_checker.ignored_internal_collisions = [
-        [robot.urdf, ignore_internal]
-    ]
-    collision_checker.update_internal_collision_pairs()
+    collision_checker.set_safe_state()
     internal_collision = collision_checker.check_internal_collisions()
-    print("Internal Collision: ", internal_collision)
-
-    ignore_external = collision_checker.get_global_external_collisions()
-    collision_checker.ignored_external_collisions = ignore_external
-    collision_checker.update_external_collision_pairs()
     external_collision = collision_checker.check_external_collisions()
+    global_collision = collision_checker.check_collision()
+    print("Internal Collision: ", internal_collision)
     print("External Collision: ", external_collision)
+    print("Global Collision: ", global_collision)
+
 
     # Initialize PathPlanner with the clearance objective.
     path_planner = pi.PathPlanner(robot, collision_checker, "BITstar",

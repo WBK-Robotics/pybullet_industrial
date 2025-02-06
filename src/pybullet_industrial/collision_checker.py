@@ -54,16 +54,16 @@ class CollisionChecker:
         each body.
         """
         num_bodies = p.getNumBodies()
-        for body_id in range(num_bodies):
-            links = CollisionChecker.get_collision_links_for_body(body_id)
+        for urdf_id in range(num_bodies):
+            links = CollisionChecker.get_collision_links_for_body(urdf_id)
             # Skip bodies that lack any collision geometry.
             if not links:
                 continue
             body_typ = ('robot'
-                        if CollisionChecker.has_moving_joint(body_id)
+                        if CollisionChecker.has_moving_joint(urdf_id)
                         else 'static_body')
             self.bodies_information.append({
-                'urdf_id': body_id,
+                'urdf_id': urdf_id,
                 'body_typ': body_typ,
                 'collision_links': links,
                 'collision_pairs':
@@ -76,7 +76,7 @@ class CollisionChecker:
         For each robot, any collision pair specified in the ignored list is
         removed. The result is stored in
         `self.pairs_internal_collisions` as a list of tuples:
-            (body_id, [list of link pairs])
+            (urdf_id, [list of link pairs])
         """
         self.pairs_internal_collisions = []
 
@@ -116,8 +116,7 @@ class CollisionChecker:
             for entry in self.ignored_external_collisions:
                 # Each ignored entry is a tuple:
                 # ((bodyA, bodyB), [ignored link pairs]).
-                if entry[0] == (bodyA, bodyB) or \
-                   entry[0] == (bodyB, bodyA):
+                if entry[0] == (bodyA, bodyB):
                     ignored_entry = entry
                     break
 
@@ -137,9 +136,6 @@ class CollisionChecker:
                 ((bodyA, bodyB), link_pairs)
             )
 
-        # Debug marker (remove or replace with logging if needed)
-        print("External collision pairs update complete.")
-
     def check_collision(self):
         """
         Checks for collisions across all robot bodies and between different
@@ -154,15 +150,15 @@ class CollisionChecker:
 
     def check_internal_collisions(self):
         """
-        Checks for collisions between internal link pairs of robot bodies.
+        Checks for collisions between internal link pairs of a robot body.
 
         Returns:
             bool: True if no internal collisions are detected, False otherwise.
         """
-        for body_id, pairs in self.pairs_internal_collisions:
+        for urdf_id, pairs in self.pairs_internal_collisions:
             for linkA, linkB in pairs:
-                if CollisionChecker.single_collision(
-                        body_id, body_id, linkA, linkB):
+                if CollisionChecker.simple_collision(
+                        urdf_id, urdf_id, linkA, linkB):
                     return False
         return True
 
@@ -175,7 +171,7 @@ class CollisionChecker:
         """
         for (bodyA, bodyB), link_pairs in self.pairs_external_collisions:
             for linkA, linkB in link_pairs:
-                if CollisionChecker.single_collision(bodyA, bodyB,
+                if CollisionChecker.simple_collision(bodyA, bodyB,
                                                      linkA, linkB):
                     print("Collision detected between body {} and body {}"
                           .format(bodyA, bodyB))
@@ -184,53 +180,45 @@ class CollisionChecker:
                     return False
         return True
 
-    @staticmethod
-    def get_internal_collisions(urdf_id: int):
+    def get_internal_collisions(self):
         """
-        Determines the internal collision pairs that are actually colliding
-        for a given body.
-
-        Args:
-            urdf_id (int): Unique identifier of the body.
+        Determines the internal collision pairs that are actually colliding.
 
         Returns:
-            list: A list of colliding link pairs (tuples).
+            list: A list of tuples, each containing a urdf_id and a list of
+                  colliding link pairs.
         """
-        collision_links = CollisionChecker.get_collision_links_for_body(
-            urdf_id
-        )
-        collision_pairs = CollisionChecker.build_internal_collision_pairs(
-            collision_links
-        )
         internal_collisions = []
-        for linkA, linkB in collision_pairs:
-            if CollisionChecker.single_collision(
-                    urdf_id, urdf_id, linkA, linkB):
-                internal_collisions.append((linkA, linkB))
+        for entry in self.pairs_internal_collisions:
+            link_pair_collisions = []
+            for linkA, linkB in entry[1]:
+                if CollisionChecker.simple_collision(
+                        entry[0], entry[0], linkA, linkB):
+                    link_pair_collisions.append((linkA, linkB))
+            if len(link_pair_collisions) > 0:
+                internal_collisions.append((entry[0], link_pair_collisions))
         return internal_collisions
 
-    @staticmethod
-    def get_local_external_collisions(urdf_id: int, other_urdf_id: int):
+    def get_local_external_collisions(self, bodyA: int, bodyB: int):
         """
         Determines the external collision pairs that are colliding between two
         specific bodies.
 
         Args:
-            urdf_id (int): Unique identifier of the first body.
-            other_urdf_id (int): Unique identifier of the second body.
+            bodyA (int): Unique identifier of the first body.
+            bodyB (int): Unique identifier of the second body.
 
         Returns:
             list: A list of colliding link pairs (tuples).
         """
-        linksA = CollisionChecker.get_collision_links_for_body(urdf_id)
-        linksB = CollisionChecker.get_collision_links_for_body(other_urdf_id)
+        linksA = CollisionChecker.get_collision_links_for_body(bodyA)
+        linksB = CollisionChecker.get_collision_links_for_body(bodyB)
         external_collision_pairs = (
             CollisionChecker.build_external_collision_pairs(linksA, linksB)
         )
         external_collisions = []
         for linkA, linkB in external_collision_pairs:
-            if CollisionChecker.single_collision(urdf_id, other_urdf_id,
-                                                 linkA, linkB):
+            if CollisionChecker.simple_collision(bodyA, bodyB, linkA, linkB):
                 external_collisions.append((linkA, linkB))
         return external_collisions
 
@@ -248,7 +236,7 @@ class CollisionChecker:
         for (bodyA, bodyB), link_pairs in self.pairs_external_collisions:
             colliding_links = []
             for linkA, linkB in link_pairs:
-                if CollisionChecker.single_collision(bodyA, bodyB,
+                if CollisionChecker.simple_collision(bodyA, bodyB,
                                                      linkA, linkB):
                     colliding_links.append((linkA, linkB))
             if colliding_links:
@@ -258,89 +246,59 @@ class CollisionChecker:
 
         return global_external_collisions
 
+    def set_safe_state(self):
+        """
+        Sets the current collisions as the safe state. This method retrieves
+        the current internal and external collisions from the bodies in
+        bodies_information and stores them as ignored collisions. It then
+        updates the internal and external collision pair lists.
+        """
+        self.ignored_internal_collisions = self.get_internal_collisions()
+        self.ignored_external_collisions = self.get_global_external_collisions()
+        self.update_internal_collision_pairs()
+        self.update_external_collision_pairs()
+
     @staticmethod
-    def has_moving_joint(body_id: int) -> bool:
+    def has_moving_joint(urdf_id: int) -> bool:
         """
         Determines if the specified body has at least one movable joint.
 
         Args:
-            body_id (int): The unique identifier of the body.
+            urdf_id (int): The unique identifier of the body.
 
         Returns:
             bool: True if any joint is movable; False otherwise.
         """
-        num_joints = p.getNumJoints(body_id)
+        num_joints = p.getNumJoints(urdf_id)
         for j in range(num_joints):
-            joint_info = p.getJointInfo(body_id, j)
+            joint_info = p.getJointInfo(urdf_id, j)
             # The joint type is at index 2 in the returned tuple.
             if joint_info[2] != p.JOINT_FIXED:
                 return True
         return False
 
     @staticmethod
-    def get_collision_links_for_body(body_id: int):
+    def get_collision_links_for_body(urdf_id: int):
         """
         Retrieves a sorted list of link indices that have collision geometry
         for the given body. This includes the base link.
 
         Args:
-            body_id (int): The unique identifier of the body.
+            urdf_id (int): The unique identifier of the body.
 
         Returns:
             list: Sorted list of link indices with collision geometry.
         """
         links_with_collision = []
         # Check the base link.
-        if p.getCollisionShapeData(body_id, BASE_LINK):
+        if p.getCollisionShapeData(urdf_id, BASE_LINK):
             links_with_collision.append(BASE_LINK)
         # Check all non-base links.
-        num_joints = p.getNumJoints(body_id)
+        num_joints = p.getNumJoints(urdf_id)
         for link in range(num_joints):
-            if p.getCollisionShapeData(body_id, link):
+            if p.getCollisionShapeData(urdf_id, link):
                 links_with_collision.append(link)
         return sorted(links_with_collision)
-
-    @staticmethod
-    def collision_pairs(bodyA: int, bodyB: int, collision_pairs: list):
-        """
-        Checks a set of link pairs for collisions between two bodies.
-
-        Args:
-            bodyA (int): The identifier of the first body.
-            bodyB (int): The identifier of the second body.
-            collision_pairs (iterable): An iterable of link pairs (tuples) to
-                                        check.
-
-        Returns:
-            list: A list of link pairs (tuples) that are colliding.
-        """
-        colliding_pairs = []
-        for linkA, linkB in collision_pairs:
-            if CollisionChecker.single_collision(bodyA, bodyB,
-                                                 linkA, linkB):
-                colliding_pairs.append((linkA, linkB))
-        return colliding_pairs
-
-    @staticmethod
-    def single_collision(bodyA: int, bodyB: int, linkA: int, linkB: int):
-        """
-        Determines if a collision is occurring between a specific pair of links
-        from two bodies.
-
-        Args:
-            bodyA (int): ID of the first body.
-            bodyB (int): ID of the second body.
-            linkA (int): Index of the link from the first body.
-            linkB (int): Index of the link from the second body.
-
-        Returns:
-            bool: True if a collision is detected; False otherwise.
-        """
-        contacts = p.getClosestPoints(
-            bodyA, bodyB, MAX_DISTANCE, linkIndexA=linkA,
-            linkIndexB=linkB
-        )
-        return len(contacts) > 0
 
     @staticmethod
     def build_internal_collision_pairs(links: list):
@@ -371,3 +329,24 @@ class CollisionChecker:
             list: A list of tuples representing all combinations of link pairs.
         """
         return list(product(links1, links2))
+
+    @staticmethod
+    def simple_collision(bodyA: int, bodyB: int, linkA: int, linkB: int):
+        """
+        Determines if a collision is occurring between a specific pair of links
+        from two bodies.
+
+        Args:
+            bodyA (int): ID of the first body.
+            bodyB (int): ID of the second body.
+            linkA (int): Index of the link from the first body.
+            linkB (int): Index of the link from the second body.
+
+        Returns:
+            bool: True if a collision is detected; False otherwise.
+        """
+        contacts = p.getClosestPoints(
+            bodyA, bodyB, MAX_DISTANCE, linkIndexA=linkA,
+            linkIndexB=linkB
+        )
+        return len(contacts) > 0

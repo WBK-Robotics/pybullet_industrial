@@ -365,3 +365,30 @@ class CollisionChecker:
             linkIndexB=linkB
         )
         return len(contacts) > 0
+
+    @staticmethod
+    def get_distance(bodyA: int, bodyB: int, distance: float,
+                     linkA: int, linkB: int):
+        """
+        Computes the closest distance between two specified links from two
+        bodies. This method uses PyBullet's getClosestPoints function with the
+        provided maximum distance threshold.
+
+        Args:
+            bodyA (int): Unique identifier of the first body.
+            bodyB (int): Unique identifier of the second body.
+            distance (float): The maximum distance threshold to search for the
+                              closest point.
+            linkA (int): Index of the link on the first body.
+            linkB (int): Index of the link on the second body.
+
+        Returns:
+            float: The smallest distance between the two links if any contact
+                   is found. Otherwise, returns the provided distance threshold.
+        """
+        contacts = p.getClosestPoints(bodyA, bodyB, distance,
+                                      linkIndexA=linkA, linkIndexB=linkB)
+        if contacts:
+            # Extract and return the smallest contact distance.
+            return min(contact['contactDistance'] for contact in contacts)
+        return distance

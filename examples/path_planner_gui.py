@@ -105,7 +105,8 @@ class PathPlannerGUI:
             row=status_row, column=4, padx=5, pady=10)
         self.clearance_cost_label = tk.Label(self.root, textvariable=self.clearance_cost_text,
                                              width=10, height=2)
-        self.clearance_cost_label.grid(row=status_row, column=5, padx=5, pady=10)
+        self.clearance_cost_label.grid(
+            row=status_row, column=5, padx=5, pady=10)
 
         # Control Buttons
         control_row = status_row + 1
@@ -114,18 +115,18 @@ class PathPlannerGUI:
                                                   column=0, pady=10)
         tk.Button(self.root, text="Set as End",
                   command=self.set_as_goal).grid(row=control_row,
-                                                  column=1, pady=10)
+                                                 column=1, pady=10)
         tk.Button(self.root, text="Set Allowed Collision",
                   command=self.set_allowed_collision).grid(row=control_row,
-                                                            column=2, pady=10)
+                                                           column=2, pady=10)
         tk.Button(self.root, text="Plan and Execute",
                   command=self.plan_and_execute).grid(row=control_row,
-                                                       column=3, pady=10)
+                                                      column=3, pady=10)
         tk.Button(self.root, text="Update Joint Positions",
                   command=self.update_joint_positions).grid(row=control_row+1,
-                                                              column=0,
-                                                              columnspan=2,
-                                                              pady=10)
+                                                            column=0,
+                                                            columnspan=2,
+                                                            pady=10)
         # Obstacle Size Buttons
         tk.Button(self.root, text="Shrink Obstacle",
                   command=self.shrink_obstacle).grid(row=control_row+2,
@@ -136,7 +137,7 @@ class PathPlannerGUI:
         # End Buttons
         tk.Button(self.root, text="Check Endeffector",
                   command=self.check_endeffector_upright).grid(row=control_row+2,
-                                                              column=6, pady=20)
+                                                               column=6, pady=20)
         tk.Button(self.root, text="Upright Endeffector",
                   command=self.make_endeffector_upright).grid(row=control_row+2,
                                                               column=7, pady=20)
@@ -179,7 +180,8 @@ class PathPlannerGUI:
         """
         Checks if the end effector is upright.
         """
-        orientation = p.getEulerFromQuaternion(self.robot.get_endeffector_pose()[1])
+        orientation = p.getEulerFromQuaternion(
+            self.robot.get_endeffector_pose()[1])
         target_orientation = np.array([-np.pi / 2, 0, 0])
         tolerance = np.array([0.3, 0.3, 2 * np.pi])
         if np.all(np.abs(orientation - target_orientation) <= tolerance):
@@ -189,13 +191,15 @@ class PathPlannerGUI:
         self.update_status()
 
     def shrink_obstacle(self):
-        current_position, current_orientation = p.getBasePositionAndOrientation(self.obstacle)
-        self.current_box_size = [(extent - (extent * 0.2)) for extent in self.current_box_size]
+        current_position, current_orientation = p.getBasePositionAndOrientation(
+            self.obstacle)
+        self.current_box_size = [(extent - (extent * 0.2))
+                                 for extent in self.current_box_size]
         p.removeBody(self.obstacle)
         self.obstacle = p.createMultiBody(
             baseMass=0,
             baseCollisionShapeIndex=p.createCollisionShape(p.GEOM_BOX,
-                                                            halfExtents=self.current_box_size),
+                                                           halfExtents=self.current_box_size),
             basePosition=current_position,
             baseOrientation=current_orientation
         )
@@ -203,13 +207,15 @@ class PathPlannerGUI:
         self.update_status()
 
     def grow_obstacle(self):
-        current_position, current_orientation = p.getBasePositionAndOrientation(self.obstacle)
-        self.current_box_size = [(extent + (extent * 0.2)) for extent in self.current_box_size]
+        current_position, current_orientation = p.getBasePositionAndOrientation(
+            self.obstacle)
+        self.current_box_size = [(extent + (extent * 0.2))
+                                 for extent in self.current_box_size]
         p.removeBody(self.obstacle)
         self.obstacle = p.createMultiBody(
             baseMass=0,
             baseCollisionShapeIndex=p.createCollisionShape(p.GEOM_BOX,
-                                                            halfExtents=self.current_box_size),
+                                                           halfExtents=self.current_box_size),
             basePosition=current_position,
             baseOrientation=current_orientation
         )
@@ -217,7 +223,8 @@ class PathPlannerGUI:
         self.update_status()
 
     def set_initial_obstacle_values(self):
-        position, orientation_quat = p.getBasePositionAndOrientation(self.obstacle)
+        position, orientation_quat = p.getBasePositionAndOrientation(
+            self.obstacle)
         orientation_euler = p.getEulerFromQuaternion(orientation_quat)
         for i in range(3):
             self.obstacle_values[i].set(f"{position[i]:.2f}")
@@ -261,9 +268,11 @@ class PathPlannerGUI:
 
     def update_obstacle(self):
         position = [float(self.obstacle_values[i].get()) for i in range(3)]
-        orientation_euler = [float(self.obstacle_values[i].get()) for i in range(3, 6)]
+        orientation_euler = [float(self.obstacle_values[i].get())
+                             for i in range(3, 6)]
         orientation_quat = p.getQuaternionFromEuler(orientation_euler)
-        p.resetBasePositionAndOrientation(self.obstacle, position, orientation_quat)
+        p.resetBasePositionAndOrientation(
+            self.obstacle, position, orientation_quat)
         self.update_status()
 
     def apply_joint_position(self, index, position):
@@ -291,7 +300,8 @@ class PathPlannerGUI:
 
     def plan_and_execute(self):
         print("Planning and executing path...")
-        res, joint_path = self.path_planner.plan_start_goal(self.start, self.goal)
+        res, joint_path = self.path_planner.plan_start_goal(
+            self.start, self.goal)
         if res:
             for joint_configuration, tool_activation in joint_path:
                 self.robot.reset_joint_position(joint_configuration, True)

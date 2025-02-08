@@ -2,7 +2,7 @@ import pybullet as p
 from itertools import combinations, product
 
 BASE_LINK = -1
-MAX_DISTANCE = 0.0
+MAX_DISTANCE_INTERNAL = 0.0
 
 
 class CollisionChecker:
@@ -23,7 +23,8 @@ class CollisionChecker:
 
     def __init__(self, ignored_urdf_ids: list = [],
                  ignored_internal_collisions: list = [],
-                 ignored_external_collisions: list = []):
+                 ignored_external_collisions: list = [],
+                 max_distance_external: float = 0.0):
         """
         Initializes the CollisionChecker by collecting collision data from all
         bodies in the simulation (except those specified in ignored_urdf_ids),
@@ -36,6 +37,7 @@ class CollisionChecker:
             ignored_external_collisions (list): List of external collision pair
                                                 specifications to ignore.
         """
+        self.max_distance_external = max_distance_external
         self.ignored_urdf_ids = ignored_urdf_ids
         self.bodies_information = []
         self.build_bodies_information(ignored_urdf_ids)
@@ -163,7 +165,9 @@ class CollisionChecker:
         for urdf_id, pairs in self.internal_collision_pairs:
             for linkA, linkB in pairs:
                 if CollisionChecker.simple_collision(
-                        urdf_id, urdf_id, linkA, linkB):
+                        urdf_id, urdf_id,
+                        MAX_DISTANCE_INTERNAL,
+                        linkA, linkB):
                     return False
         return True
 
@@ -176,8 +180,10 @@ class CollisionChecker:
         """
         for (bodyA, bodyB), link_pairs in self.external_collision_pairs:
             for linkA, linkB in link_pairs:
-                if CollisionChecker.simple_collision(bodyA, bodyB,
-                                                     linkA, linkB):
+                if CollisionChecker.simple_collision(
+                        bodyA, bodyB,
+                        self.max_distance_external,
+                        linkA, linkB):
                     return False
         return True
 
@@ -194,7 +200,8 @@ class CollisionChecker:
             link_pair_collisions = []
             for linkA, linkB in entry[1]:
                 if CollisionChecker.simple_collision(
-                        entry[0], entry[0], linkA, linkB):
+                    entry[0], entry[0], MAX_DISTANCE_INTERNAL,
+                        linkA, linkB):
                     link_pair_collisions.append((linkA, linkB))
             if len(link_pair_collisions) > 0:
                 internal_collisions.append((entry[0], link_pair_collisions))
@@ -214,8 +221,10 @@ class CollisionChecker:
         for (bodyA, bodyB), link_pairs in self.external_collision_pairs:
             colliding_links = []
             for linkA, linkB in link_pairs:
-                if CollisionChecker.simple_collision(bodyA, bodyB,
-                                                     linkA, linkB):
+                if CollisionChecker.simple_collision(
+                        bodyA, bodyB,
+                        self.max_distance_external,
+                        linkA, linkB):
                     colliding_links.append((linkA, linkB))
             if colliding_links:
                 global_external_collisions.append(
@@ -237,7 +246,8 @@ class CollisionChecker:
         self.update_external_collision_pairs()
 
     @staticmethod
-    def get_local_external_collisions(bodyA: int, bodyB: int):
+    def get_local_external_collisions(bodyA: int, bodyB: int,
+                                      max_distance: float = 0.0):
         """
         Determines the external collision pairs that are colliding between two
         specific bodies.
@@ -256,7 +266,9 @@ class CollisionChecker:
         )
         external_collisions = []
         for linkA, linkB in external_collision_pairs:
-            if CollisionChecker.simple_collision(bodyA, bodyB, linkA, linkB):
+            if CollisionChecker.simple_collision(bodyA, bodyB,
+                                                 max_distance,
+                                                 linkA, linkB):
                 external_collisions.append((linkA, linkB))
         return external_collisions
 
@@ -333,7 +345,8 @@ class CollisionChecker:
         return list(product(links1, links2))
 
     @staticmethod
-    def simple_collision(bodyA: int, bodyB: int, linkA: int, linkB: int):
+    def simple_collision(bodyA: int, bodyB: int, max_distance: float,
+                         linkA: int, linkB: int):
         """
         Determines if a collision is occurring between a specific pair of links
         from two bodies.
@@ -348,7 +361,7 @@ class CollisionChecker:
             bool: True if a collision is detected; False otherwise.
         """
         contacts = p.getClosestPoints(
-            bodyA, bodyB, MAX_DISTANCE, linkIndexA=linkA,
+            bodyA, bodyB, max_distance, linkIndexA=linkA,
             linkIndexB=linkB
         )
         return len(contacts) > 0

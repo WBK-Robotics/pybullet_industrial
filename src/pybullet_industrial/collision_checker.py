@@ -178,10 +178,6 @@ class CollisionChecker:
             for linkA, linkB in link_pairs:
                 if CollisionChecker.simple_collision(bodyA, bodyB,
                                                      linkA, linkB):
-                    print("Collision detected between body {} and body {}"
-                          .format(bodyA, bodyB))
-                    print("Impacted links: {} (from body {}) and {} (from body {})"
-                          .format(linkA, bodyA, linkB, bodyB))
                     return False
         return True
 

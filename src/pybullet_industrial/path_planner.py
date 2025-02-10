@@ -193,8 +193,8 @@ class ValidityChecker(ob.StateValidityChecker):
         if not self.collision_checker.check_collision():
             return False
 
-        if not self.check_endeffector_upright():
-            return False
+        # if not self.check_endeffector_upright():
+        #     return False
 
         return True
 
@@ -259,44 +259,6 @@ class PathPlanner:
 
         # Allocate the desired planner.
         self.planner = self.allocatePlanner(planner_name)
-
-    def is_state_valid(self, state: ob.State):
-        """Validates a state by checking collisions and end-effector
-        orientation.
-
-        Args:
-            state (ob.State): The state to validate.
-
-        Returns:
-            bool: True if valid, False otherwise.
-        """
-        if state is not None:
-            target = {}
-            joint_pos = self.sampling_space.realvector_state_to_list(state)
-            for name, pos in zip(self.joint_order, joint_pos):
-                target[name] = pos
-            self.robot.reset_joint_position(target, True)
-
-        if not self.collision_checker.check_collision():
-            return False
-
-        if not self.check_endeffector_upright():
-            return False
-
-        return True
-
-    def check_endeffector_upright(self):
-        """Checks if the robot's end-effector orientation is acceptable.
-
-        Returns:
-            bool: True if upright, False otherwise.
-        """
-        orientation = p.getEulerFromQuaternion(
-            self.robot.get_endeffector_pose()[1]
-        )
-        target = np.array([-np.pi / 2, 0, 0])
-        tol = np.array([0.3, 0.3, 2 * np.pi])
-        return np.all(np.abs(orientation - target) <= tol)
 
     def allocateObjective(self, objectiveType: str):
         """Selects and allocates an optimization objective for the planning

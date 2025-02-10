@@ -84,14 +84,10 @@ if __name__ == "__main__":
     internal_collision = collision_checker.check_internal_collisions()
     external_collision = collision_checker.check_external_collisions()
     global_collision = collision_checker.check_collision()
-    print("Internal Collision: ", internal_collision)
-    print("External Collision: ", external_collision)
-    print("Global Collision: ", global_collision)
 
 
     # Initialize PathPlanner with the clearance objective.
-    path_planner = pi.PathPlanner(robot, collision_checker, "BITstar",
-                                  objective="pathclearance")
+    path_planner = pi.PathPlanner(robot, collision_checker, "BITstar")
 
     # Set up initial state (for Comau).
     inital_state = {

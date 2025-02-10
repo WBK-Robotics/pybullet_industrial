@@ -80,7 +80,7 @@ class CollisionChecker:
                 )
             })
 
-    def update_internal_collision_pairs(self):
+    def update_internal_collision_pairs(self, ignore_collision = True):
         """
         Updates the list of internal collision pairs for each robot body.
         For each robot, any collision pair specified in the ignored list is
@@ -94,16 +94,17 @@ class CollisionChecker:
                 # Work on a copy to avoid modifying the original list.
                 valid_pairs = body['collision_pairs'].copy()
                 # Remove any collision pairs marked to be ignored.
-                for ignored in self.ignored_internal_collisions:
-                    if ignored[0] == body['urdf_id']:
-                        for pair in ignored[1]:
-                            if pair in valid_pairs:
-                                valid_pairs.remove(pair)
+                if ignore_collision:
+                    for ignored in self.ignored_internal_collisions:
+                        if ignored[0] == body['urdf_id']:
+                            for pair in ignored[1]:
+                                if pair in valid_pairs:
+                                    valid_pairs.remove(pair)
                 self.internal_collision_pairs.append(
                     (body['urdf_id'], valid_pairs)
                 )
 
-    def update_external_collision_pairs(self):
+    def update_external_collision_pairs(self, ignore_collision = True):
         """
         Updates the list of external collision pairs between bodies.
         Each entry in self.external_collision_pairs is a tuple:
@@ -119,12 +120,13 @@ class CollisionChecker:
 
         for bodyA, bodyB in potential_body_pairs:
             ignored_entry = None
-            for entry in self.ignored_external_collisions:
-                # Each ignored entry is a tuple:
-                # ((bodyA, bodyB), [ignored link pairs]).
-                if entry[0] == (bodyA, bodyB):
-                    ignored_entry = entry
-                    break
+            if ignore_collision:
+                for entry in self.ignored_external_collisions:
+                    # Each ignored entry is a tuple:
+                    # ((bodyA, bodyB), [ignored link pairs]).
+                    if entry[0] == (bodyA, bodyB):
+                        ignored_entry = entry
+                        break
 
             linksA = CollisionChecker.get_collision_links_for_body(bodyA)
             linksB = CollisionChecker.get_collision_links_for_body(bodyB)
@@ -232,6 +234,9 @@ class CollisionChecker:
         bodies_information and stores them as ignored collisions. It then
         updates the internal and external collision pair lists.
         """
+        self.update_internal_collision_pairs(ignore_collision=False)
+        self.update_external_collision_pairs(ignore_collision=False)
+
         self.ignored_internal_collisions = self.get_internal_collisions()
         self.ignored_external_collisions = (
             self.get_global_external_collisions()

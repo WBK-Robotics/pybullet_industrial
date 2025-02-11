@@ -7,30 +7,33 @@ import numpy as np
 import pybullet as p
 
 # Global constant for continuous joint bounds.
-CONTINIOUS_JOINT_BOUNDS = 3 * np.pi
+CONTINUOUS_JOINT_BOUNDS = 3 * np.pi
 
 INTERPOLATE_NUM = 500  # Number of segments for interpolating the path
-DEFAULT_PLANNING_TIME = 5.0  # Maximum planning time in seconds
+DEFAULT_PLANNING_TIME = 5.0  # Maximum planning time (seconds)
 
 
 class SamplingSpace:
     """Creates an OMPL state space based on robot joint limits and provides
-    state conversion and state creation utilities.
+    utilities for state conversion and creation.
 
-    This class always creates a RealVectorStateSpace. If a joint is
-    continuous (i.e. has an infinite limit), its bounds are set to [-CONTINIOUS_JOINT_BOUNDS, CONTINIOUS_JOINT_BOUNDS].
-    Otherwise, a small margin is added to the joint limits.
+    This class always creates a RealVectorStateSpace. For each joint,
+    if the joint limit is infinite the bounds are set to
+    [-CONTINUOUS_JOINT_BOUNDS, CONTINUOUS_JOINT_BOUNDS]. Otherwise, a small
+    margin is added to the provided limits.
 
-    It also includes a helper method to set the start and goal states.
+    It also provides a helper to create start and goal states.
 
     Args:
-        robot (RobotBase): The robot model and its kinematics.
-        joint_order (list): List of joint names for the state space.
+        robot (RobotBase): The robot model with its kinematics.
     """
+
     def __init__(self, robot: RobotBase):
-        # Retrieve joint limits as two dictionaries (lower and upper bounds)
+        # Retrieve joint limits as two dictionaries (lower and upper bounds).
         self.joint_order = robot.get_moveable_joints()[0]
-        lower_limit, upper_limit = robot.get_joint_limits(set(self.joint_order))
+        lower_limit, upper_limit = robot.get_joint_limits(
+            set(self.joint_order)
+        )
         self.robot = robot
 
         # Always use a RealVectorStateSpace.
@@ -42,22 +45,23 @@ class SamplingSpace:
         continuous joints.
 
         For each joint:
-          - If a joint limit is infinite, set the bounds to [-CONTINIOUS_JOINT_BOUNDS, CONTINIOUS_JOINT_BOUNDS].
-          - Otherwise, use the provided limit with a small margin (±0.1).
+          - If a limit is infinite, set bounds to
+            [-CONTINUOUS_JOINT_BOUNDS, CONTINUOUS_JOINT_BOUNDS].
+          - Otherwise, use the provided limits with a small margin (±0.1).
 
         Args:
             lower_limit (dict): Lower limits for each joint.
             upper_limit (dict): Upper limits for each joint.
 
         Returns:
-            ob.RealVectorStateSpace: The constructed real vector state space.
+            ob.RealVectorStateSpace: The constructed state space.
         """
         num_dims = len(self.joint_order)
         bounds = ob.RealVectorBounds(num_dims)
         for i, joint in enumerate(self.joint_order):
             if np.isinf(lower_limit[joint]) or np.isinf(upper_limit[joint]):
-                bounds.setLow(i, -CONTINIOUS_JOINT_BOUNDS)
-                bounds.setHigh(i, CONTINIOUS_JOINT_BOUNDS)
+                bounds.setLow(i, -CONTINUOUS_JOINT_BOUNDS)
+                bounds.setHigh(i, CONTINUOUS_JOINT_BOUNDS)
             else:
                 bounds.setLow(i, lower_limit[joint] - 0.1)
                 bounds.setHigh(i, upper_limit[joint] + 0.1)
@@ -72,7 +76,7 @@ class SamplingSpace:
             state (ob.State): An OMPL state object.
 
         Returns:
-            list: Joint values extracted from the state.
+            list: The joint values extracted from the state.
         """
         return [state[i] for i, _ in enumerate(self.joint_order)]
 
@@ -85,16 +89,13 @@ class SamplingSpace:
         return self.space
 
     def set_state(self, state: ob.State):
-        """Checks if the provided state is valid.
+        """Updates the robot's joint positions to match the given state.
 
-        A state is valid if it is collision-free and the end-effector is
-        correctly oriented.
+        This method resets the robot joints to the values specified in
+        the state. It does not perform collision or constraint checks.
 
         Args:
-            state (ob.State): The state to validate.
-
-        Returns:
-            bool: True if valid, False otherwise.
+            state (ob.State): The state containing joint values.
         """
         # Extract joint positions from the state.
         joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
@@ -121,18 +122,20 @@ class SamplingSpace:
 
 
 class ClearanceObjective(ob.StateCostIntegralObjective):
-    """An objective that maximizes clearance from obstacles by penalizing low
-    clearance states.
+    """An objective that encourages paths with high clearance from obstacles.
 
     The cost is computed as the reciprocal of the state's clearance plus a
-    small constant, encouraging paths that maintain a safe distance from
-    obstacles.
+    small constant, which favors paths that stay away from obstacles.
 
     Args:
-        si (ob.SpaceInformation): The space information for the planning
-            problem.
+        si (ob.SpaceInformation): The space information.
+        sampling_space (SamplingSpace): The sampling space instance.
+        state_cost_function (iterable of callables, optional): Functions to
+            compute additional state costs.
     """
-    def __init__(self, si: ob.SpaceInformation, sampling_space: SamplingSpace,
+
+    def __init__(self, si: ob.SpaceInformation,
+                 sampling_space: SamplingSpace,
                  state_cost_function=None):
         super(ClearanceObjective, self).__init__(si, True)
         self.sampling_space = sampling_space
@@ -142,38 +145,38 @@ class ClearanceObjective(ob.StateCostIntegralObjective):
         """Computes the cost of a state based on its clearance.
 
         Args:
-            s (ob.State): The state for which to compute the cost.
+            state (ob.State): The state for cost evaluation.
 
         Returns:
             ob.Cost: The computed cost.
         """
-        # Uses the clearance computed by the ValidityChecker, which now
-        # relies on the refactored collision checker.
+        # Update the robot's joint positions to match the state.
         self.sampling_space.set_state(state)
-        # Gather clearances from all collision checkers; the overall clearance is the minimum.
         total_cost = 0
+        # Sum cost contributions from all state cost functions.
         for state_cost in self.state_cost_function:
             total_cost += state_cost()
 
-        return ob.Cost(
-            1 / (total_cost +
-                 sys.float_info.min)
-        )
+        return ob.Cost(1 / (total_cost + sys.float_info.min))
 
 
 class ValidityChecker(ob.StateValidityChecker):
-    """Checks if a state is collision-free and meets end-effector constraints.
+    """Checks if a state is valid with respect to collisions and constraints.
 
-    The checker resets the robot to a given state, verifies collisions, and
-    ensures the end-effector is correctly oriented.
+    This checker updates the robot's configuration to the given state,
+    then verifies that no collisions occur and that all additional
+    constraint functions are satisfied.
 
     Args:
-        space_information (ob.SpaceInformation): The state space information.
-        robot (RobotBase): The robot instance.
-        collision_checker_list (list): List of CollisionChecker objects to check for collisions.
-        joint_order (list): List of joint names corresponding to the state.
+        space_information (ob.SpaceInformation): The state space info.
+        sampling_space (SamplingSpace): The sampling space instance.
+        collision_checker_list (list): List of collision checker objects.
+        constraint_functions (iterable of callables, optional): Functions to
+            evaluate extra state constraints.
     """
-    def __init__(self, space_information: ob.SpaceInformation, sampling_space: SamplingSpace,
+
+    def __init__(self, space_information: ob.SpaceInformation,
+                 sampling_space: SamplingSpace,
                  collision_checker_list: list,
                  constraint_functions=None):
         super(ValidityChecker, self).__init__(space_information)
@@ -182,10 +185,10 @@ class ValidityChecker(ob.StateValidityChecker):
         self.constraint_functions = constraint_functions
 
     def isValid(self, state: ob.State):
-        """Checks if the provided state is valid.
+        """Determines whether the given state is valid.
 
-        A state is valid if it is collision-free and the end-effector is
-        correctly oriented.
+        A state is valid if it is collision-free and satisfies all
+        constraint functions.
 
         Args:
             state (ob.State): The state to validate.
@@ -193,7 +196,7 @@ class ValidityChecker(ob.StateValidityChecker):
         Returns:
             bool: True if valid, False otherwise.
         """
-        # Extract joint positions from the state.
+        # Update the robot's joint positions to the provided state.
         self.sampling_space.set_state(state)
 
         if self.constraint_functions is not None:
@@ -209,22 +212,24 @@ class ValidityChecker(ob.StateValidityChecker):
 
 
 class PathPlanner:
-    """Sets up and executes motion planning for a robot in a constrained
-    environment.
+    """Plans motion for a robot in a constrained environment.
 
-    This class configures the state space, sets up the planning problem, and
-    provides methods to solve for a path between start and goal configurations.
+    This class configures the state space, sets up the planning problem,
+    and computes a path between start and goal states.
 
     Args:
-        robot (RobotBase): The robot instance for which to plan.
-        collision_checker_list (list): List of CollisionChecker objects to check for collisions.
+        robot (RobotBase): The robot instance for planning.
+        collision_checker_list (list): List of collision checker objects.
         planner_name (str, optional): The planner to use (e.g., "BITstar").
             Defaults to "BITstar".
-        selected_joint_names (set, optional): Set of joint names to include.
-            Defaults to None (all moveable joints are used).
         objective (str, optional): The optimization objective (e.g.,
             "PathLength"). Defaults to "PathLength".
+        constraint_functions (iterable of callables, optional): Functions to
+            evaluate extra state constraints.
+        state_cost (iterable of callables, optional): Functions to compute state
+            costs.
     """
+
     def __init__(self, robot: RobotBase, collision_checker_list: list,
                  planner_name: str = "BITstar",
                  objective: str = "PathLength", constraint_functions=None,
@@ -233,7 +238,6 @@ class PathPlanner:
         self.robot = robot
         self.collision_checker_list = collision_checker_list
 
-
         # Create the state space using SamplingSpace.
         self.sampling_space = SamplingSpace(robot)
         self.space = self.sampling_space.get_space()
@@ -241,10 +245,12 @@ class PathPlanner:
 
         # Set up OMPL space information and validity checking.
         self.space_information = ob.SpaceInformation(self.space)
-        self.validity_checker = ValidityChecker(self.space_information,
-                                                self.sampling_space,
-                                                collision_checker_list,
-                                                constraint_functions)
+        self.validity_checker = ValidityChecker(
+            self.space_information,
+            self.sampling_space,
+            collision_checker_list,
+            constraint_functions
+        )
         self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()
 
@@ -258,8 +264,7 @@ class PathPlanner:
         self.planner = self.allocatePlanner(planner_name)
 
     def allocateObjective(self, objectiveType: str):
-        """Selects and allocates an optimization objective for the planning
-        problem.
+        """Selects and allocates an optimization objective.
 
         Args:
             objectiveType (str): The type of optimization objective.
@@ -285,7 +290,8 @@ class PathPlanner:
             length_obj = ob.PathLengthOptimizationObjective(
                 self.space_information
             )
-            clear_obj = ClearanceObjective(self.space_information)
+            clear_obj = ClearanceObjective(self.space_information,
+                                           self.sampling_space)
             opt = ob.MultiOptimizationObjective(self.space_information)
             opt.addObjective(length_obj, 5.0)
             opt.addObjective(clear_obj, 1.0)
@@ -328,22 +334,21 @@ class PathPlanner:
                         allowed_time: float = DEFAULT_PLANNING_TIME):
         """Plans a path between the given start and goal states.
 
-        This method sets up the start and goal states, runs the planner, and
-        returns whether a solution was found along with the resulting joint
-        path.
+        This method creates start and goal states, runs the planner, and
+        returns a success flag and the corresponding joint path.
 
         Args:
             start (dict): Joint values for the start configuration.
             goal (dict): Joint values for the goal configuration.
-            allowed_time (float, optional): Maximum planning time in seconds.
+            allowed_time (float, optional): Maximum planning time (seconds).
                 Defaults to DEFAULT_PLANNING_TIME.
 
         Returns:
-            tuple(bool, JointPath): A tuple containing a success flag and the
-            joint path.
+            tuple(bool, JointPath): A tuple containing a success flag and
+            the joint path.
         """
         orig_state = start
-        # Use the SamplingSpace helper to create start and goal states.
+        # Create start and goal states using the SamplingSpace helper.
         s, g = self.sampling_space.set_start_goal_states(start, goal)
         self.problem_definition.setStartAndGoalStates(s, g)
 
@@ -362,7 +367,8 @@ class PathPlanner:
                  for st in states]
             )
             joint_path = JointPath(
-                path_list.transpose(), tuple(self.robot.get_moveable_joints()[0])
+                path_list.transpose(),
+                tuple(self.robot.get_moveable_joints()[0])
             )
             res = True
         else:

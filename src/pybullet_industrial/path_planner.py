@@ -33,7 +33,6 @@ class SamplingSpace:
         lower_limit, upper_limit = robot.get_joint_limits(set(self.joint_order))
         self.robot = robot
 
-
         # Always use a RealVectorStateSpace.
         self.real_vector = True
         self.space = self.build_realvector_space(lower_limit, upper_limit)
@@ -84,6 +83,24 @@ class SamplingSpace:
             ob.StateSpace: The state space used for planning.
         """
         return self.space
+
+    def set_state(self, state: ob.State):
+        """Checks if the provided state is valid.
+
+        A state is valid if it is collision-free and the end-effector is
+        correctly oriented.
+
+        Args:
+            state (ob.State): The state to validate.
+
+        Returns:
+            bool: True if valid, False otherwise.
+        """
+        # Extract joint positions from the state.
+        joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
+        self.robot.reset_joint_position(
+            dict(zip(self.joint_order, joint_positions)), True
+        )
 
     def set_start_goal_states(self, start: dict, goal: dict):
         """Creates and returns the start and goal states for planning.
@@ -159,13 +176,12 @@ class ValidityChecker(ob.StateValidityChecker):
         collision_checker_list (list): List of CollisionChecker objects to check for collisions.
         joint_order (list): List of joint names corresponding to the state.
     """
-    def __init__(self, space_information: ob.SpaceInformation, robot: RobotBase,
+    def __init__(self, space_information: ob.SpaceInformation, sampling_space: SamplingSpace,
                  collision_checker_list: list,
                  constraint_functions=None):
         super(ValidityChecker, self).__init__(space_information)
-        self.robot = robot
+        self.sampling_space = sampling_space
         self.collision_checker_list = collision_checker_list
-        self.joint_order = robot.get_moveable_joints()[0]
         self.constraint_functions = constraint_functions
 
     def isValid(self, state: ob.State):
@@ -181,10 +197,8 @@ class ValidityChecker(ob.StateValidityChecker):
             bool: True if valid, False otherwise.
         """
         # Extract joint positions from the state.
-        joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
-        self.robot.reset_joint_position(
-            dict(zip(self.joint_order, joint_positions)), True
-        )
+        self.sampling_space.set_state(state)
+
         if self.constraint_functions is not None:
             for constraint in self.constraint_functions:
                 if not constraint():
@@ -230,7 +244,7 @@ class PathPlanner:
 
         # Set up OMPL space information and validity checking.
         self.space_information = ob.SpaceInformation(self.space)
-        self.validity_checker = ValidityChecker(self.space_information, robot,
+        self.validity_checker = ValidityChecker(self.space_information, self.sampling_space,
                                                 collision_checker_list,
                                                 constraint_functions)
         self.space_information.setStateValidityChecker(self.validity_checker)

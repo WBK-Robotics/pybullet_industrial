@@ -27,11 +27,12 @@ class SamplingSpace:
         robot (RobotBase): The robot model and its kinematics.
         joint_order (list): List of joint names for the state space.
     """
-    def __init__(self, robot: RobotBase, joint_order: list):
+    def __init__(self, robot: RobotBase):
         # Retrieve joint limits as two dictionaries (lower and upper bounds)
-        lower_limit, upper_limit = robot.get_joint_limits(set(joint_order))
-        self.joint_order = joint_order
+        self.joint_order = robot.get_moveable_joints()[0]
+        lower_limit, upper_limit = robot.get_joint_limits(set(self.joint_order))
         self.robot = robot
+
 
         # Always use a RealVectorStateSpace.
         self.real_vector = True
@@ -159,12 +160,12 @@ class ValidityChecker(ob.StateValidityChecker):
         joint_order (list): List of joint names corresponding to the state.
     """
     def __init__(self, space_information: ob.SpaceInformation, robot: RobotBase,
-                 collision_checker_list: list, joint_order: list,
+                 collision_checker_list: list,
                  constraint_functions=None):
         super(ValidityChecker, self).__init__(space_information)
         self.robot = robot
         self.collision_checker_list = collision_checker_list
-        self.joint_order = joint_order
+        self.joint_order = robot.get_moveable_joints()[0]
         self.constraint_functions = constraint_functions
 
     def isValid(self, state: ob.State):
@@ -214,18 +215,16 @@ class PathPlanner:
             "PathLength"). Defaults to "PathLength".
     """
     def __init__(self, robot: RobotBase, collision_checker_list: list,
-                 planner_name: str = "BITstar", selected_joint_names: set = None,
+                 planner_name: str = "BITstar",
                  objective: str = "PathLength", constraint_functions=None,
                  state_cost=None):
         self.state_cost_function = state_cost
         self.robot = robot
         self.collision_checker_list = collision_checker_list
 
-        # Determine the joint order from the robot.
-        self.joint_order = robot.get_moveable_joints(selected_joint_names)[0]
 
         # Create the state space using SamplingSpace.
-        self.sampling_space = SamplingSpace(robot, self.joint_order)
+        self.sampling_space = SamplingSpace(robot)
         self.space = self.sampling_space.get_space()
         self.real_vector = self.sampling_space.real_vector
 
@@ -233,7 +232,6 @@ class PathPlanner:
         self.space_information = ob.SpaceInformation(self.space)
         self.validity_checker = ValidityChecker(self.space_information, robot,
                                                 collision_checker_list,
-                                                self.joint_order,
                                                 constraint_functions)
         self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()
@@ -351,7 +349,7 @@ class PathPlanner:
                  for st in states]
             )
             joint_path = JointPath(
-                path_list.transpose(), tuple(self.joint_order)
+                path_list.transpose(), tuple(self.robot.get_moveable_joints()[0])
             )
             res = True
         else:

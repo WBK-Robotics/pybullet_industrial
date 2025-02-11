@@ -6,6 +6,9 @@ from pybullet_industrial import (CollisionChecker, RobotBase, JointPath)
 import numpy as np
 import pybullet as p
 
+# Global constant for continuous joint bounds.
+CONTINIOUS_JOINT_BOUNDS = 3 * np.pi
+
 INTERPOLATE_NUM = 500  # Number of segments for interpolating the path
 DEFAULT_PLANNING_TIME = 5.0  # Maximum planning time in seconds
 
@@ -15,7 +18,7 @@ class SamplingSpace:
     state conversion and state creation utilities.
 
     This class always creates a RealVectorStateSpace. If a joint is
-    continuous (i.e. has an infinite limit), its bounds are set to [-3π, 3π].
+    continuous (i.e. has an infinite limit), its bounds are set to [-CONTINIOUS_JOINT_BOUNDS, CONTINIOUS_JOINT_BOUNDS].
     Otherwise, a small margin is added to the joint limits.
 
     It also includes a helper method to set the start and goal states.
@@ -39,7 +42,7 @@ class SamplingSpace:
         continuous joints.
 
         For each joint:
-          - If a joint limit is infinite, set the bounds to [-3π, 3π].
+          - If a joint limit is infinite, set the bounds to [-CONTINIOUS_JOINT_BOUNDS, CONTINIOUS_JOINT_BOUNDS].
           - Otherwise, use the provided limit with a small margin (±0.1).
 
         Args:
@@ -53,8 +56,8 @@ class SamplingSpace:
         bounds = ob.RealVectorBounds(num_dims)
         for i, joint in enumerate(self.joint_order):
             if np.isinf(lower_limit[joint]) or np.isinf(upper_limit[joint]):
-                bounds.setLow(i, -3 * np.pi)
-                bounds.setHigh(i, 3 * np.pi)
+                bounds.setLow(i, -CONTINIOUS_JOINT_BOUNDS)
+                bounds.setHigh(i, CONTINIOUS_JOINT_BOUNDS)
             else:
                 bounds.setLow(i, lower_limit[joint] - 0.1)
                 bounds.setHigh(i, upper_limit[joint] + 0.1)

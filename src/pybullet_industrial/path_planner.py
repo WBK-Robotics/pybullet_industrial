@@ -132,12 +132,10 @@ class ClearanceObjective(ob.StateCostIntegralObjective):
         si (ob.SpaceInformation): The space information for the planning
             problem.
     """
-    def __init__(self, si: ob.SpaceInformation, robot: RobotBase,
+    def __init__(self, si: ob.SpaceInformation, sampling_space: SamplingSpace,
                  state_cost_function=None):
         super(ClearanceObjective, self).__init__(si, True)
-        self.si_ = si
-        self.robot = robot
-        self.joint_order = robot.get_moveable_joints()[0]
+        self.sampling_space = sampling_space
         self.state_cost_function = state_cost_function
 
     def stateCost(self, state: ob.State):
@@ -151,8 +149,7 @@ class ClearanceObjective(ob.StateCostIntegralObjective):
         """
         # Uses the clearance computed by the ValidityChecker, which now
         # relies on the refactored collision checker.
-        joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
-        self.robot.reset_joint_position(dict(zip(self.joint_order, joint_positions)), True)
+        self.sampling_space.set_state(state)
         # Gather clearances from all collision checkers; the overall clearance is the minimum.
         total_cost = 0
         for state_cost in self.state_cost_function:
@@ -244,7 +241,8 @@ class PathPlanner:
 
         # Set up OMPL space information and validity checking.
         self.space_information = ob.SpaceInformation(self.space)
-        self.validity_checker = ValidityChecker(self.space_information, self.sampling_space,
+        self.validity_checker = ValidityChecker(self.space_information,
+                                                self.sampling_space,
                                                 collision_checker_list,
                                                 constraint_functions)
         self.space_information.setStateValidityChecker(self.validity_checker)
@@ -270,7 +268,8 @@ class PathPlanner:
             ob.OptimizationObjective: The allocated objective.
         """
         if objectiveType.lower() == "pathclearance":
-            return ClearanceObjective(self.space_information, self.robot,
+            return ClearanceObjective(self.space_information,
+                                      self.sampling_space,
                                       self.state_cost_function)
         elif objectiveType.lower() == "pathlength":
             return ob.PathLengthOptimizationObjective(

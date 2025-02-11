@@ -291,7 +291,8 @@ class PathPlanner:
                 self.space_information
             )
             clear_obj = ClearanceObjective(self.space_information,
-                                           self.sampling_space)
+                                           self.sampling_space,
+                                           self.state_cost_function)
             opt = ob.MultiOptimizationObjective(self.space_information)
             opt.addObjective(length_obj, 5.0)
             opt.addObjective(clear_obj, 1.0)

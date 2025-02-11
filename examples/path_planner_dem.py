@@ -117,7 +117,9 @@ if __name__ == "__main__":
     constraint_functions = [lambda: check_endeffector_upright(robot)]
     state_cost = [lambda: stateCost([collision_checker])]
     # Initialize PathPlanner with the clearance objective.
-    path_planner = pi.PathPlanner(robot=robot, collision_checker_list=[collision_checker], planner_name="BITstar",
+    path_planner = pi.PathPlanner(robot=robot,
+                                  collision_checker_list=[collision_checker],
+                                  planner_name="BITstar",
                                   objective="pathclearance",
                                   constraint_functions=constraint_functions,
                                   state_cost=state_cost,)

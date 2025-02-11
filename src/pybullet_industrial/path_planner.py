@@ -173,7 +173,7 @@ class ValidityChecker(ob.StateValidityChecker):
         joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
         self.robot.reset_joint_position(dict(zip(self.joint_order, joint_positions)), True)
         # Gather clearances from all collision checkers; the overall clearance is the minimum.
-        clearances = [cc.get_max_distance() for cc in self.collision_checker_list]
+        clearances = [cc.get_min_body_distance(bodyA=0, bodyB=1, distance=1) for cc in self.collision_checker_list]
         return min(clearances)
 
     def isValid(self, state: ob.State):

@@ -103,6 +103,7 @@ if __name__ == "__main__":
     constraint_functions = [lambda: check_endeffector_upright(robot)]
     # Initialize PathPlanner with the clearance objective.
     path_planner = pi.PathPlanner(robot, [collision_checker], "BITstar",
+                                  objective="pathclearance",
                                   constraint_functions=constraint_functions)
 
     # Set up initial state (for Comau).

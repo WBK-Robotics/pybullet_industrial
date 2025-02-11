@@ -114,11 +114,15 @@ class ClearanceObjective(ob.StateCostIntegralObjective):
         si (ob.SpaceInformation): The space information for the planning
             problem.
     """
-    def __init__(self, si: ob.SpaceInformation):
+    def __init__(self, si: ob.SpaceInformation, robot: RobotBase, collision_checker_list: list, state_cost_function=None):
         super(ClearanceObjective, self).__init__(si, True)
         self.si_ = si
+        self.robot = robot
+        self.collision_checker_list = collision_checker_list
+        self.joint_order = robot.get_moveable_joints()[0]
+        self.state_cost_function = state_cost_function
 
-    def stateCost(self, s: ob.State):
+    def stateCost(self, state: ob.State):
         """Computes the cost of a state based on its clearance.
 
         Args:
@@ -129,8 +133,15 @@ class ClearanceObjective(ob.StateCostIntegralObjective):
         """
         # Uses the clearance computed by the ValidityChecker, which now
         # relies on the refactored collision checker.
+        joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
+        self.robot.reset_joint_position(dict(zip(self.joint_order, joint_positions)), True)
+        # Gather clearances from all collision checkers; the overall clearance is the minimum.
+        total_cost = 0
+        for state_cost in self.state_cost_function:
+            total_cost += state_cost()
+
         return ob.Cost(
-            1 / (self.si_.getStateValidityChecker().clearance(s) +
+            1 / (total_cost +
                  sys.float_info.min)
         )
 
@@ -155,26 +166,6 @@ class ValidityChecker(ob.StateValidityChecker):
         self.collision_checker_list = collision_checker_list
         self.joint_order = joint_order
         self.constraint_functions = constraint_functions
-
-    def clearance(self, state: ob.State):
-        """Computes the clearance of a given state using the refactored
-        collision checkers.
-
-        The robot is reset to the state provided and each collision checker in
-        the list is used to obtain a clearance. The minimum clearance is returned.
-
-        Args:
-            state (ob.State): The state for which to compute clearance.
-
-        Returns:
-            float: The clearance value.
-        """
-        # Extract joint positions and reset the robot.
-        joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
-        self.robot.reset_joint_position(dict(zip(self.joint_order, joint_positions)), True)
-        # Gather clearances from all collision checkers; the overall clearance is the minimum.
-        clearances = [cc.get_min_body_distance(bodyA=0, bodyB=1, distance=1) for cc in self.collision_checker_list]
-        return min(clearances)
 
     def isValid(self, state: ob.State):
         """Checks if the provided state is valid.
@@ -224,7 +215,9 @@ class PathPlanner:
     """
     def __init__(self, robot: RobotBase, collision_checker_list: list,
                  planner_name: str = "BITstar", selected_joint_names: set = None,
-                 objective: str = "PathLength", constraint_functions=None):
+                 objective: str = "PathLength", constraint_functions=None,
+                 state_cost=None):
+        self.state_cost_function = state_cost
         self.robot = robot
         self.collision_checker_list = collision_checker_list
 
@@ -265,7 +258,7 @@ class PathPlanner:
             ob.OptimizationObjective: The allocated objective.
         """
         if objectiveType.lower() == "pathclearance":
-            return ClearanceObjective(self.space_information)
+            return ClearanceObjective(self.space_information, self.robot, self.collision_checker_list, self.state_cost_function)
         elif objectiveType.lower() == "pathlength":
             return ob.PathLengthOptimizationObjective(
                 self.space_information

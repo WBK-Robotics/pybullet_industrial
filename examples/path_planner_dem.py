@@ -23,6 +23,20 @@ def check_endeffector_upright(robot: pi.RobotBase):
     tol = np.array([0.3, 0.3, 2 * np.pi])
     return np.all(np.abs(orientation - target) <= tol)
 
+def stateCost(collision_checker_list):
+    """Computes the cost of a state based on its clearance.
+
+    Args:
+        s (ob.State): The state for which to compute the cost.
+
+    Returns:
+        ob.Cost: The computed cost.
+    """
+
+    state_cost = [cc.get_min_body_distance(bodyA=0, bodyB=1, distance=1) for cc in collision_checker_list]
+
+    return min(state_cost)
+
 
 def seting_up_enviroment():
     """
@@ -101,10 +115,12 @@ if __name__ == "__main__":
 
     # Append constraint functinons
     constraint_functions = [lambda: check_endeffector_upright(robot)]
+    state_cost = [lambda: stateCost([collision_checker])]
     # Initialize PathPlanner with the clearance objective.
     path_planner = pi.PathPlanner(robot, [collision_checker], "BITstar",
                                   objective="pathclearance",
-                                  constraint_functions=constraint_functions)
+                                  constraint_functions=constraint_functions,
+                                  state_cost=state_cost,)
 
     # Set up initial state (for Comau).
     inital_state = {

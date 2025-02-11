@@ -10,12 +10,12 @@ JOINT_INCREMENT = 0.1
 class PathPlannerGUI:
     """
     GUI for the Path Planner, allowing users to control joints, update
-    obstacles, and execute paths. Shows only collision status.
+    obstacles, and execute paths. Shows collision status and constraint status.
     """
 
     def __init__(self, root, robot: pi.RobotBase,
                  path_planner: pi.PathPlanner,
-                 collision_checker_list: list, obstacle):
+                 collision_checker_list: list, obstacle, constraint_functions):
         """
         Initializes the PathPlanner GUI.
 
@@ -23,15 +23,17 @@ class PathPlannerGUI:
             root (tk.Tk): The root Tkinter window.
             robot: The robot instance from PyBullet Industrial.
             path_planner: The PathPlanner instance for motion planning.
-            collision_checker_list (list): List of CollisionChecker objects for collision
-                management.
+            collision_checker_list (list): List of CollisionChecker objects for collision management.
             obstacle: The obstacle to manipulate.
+            constraint_functions (list): List of functions (no-arg lambdas) that return a boolean
+                                         indicating if a constraint is satisfied.
         """
         self.root = root
         self.robot = robot
         self.path_planner = path_planner
         self.collision_checker_list = collision_checker_list
         self.obstacle = obstacle
+        self.constraint_functions = constraint_functions
         self.start = self.robot.get_joint_state()  # Start config.
         self.goal = self.robot.get_joint_state()   # Goal config.
         self.joint_order = self.robot.get_moveable_joints()[0]
@@ -43,6 +45,8 @@ class PathPlannerGUI:
                                 for _ in range(6)]
         # Status indicator for collision.
         self.collision_status = tk.StringVar(value="green")
+        # Status indicator for constraint functions.
+        self.constraint_status = tk.StringVar(value="green")
         self.current_box_size = [0.5, 0.5, 0.05]
         self.create_widgets()
         self.set_allowed_collision()
@@ -90,6 +94,14 @@ class PathPlannerGUI:
                                         width=10, height=2)
         self.collision_light.grid(row=status_row, column=1,
                                   padx=5, pady=10)
+        # Status Indicator for constraints.
+        tk.Label(self.root, text="Constraint Status:").grid(
+            row=status_row, column=2, padx=5, pady=10)
+        self.constraint_light = tk.Label(self.root,
+                                         bg=self.constraint_status.get(),
+                                         width=10, height=2)
+        self.constraint_light.grid(row=status_row, column=3,
+                                   padx=5, pady=10)
 
         # Control Buttons.
         control_row = status_row + 1
@@ -120,13 +132,23 @@ class PathPlannerGUI:
 
     def update_status(self):
         """
-        Updates the collision status indicator.
+        Updates the collision status and constraint status indicators.
         """
-        # Check all collision checkers. The state is valid (no collision)
-        # only if all collision checkers report no collision.
-        valid = all(cc.check_collision() for cc in self.collision_checker_list)
-        self.collision_status.set("green" if valid else "red")
+        # Update collision status.
+        valid_collision = all(cc.check_collision() for cc in self.collision_checker_list)
+        self.collision_status.set("green" if valid_collision else "red")
         self.collision_light.config(bg=self.collision_status.get())
+        # Update constraint status.
+        self.update_constraint_status()
+
+    def update_constraint_status(self):
+        """
+        Checks all constraint functions. If all return True, the status is green;
+        otherwise, it's red.
+        """
+        valid_constraints = all(fn() for fn in self.constraint_functions)
+        self.constraint_status.set("green" if valid_constraints else "red")
+        self.constraint_light.config(bg=self.constraint_status.get())
 
     def shrink_obstacle(self):
         pos, orn = p.getBasePositionAndOrientation(self.obstacle)

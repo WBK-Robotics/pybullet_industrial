@@ -10,6 +10,20 @@ INTERPOLATE_NUM = 500  # Number of segments for interpolating the path
 DEFAULT_PLANNING_TIME = 5.0  # Maximum planning time in seconds
 
 
+def check_endeffector_upright(robot: pi.RobotBase):
+    """Checks if the robot's end-effector is upright within tolerance.
+
+    Returns:
+        bool: True if upright, False otherwise.
+    """
+    orientation = p.getEulerFromQuaternion(
+        robot.get_endeffector_pose()[1]
+    )
+    target = np.array([-np.pi / 2, 0, 0])
+    tol = np.array([0.3, 0.3, 2 * np.pi])
+    return np.all(np.abs(orientation - target) <= tol)
+
+
 def seting_up_enviroment():
     """
     Sets up the simulation environment, including paths to URDF files and
@@ -85,9 +99,11 @@ if __name__ == "__main__":
     external_collision = collision_checker.check_external_collisions()
     global_collision = collision_checker.check_collision()
 
-
+    # Append constraint functinons
+    constraint_functions = [lambda: check_endeffector_upright(robot)]
     # Initialize PathPlanner with the clearance objective.
-    path_planner = pi.PathPlanner(robot, [collision_checker], "BITstar")
+    path_planner = pi.PathPlanner(robot, [collision_checker], "BITstar",
+                                  constraint_functions=constraint_functions)
 
     # Set up initial state (for Comau).
     inital_state = {
@@ -103,5 +119,5 @@ if __name__ == "__main__":
     # Create the GUI for motion planning.
     root = tk.Tk()
     gui = PathPlannerGUI(root, robot, path_planner, [collision_checker],
-                         obstacle)
+                         obstacle, constraint_functions)
     root.mainloop()

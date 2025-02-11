@@ -148,11 +148,13 @@ class ValidityChecker(ob.StateValidityChecker):
         joint_order (list): List of joint names corresponding to the state.
     """
     def __init__(self, space_information: ob.SpaceInformation, robot: RobotBase,
-                 collision_checker_list: list, joint_order: list):
+                 collision_checker_list: list, joint_order: list,
+                 constraint_functions=None):
         super(ValidityChecker, self).__init__(space_information)
         self.robot = robot
         self.collision_checker_list = collision_checker_list
         self.joint_order = joint_order
+        self.constraint_functions = constraint_functions
 
     def clearance(self, state: ob.State):
         """Computes the clearance of a given state using the refactored
@@ -191,29 +193,16 @@ class ValidityChecker(ob.StateValidityChecker):
         self.robot.reset_joint_position(
             dict(zip(self.joint_order, joint_positions)), True
         )
+        if self.constraint_functions is not None:
+            for constraint in self.constraint_functions:
+                if not constraint():
+                    return False
 
         for collision_checker in self.collision_checker_list:
             if not collision_checker.check_collision():
                 return False
 
-        # Uncomment the following lines if end-effector orientation checking is needed.
-        # if not self.check_endeffector_upright():
-        #     return False
-
         return True
-
-    def check_endeffector_upright(self):
-        """Checks if the robot's end-effector is upright within tolerance.
-
-        Returns:
-            bool: True if upright, False otherwise.
-        """
-        orientation = p.getEulerFromQuaternion(
-            self.robot.get_endeffector_pose()[1]
-        )
-        target = np.array([-np.pi / 2, 0, 0])
-        tol = np.array([0.3, 0.3, 2 * np.pi])
-        return np.all(np.abs(orientation - target) <= tol)
 
 
 class PathPlanner:
@@ -235,7 +224,7 @@ class PathPlanner:
     """
     def __init__(self, robot: RobotBase, collision_checker_list: list,
                  planner_name: str = "BITstar", selected_joint_names: set = None,
-                 objective: str = "PathLength"):
+                 objective: str = "PathLength", constraint_functions=None):
         self.robot = robot
         self.collision_checker_list = collision_checker_list
 
@@ -251,7 +240,8 @@ class PathPlanner:
         self.space_information = ob.SpaceInformation(self.space)
         self.validity_checker = ValidityChecker(self.space_information, robot,
                                                 collision_checker_list,
-                                                self.joint_order)
+                                                self.joint_order,
+                                                constraint_functions)
         self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()
 

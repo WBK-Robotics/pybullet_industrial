@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
 
     # Initialize PathPlanner with the clearance objective.
-    path_planner = pi.PathPlanner(robot, collision_checker, "BITstar")
+    path_planner = pi.PathPlanner(robot, [collision_checker], "BITstar")
 
     # Set up initial state (for Comau).
     inital_state = {
@@ -102,6 +102,6 @@ if __name__ == "__main__":
 
     # Create the GUI for motion planning.
     root = tk.Tk()
-    gui = PathPlannerGUI(root, robot, path_planner, collision_checker,
+    gui = PathPlannerGUI(root, robot, path_planner, [collision_checker],
                          obstacle)
     root.mainloop()

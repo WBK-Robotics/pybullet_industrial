@@ -7,7 +7,6 @@ import sys
 
 JOINT_INCREMENT = 0.1
 
-
 class PathPlannerGUI:
     """
     GUI for the Path Planner, allowing users to control joints, update
@@ -16,7 +15,7 @@ class PathPlannerGUI:
 
     def __init__(self, root, robot: pi.RobotBase,
                  path_planner: pi.PathPlanner,
-                 collision_checker: pi.CollisionChecker, obstacle):
+                 collision_checker_list: list, obstacle):
         """
         Initializes the PathPlanner GUI.
 
@@ -24,14 +23,14 @@ class PathPlannerGUI:
             root (tk.Tk): The root Tkinter window.
             robot: The robot instance from PyBullet Industrial.
             path_planner: The PathPlanner instance for motion planning.
-            collision_checker: The CollisionChecker instance for collision
+            collision_checker_list (list): List of CollisionChecker objects for collision
                 management.
             obstacle: The obstacle to manipulate.
         """
         self.root = root
         self.robot = robot
         self.path_planner = path_planner
-        self.collision_checker = collision_checker
+        self.collision_checker_list = collision_checker_list
         self.obstacle = obstacle
         self.start = self.robot.get_joint_state()  # Start config.
         self.goal = self.robot.get_joint_state()   # Goal config.
@@ -123,10 +122,10 @@ class PathPlannerGUI:
         """
         Updates the collision status indicator.
         """
-        if self.collision_checker.check_collision():
-            self.collision_status.set("green")
-        else:
-            self.collision_status.set("red")
+        # Check all collision checkers. The state is valid (no collision)
+        # only if all collision checkers report no collision.
+        valid = all(cc.check_collision() for cc in self.collision_checker_list)
+        self.collision_status.set("green" if valid else "red")
         self.collision_light.config(bg=self.collision_status.get())
 
     def shrink_obstacle(self):
@@ -225,7 +224,8 @@ class PathPlannerGUI:
         print("Goal configuration set:", self.goal)
 
     def set_allowed_collision(self):
-        self.collision_checker.set_safe_state()
+        for cc in self.collision_checker_list:
+            cc.set_safe_state()
         print("Allowed collisions set.")
         self.update_status()
 

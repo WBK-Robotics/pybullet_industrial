@@ -141,23 +141,22 @@ class ValidityChecker(ob.StateValidityChecker):
     Args:
         space_information (ob.SpaceInformation): The state space information.
         robot (RobotBase): The robot instance.
-        collision_checker (CollisionChecker): Checks for collisions.
+        collision_checker_list (list): List of CollisionChecker objects to check for collisions.
         joint_order (list): List of joint names corresponding to the state.
     """
     def __init__(self, space_information: ob.SpaceInformation, robot: RobotBase,
-                 collision_checker: CollisionChecker, joint_order: list):
+                 collision_checker_list: list, joint_order: list):
         super(ValidityChecker, self).__init__(space_information)
         self.robot = robot
-        self.collision_checker = collision_checker
+        self.collision_checker_list = collision_checker_list
         self.joint_order = joint_order
 
     def clearance(self, state: ob.State):
         """Computes the clearance of a given state using the refactored
-        collision checker.
+        collision checkers.
 
-        The robot is reset to the state provided and the collision checker's
-        get_max_distance() is used to obtain the minimum distance (clearance)
-        from obstacles.
+        The robot is reset to the state provided and each collision checker in
+        the list is used to obtain a clearance. The minimum clearance is returned.
 
         Args:
             state (ob.State): The state for which to compute clearance.
@@ -167,10 +166,10 @@ class ValidityChecker(ob.StateValidityChecker):
         """
         # Extract joint positions and reset the robot.
         joint_positions = [state[i] for i, _ in enumerate(self.joint_order)]
-        self.robot.reset_joint_position(dict(zip(self.joint_order,
-                                                 joint_positions)), True)
-        # Use the refactored collision checker to obtain the clearance.
-        return self.collision_checker.get_max_distance()
+        self.robot.reset_joint_position(dict(zip(self.joint_order, joint_positions)), True)
+        # Gather clearances from all collision checkers; the overall clearance is the minimum.
+        clearances = [cc.get_max_distance() for cc in self.collision_checker_list]
+        return min(clearances)
 
     def isValid(self, state: ob.State):
         """Checks if the provided state is valid.
@@ -190,9 +189,11 @@ class ValidityChecker(ob.StateValidityChecker):
             dict(zip(self.joint_order, joint_positions)), True
         )
 
-        if not self.collision_checker.check_collision():
-            return False
+        for collision_checker in self.collision_checker_list:
+            if not collision_checker.check_collision():
+                return False
 
+        # Uncomment the following lines if end-effector orientation checking is needed.
         # if not self.check_endeffector_upright():
         #     return False
 
@@ -221,7 +222,7 @@ class PathPlanner:
 
     Args:
         robot (RobotBase): The robot instance for which to plan.
-        collision_checker (CollisionChecker): Object to check for collisions.
+        collision_checker_list (list): List of CollisionChecker objects to check for collisions.
         planner_name (str, optional): The planner to use (e.g., "BITstar").
             Defaults to "BITstar".
         selected_joint_names (set, optional): Set of joint names to include.
@@ -229,11 +230,11 @@ class PathPlanner:
         objective (str, optional): The optimization objective (e.g.,
             "PathLength"). Defaults to "PathLength".
     """
-    def __init__(self, robot: RobotBase, collision_checker: CollisionChecker,
+    def __init__(self, robot: RobotBase, collision_checker_list: list,
                  planner_name: str = "BITstar", selected_joint_names: set = None,
                  objective: str = "PathLength"):
         self.robot = robot
-        self.collision_checker = collision_checker
+        self.collision_checker_list = collision_checker_list
 
         # Determine the joint order from the robot.
         self.joint_order = robot.get_moveable_joints(selected_joint_names)[0]
@@ -246,7 +247,7 @@ class PathPlanner:
         # Set up OMPL space information and validity checking.
         self.space_information = ob.SpaceInformation(self.space)
         self.validity_checker = ValidityChecker(self.space_information, robot,
-                                                collision_checker,
+                                                collision_checker_list,
                                                 self.joint_order)
         self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()

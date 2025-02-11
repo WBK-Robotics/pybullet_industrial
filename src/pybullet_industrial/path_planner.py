@@ -114,11 +114,11 @@ class ClearanceObjective(ob.StateCostIntegralObjective):
         si (ob.SpaceInformation): The space information for the planning
             problem.
     """
-    def __init__(self, si: ob.SpaceInformation, robot: RobotBase, collision_checker_list: list, state_cost_function=None):
+    def __init__(self, si: ob.SpaceInformation, robot: RobotBase,
+                 state_cost_function=None):
         super(ClearanceObjective, self).__init__(si, True)
         self.si_ = si
         self.robot = robot
-        self.collision_checker_list = collision_checker_list
         self.joint_order = robot.get_moveable_joints()[0]
         self.state_cost_function = state_cost_function
 
@@ -258,7 +258,8 @@ class PathPlanner:
             ob.OptimizationObjective: The allocated objective.
         """
         if objectiveType.lower() == "pathclearance":
-            return ClearanceObjective(self.space_information, self.robot, self.collision_checker_list, self.state_cost_function)
+            return ClearanceObjective(self.space_information, self.robot,
+                                      self.state_cost_function)
         elif objectiveType.lower() == "pathlength":
             return ob.PathLengthOptimizationObjective(
                 self.space_information

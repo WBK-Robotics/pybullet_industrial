@@ -35,7 +35,7 @@ def stateCost(collision_checker_list):
 
     state_cost = [cc.get_min_body_distance(bodyA=0, bodyB=1, distance=1) for cc in collision_checker_list]
 
-    return min(state_cost)
+    return float(min(state_cost))
 
 
 def seting_up_enviroment():

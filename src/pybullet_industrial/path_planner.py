@@ -6,7 +6,6 @@ from pybullet_industrial import (
     CollisionChecker, RobotBase, JointPath
 )
 import numpy as np
-import pybullet as p
 
 # Global constant for continuous joint bounds.
 CONTINUOUS_JOINT_BOUNDS = 3 * np.pi
@@ -28,7 +27,7 @@ class SamplingSpace(ob.SpaceInformation):
       - If a joint limit is infinite, the joint is treated as
         continuous with bounds:
         [-CONTINUOUS_JOINT_BOUNDS, CONTINUOUS_JOINT_BOUNDS].
-      - Otherwise, a small margin (±0.1) is added to the limits.
+      - Otherwise, the limits are set to the joint limits.
 
     Args:
         robot (RobotBase): The robot model with joint and kinematic info.
@@ -42,12 +41,11 @@ class SamplingSpace(ob.SpaceInformation):
         )
         self.robot = robot
         # Build the state space using joint limits.
-        space = self.build_realvector_space(lower_limit, upper_limit)
+        space = self.build_space(lower_limit, upper_limit)
         # Initialize the base class with the created state space.
         super().__init__(space)
 
-    def build_realvector_space(self, lower_limit: dict,
-                               upper_limit: dict):
+    def build_space(self, lower_limit: dict, upper_limit: dict):
         """
         Constructs a RealVectorStateSpace with appropriate bounds for
         each joint.
@@ -55,7 +53,7 @@ class SamplingSpace(ob.SpaceInformation):
         For each joint:
           - If either limit is infinite, the bounds are set to
             [-CONTINUOUS_JOINT_BOUNDS, CONTINUOUS_JOINT_BOUNDS].
-          - Otherwise, the limits are expanded by ±0.1.
+          - Otherwise, the joint limits are used directly.
 
         Args:
             lower_limit (dict): Lower limits for joints.
@@ -67,18 +65,17 @@ class SamplingSpace(ob.SpaceInformation):
         num_dims = len(self.joint_order)
         bounds = ob.RealVectorBounds(num_dims)
         for i, joint in enumerate(self.joint_order):
-            if np.isinf(lower_limit[joint]) or \
-               np.isinf(upper_limit[joint]):
+            if np.isinf(lower_limit[joint]) or np.isinf(upper_limit[joint]):
                 bounds.setLow(i, -CONTINUOUS_JOINT_BOUNDS)
                 bounds.setHigh(i, CONTINUOUS_JOINT_BOUNDS)
             else:
-                bounds.setLow(i, lower_limit[joint] - 0.1)
-                bounds.setHigh(i, upper_limit[joint] + 0.1)
+                bounds.setLow(i, lower_limit[joint])
+                bounds.setHigh(i, upper_limit[joint])
         space = ob.RealVectorStateSpace(num_dims)
         space.setBounds(bounds)
         return space
 
-    def realvector_state_to_list(self, state: ob.State):
+    def state_to_list(self, state: ob.State):
         """
         Converts an OMPL RealVector state to a list of joint values.
 
@@ -99,9 +96,7 @@ class SamplingSpace(ob.SpaceInformation):
         Args:
             state (ob.State): The state with joint values.
         """
-        joint_positions = [
-            state[i] for i, _ in enumerate(self.joint_order)
-        ]
+        joint_positions = self.state_to_list(state)
         self.robot.reset_joint_position(
             dict(zip(self.joint_order, joint_positions)), True
         )
@@ -117,24 +112,15 @@ class SamplingSpace(ob.SpaceInformation):
         Returns:
             tuple(ob.State, ob.State): The start and goal states.
         """
-        s = ob.State(self.getStateSpace())
-        g = ob.State(self.getStateSpace())
+        start_state = ob.State(self.getStateSpace())
+        goal_state = ob.State(self.getStateSpace())
         for i, joint in enumerate(self.joint_order):
-            s[i] = start[joint]
-            g[i] = goal[joint]
-        return s, g
-
-    def get_space(self):
-        """
-        Returns the state space (a RealVectorStateSpace).
-
-        Returns:
-            ob.StateSpace: The state space used for planning.
-        """
-        return self.getStateSpace()
+            start_state[i] = start[joint]
+            goal_state[i] = goal[joint]
+        return start_state, goal_state
 
 
-class ClearanceObjective(ob.StateCostIntegralObjective):
+class StateCostObjective(ob.StateCostIntegralObjective):
     """
     An optimization objective that encourages paths with high
     clearance from obstacles.
@@ -152,7 +138,7 @@ class ClearanceObjective(ob.StateCostIntegralObjective):
     def __init__(self, si: ob.SpaceInformation,
                  sampling_space: SamplingSpace,
                  state_cost_functions=None):
-        super(ClearanceObjective, self).__init__(si, True)
+        super(StateCostObjective, self).__init__(si, True)
         self.sampling_space = sampling_space
         self.state_cost_functions = state_cost_functions
 
@@ -300,7 +286,7 @@ class PathPlanner:
             ob.OptimizationObjective: The configured objective.
         """
         if objectiveType.lower() == "pathclearance":
-            return ClearanceObjective(
+            return StateCostObjective(
                 self.sampling_space, self.sampling_space,
                 state_cost_functions
             )
@@ -314,12 +300,11 @@ class PathPlanner:
             )
             obj.setCostThreshold(ob.Cost(1.51))
             return obj
-        elif objectiveType.lower() == \
-             "weightedlengthandclearancecombo":
+        elif objectiveType.lower() == "weightedlengthandclearancecombo":
             length_obj = ob.PathLengthOptimizationObjective(
                 self.sampling_space
             )
-            clear_obj = ClearanceObjective(
+            clear_obj = StateCostObjective(
                 self.sampling_space, self.sampling_space,
                 state_cost_functions
             )
@@ -395,8 +380,8 @@ class PathPlanner:
         """
         self.problem_definition.clearSolutionPaths()
         orig_state = start
-        s, g = self.sampling_space.set_start_goal_states(start, goal)
-        self.problem_definition.setStartAndGoalStates(s, g)
+        start_state, goal_state = self.sampling_space.set_start_goal_states(start, goal)
+        self.problem_definition.setStartAndGoalStates(start_state, goal_state)
 
         self.planner.setProblemDefinition(self.problem_definition)
         self.planner.clear()
@@ -411,7 +396,7 @@ class PathPlanner:
             sol_path.interpolate(INTERPOLATE_NUM)
             states = sol_path.getStates()
             path_list = np.array([
-                self.sampling_space.realvector_state_to_list(st)
+                self.sampling_space.state_to_list(st)
                 for st in states
             ])
             joint_path = JointPath(

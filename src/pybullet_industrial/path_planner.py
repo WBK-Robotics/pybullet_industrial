@@ -134,12 +134,9 @@ class ClearanceObjective(ob.StateCostIntegralObjective):
             compute additional state costs.
     """
 
-    def __init__(self, si: ob.SpaceInformation,
-                 sampling_space: SamplingSpace,
-                 state_cost_function=None):
+    def __init__(self, si: ob.SpaceInformation):
         super(ClearanceObjective, self).__init__(si, True)
-        self.sampling_space = sampling_space
-        self.state_cost_function = state_cost_function
+        self.si_ = si
 
     def stateCost(self, state: ob.State):
         """Computes the cost of a state based on its clearance.
@@ -151,13 +148,9 @@ class ClearanceObjective(ob.StateCostIntegralObjective):
             ob.Cost: The computed cost.
         """
         # Update the robot's joint positions to match the state.
-        self.sampling_space.set_state(state)
-        total_cost = 0
-        # Sum cost contributions from all state cost functions.
-        for state_cost in self.state_cost_function:
-            total_cost += state_cost()
 
-        return ob.Cost(1 / (total_cost + sys.float_info.min))
+        return ob.Cost(1 / (
+            self.si_.getStateValidityChecker().get_state_cost(state) + sys.float_info.min))
 
 
 class ValidityChecker(ob.StateValidityChecker):
@@ -178,11 +171,21 @@ class ValidityChecker(ob.StateValidityChecker):
     def __init__(self, space_information: ob.SpaceInformation,
                  sampling_space: SamplingSpace,
                  collision_checker_list: list,
-                 constraint_functions=None):
+                 constraint_functions=None,
+                 state_cost_function=None):
         super(ValidityChecker, self).__init__(space_information)
         self.sampling_space = sampling_space
         self.collision_checker_list = collision_checker_list
         self.constraint_functions = constraint_functions
+        self.state_cost_function = state_cost_function
+
+    def get_state_cost(self, state: ob.State):
+        self.sampling_space.set_state(state)
+        total_cost = 0
+        # Sum cost contributions from all state cost functions.
+        for state_cost in self.state_cost_function:
+            total_cost += state_cost()
+        return total_cost
 
     def isValid(self, state: ob.State):
         """Determines whether the given state is valid.
@@ -233,8 +236,7 @@ class PathPlanner:
     def __init__(self, robot: RobotBase, collision_checker_list: list,
                  planner_name: str = "BITstar",
                  objective: str = "PathLength", constraint_functions=None,
-                 state_cost=None):
-        self.state_cost_function = state_cost
+                 state_cost_functions=None):
         self.robot = robot
         self.collision_checker_list = collision_checker_list
 
@@ -249,7 +251,8 @@ class PathPlanner:
             self.space_information,
             self.sampling_space,
             collision_checker_list,
-            constraint_functions
+            constraint_functions,
+            state_cost_functions
         )
         self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()
@@ -273,9 +276,7 @@ class PathPlanner:
             ob.OptimizationObjective: The allocated objective.
         """
         if objectiveType.lower() == "pathclearance":
-            return ClearanceObjective(self.space_information,
-                                      self.sampling_space,
-                                      self.state_cost_function)
+            return ClearanceObjective(self.space_information)
         elif objectiveType.lower() == "pathlength":
             return ob.PathLengthOptimizationObjective(
                 self.space_information
@@ -291,8 +292,7 @@ class PathPlanner:
                 self.space_information
             )
             clear_obj = ClearanceObjective(self.space_information,
-                                           self.sampling_space,
-                                           self.state_cost_function)
+                                           self.sampling_space)
             opt = ob.MultiOptimizationObjective(self.space_information)
             opt.addObjective(length_obj, 5.0)
             opt.addObjective(clear_obj, 1.0)

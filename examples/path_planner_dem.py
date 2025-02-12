@@ -122,7 +122,7 @@ if __name__ == "__main__":
                                   planner_name="BITstar",
                                   objective="pathclearance",
                                   constraint_functions=constraint_functions,
-                                  state_cost=state_cost,)
+                                  state_cost_functions=state_cost,)
 
     # Set up initial state (for Comau).
     inital_state = {

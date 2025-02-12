@@ -23,6 +23,7 @@ def check_endeffector_upright(robot: pi.RobotBase):
     tol = np.array([0.3, 0.3, 2 * np.pi])
     return np.all(np.abs(orientation - target) <= tol)
 
+
 def stateCost(collision_checker_list):
     """Computes the cost of a state based on its clearance.
 

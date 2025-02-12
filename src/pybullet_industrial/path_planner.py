@@ -258,13 +258,13 @@ class PathPlanner:
             self.sampling_space
         )
         self.problem_definition.setOptimizationObjective(
-            self.allocateObjective(objective, state_cost_functions)
+            self.allocate_objective(objective, state_cost_functions)
         )
 
         # Allocate the planner based on the given planner name.
-        self.planner = self.allocatePlanner(planner_name)
+        self.planner = self.allocate_planner(planner_name)
 
-    def allocateObjective(self, objectiveType: str,
+    def allocate_objective(self, objectiveType: str,
                           state_cost_functions=None):
         """
         Allocates an optimization objective based on the type.
@@ -319,7 +319,7 @@ class PathPlanner:
                 "The specified optimization objective is not implemented."
             )
 
-    def allocatePlanner(self, plannerType: str):
+    def allocate_planner(self, plannerType: str):
         """
         Allocates and returns a planner based on the specified type.
 

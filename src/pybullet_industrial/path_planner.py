@@ -178,11 +178,11 @@ class ValidityChecker(ob.StateValidityChecker):
     """
     def __init__(self, space_information: ob.SpaceInformation,
                  sampling_space: SamplingSpace,
-                 collision_checker_list: list,
+                 collision_check_fucntions: list,
                  constraint_functions=None):
         super(ValidityChecker, self).__init__(space_information)
         self.sampling_space = sampling_space
-        self.collision_checker_list = collision_checker_list
+        self.collision_check_functions = collision_check_fucntions
         self.constraint_functions = constraint_functions
 
     def isValid(self, state: ob.State):
@@ -203,8 +203,8 @@ class ValidityChecker(ob.StateValidityChecker):
             for constraint in self.constraint_functions:
                 if not constraint():
                     return False
-        for collision_checker in self.collision_checker_list:
-            if not collision_checker.check_collision():
+        for collision_check in self.collision_check_functions:
+            if not collision_check():
                 return False
         return True
 
@@ -231,14 +231,14 @@ class PathPlanner:
             compute extra state costs.
     """
     def __init__(self, robot: RobotBase,
-                 collision_checker_list: list,
+                 collision_check_functions: list,
                  planner_name: str = "BITstar",
                  objective: str = "PathLength",
                  constraint_functions=None,
                  state_cost_functions=None):
 
         self.robot = robot
-        self.collision_checker_list = collision_checker_list
+        self.collision_checker_list = collision_check_functions
 
         # Create a state space that also acts as space information.
         self.sampling_space = SamplingSpace(robot)
@@ -246,7 +246,7 @@ class PathPlanner:
         # Set up and attach a validity checker.
         self.validity_checker = ValidityChecker(
             self.sampling_space, self.sampling_space,
-            collision_checker_list, constraint_functions
+            collision_check_functions, constraint_functions
         )
         self.sampling_space.setStateValidityChecker(
             self.validity_checker

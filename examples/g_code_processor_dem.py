@@ -3,6 +3,16 @@ import pybullet as p
 import pybullet_data
 import pybullet_industrial as pi
 import numpy as np
+import time
+
+
+def step_simulation_helper(iterations: int):
+    for _ in range(iterations):
+        p.stepSimulation()
+
+
+def step_simulation(iterations: int = 1):
+    return step_simulation_helper(iterations)
 
 
 def actuate_gripper(gripper: pi.Gripper, val: int):
@@ -16,6 +26,20 @@ def couple_endeffector(gripper: pi.Gripper, robot: pi.RobotBase, link: chr):
 def decouple_endeffector(gripper: pi.Gripper):
     return gripper.decouple()
 
+
+def add_box(box_pos, half_box_size):
+    """
+    Adds a box-shaped obstacle to the simulation.
+    """
+    colBoxId = p.createCollisionShape(
+        p.GEOM_BOX, halfExtents=half_box_size)
+    box_id = p.createMultiBody(
+        baseMass=0,
+        baseCollisionShapeIndex=colBoxId,
+        basePosition=box_pos,
+        baseOrientation=p.getQuaternionFromEuler([0, -np.pi/2, 0])
+    )
+    return box_id
 
 if __name__ == "__main__":
 
@@ -41,6 +65,7 @@ if __name__ == "__main__":
 
     test_robot = pi.RobotBase(urdf_file1, [0, 0, 0], [0, 0, 0, 1])
 
+
     test_robot.set_joint_position(({'q2': np.deg2rad(-15.0),
                                   'q3': np.deg2rad(-90.0)}))
     for _ in range(100):
@@ -51,8 +76,11 @@ if __name__ == "__main__":
     endeffector_list = []
     endeffector_list.append(test_gripper)
 
+    obstacle = add_box([2.7, -0.5, 2], [0.2, 0.2, 0.05])
+
     # M-Commands have to be added in this convention
     m_commands = {
+        "0": [lambda: step_simulation(200)],
         "10": [lambda: actuate_gripper(test_gripper, 1)],
         "11": [lambda: actuate_gripper(test_gripper, 0)]
     }
@@ -72,19 +100,23 @@ if __name__ == "__main__":
     demonstration_object = pi.GCodeProcessor(gcode_input, test_robot,
                                              endeffector_list,
                                              m_commands, t_commands)
-    collision_checker = pi.CollisionChecker(max_distance_external=0.1)
-    collision_checker.set_safe_state()
-    collision = collision_checker.check_collision()
+    robot_collision_checker = pi.CollisionChecker(ignored_urdf_ids=[3,4])
+    gripper_collision_checker = pi.CollisionChecker()
+    gripper_collision_checker.enable_internal_collision = False
+    robot_collision_checker.set_safe_state()
+    collision = robot_collision_checker.check_collision()
 
     # Create an iterator from the demonstration object
     demonstration_iterator = iter(demonstration_object)
 
     # Iterate over the demonstration object
-    for _ in demonstration_iterator:
+    for g_code in demonstration_iterator:
         # Execute the simulation steps
-        for _ in range(200):
-            p.stepSimulation()
-        collision_free = collision_checker.check_collision()
+        for _ in range(1):
+            time.sleep(0.05)
+        collision_free = robot_collision_checker.check_collision()
         if not collision_free:
-            print("Collision detected")
-            break
+            collision_free = gripper_collision_checker.check_collision()
+            if not collision_free:
+                print("Collision detected")
+                break

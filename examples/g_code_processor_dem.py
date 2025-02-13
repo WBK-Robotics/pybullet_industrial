@@ -72,6 +72,9 @@ if __name__ == "__main__":
     demonstration_object = pi.GCodeProcessor(gcode_input, test_robot,
                                              endeffector_list,
                                              m_commands, t_commands)
+    collision_checker = pi.CollisionChecker(max_distance_external=0.1)
+    collision_checker.set_safe_state()
+    collision = collision_checker.check_collision()
 
     # Create an iterator from the demonstration object
     demonstration_iterator = iter(demonstration_object)
@@ -81,3 +84,7 @@ if __name__ == "__main__":
         # Execute the simulation steps
         for _ in range(200):
             p.stepSimulation()
+        collision_free = collision_checker.check_collision()
+        if not collision_free:
+            print("Collision detected")
+            break

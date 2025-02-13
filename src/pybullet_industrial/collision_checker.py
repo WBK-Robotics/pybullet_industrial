@@ -23,7 +23,9 @@ class CollisionChecker:
     def __init__(self, ignored_urdf_ids: list = [],
                  ignored_internal_collisions: list = [],
                  ignored_external_collisions: list = [],
-                 max_distance_external: float = 0.0):
+                 max_distance_external: float = 0.0,
+                 enable_internal_collision: bool = True,
+                 enable_external_collision: bool = True):
         """
         Initializes CollisionChecker by collecting collision data from all
         bodies in the simulation (except those in ignored_urdf_ids) and
@@ -45,6 +47,8 @@ class CollisionChecker:
         self.ignored_external_collisions = ignored_external_collisions
         self.internal_collision_pairs = []
         self.external_collision_pairs = []
+        self.enable_internal_collision = enable_internal_collision
+        self.enable_external_collision = enable_external_collision
         self.update_internal_collision_pairs()
         self.update_external_collision_pairs()
 
@@ -149,8 +153,13 @@ class CollisionChecker:
             bool: True if no collisions are detected, False if at least one is
             found.
         """
-        return (self.check_internal_collisions() and
-                self.check_external_collisions())
+        if self.enable_internal_collision:
+            if not self.check_internal_collisions():
+                return False
+        if self.enable_external_collision:
+            if not self.check_external_collisions():
+                return False
+        return True
 
     def check_internal_collisions(self) -> bool:
         """
@@ -159,12 +168,13 @@ class CollisionChecker:
         Returns:
             bool: True if no internal collisions are detected, False otherwise.
         """
-        for urdf_id, pairs in self.internal_collision_pairs:
-            for linkA, linkB in pairs:
-                if CollisionChecker.simple_collision(
-                        urdf_id, urdf_id, MAX_DISTANCE_INTERNAL,
-                        linkA, linkB):
-                    return False
+        if self.enable_internal_collision:
+            for urdf_id, pairs in self.internal_collision_pairs:
+                for linkA, linkB in pairs:
+                    if CollisionChecker.simple_collision(
+                            urdf_id, urdf_id, MAX_DISTANCE_INTERNAL,
+                            linkA, linkB):
+                        return False
         return True
 
     def check_external_collisions(self):
@@ -174,12 +184,13 @@ class CollisionChecker:
         Returns:
             bool: True if no external collisions are detected, False otherwise.
         """
-        for (bodyA, bodyB), link_pairs in self.external_collision_pairs:
-            for linkA, linkB in link_pairs:
-                if CollisionChecker.simple_collision(
-                        bodyA, bodyB, self.max_distance_external,
-                        linkA, linkB):
-                    return False
+        if self.enable_external_collision:
+            for (bodyA, bodyB), link_pairs in self.external_collision_pairs:
+                for linkA, linkB in link_pairs:
+                    if CollisionChecker.simple_collision(
+                            bodyA, bodyB, self.max_distance_external,
+                            linkA, linkB):
+                        return False
         return True
 
     def get_internal_collisions(self):

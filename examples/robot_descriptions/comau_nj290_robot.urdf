@@ -219,13 +219,6 @@
 		</visual>
 	</link>
 
-	<!-- <joint name="q1" type="continuous">
-    <parent link="link0_passive"/>
-    <child link="link1"/>
-    <origin xyz="0 0 1.14" rpy="0 0 0"/>
-    <axis xyz="0 0 1"/>
-	</joint> -->
-
 	<joint name="q1" type="revolute">
 		<parent link="link0_passive"/>
 		<child link="link1"/>

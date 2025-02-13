@@ -32,7 +32,6 @@ class GCodeProcessor:
                  endeffector_list: list = None,
                  m_commands: dict = None,
                  t_commands: dict = None,
-                 selected_joint_names: set = None,
                  offset: np.array = np.array([[0.0, 0.0, 0.0],
                                               [0.0, 0.0, 0.0]]),
                  axis: int = 2, interpolation_precision: int = 0.01,
@@ -57,7 +56,7 @@ class GCodeProcessor:
         self.interpolation_approach = interpolation_approach
         self.m_commands = m_commands
         self.t_commands = t_commands
-        self.joint_order = robot.get_joint_order(selected_joint_names)
+        self.joint_order = robot.get_moveable_joints()[0]
 
         # Setting the default G-commands
         self.g_commands = {

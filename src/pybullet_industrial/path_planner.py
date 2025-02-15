@@ -188,6 +188,49 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         return ob.Cost(1 / (total_cost + sys.float_info.min))
 
 
+class RobotPlanner(ob.Planner):
+    """
+    A wrapper for OMPL planners. This class selects and wraps an OMPL planner based on the given type.
+    """
+    def __init__(self, si: RobotSpaceInformation, plannerType: str):
+        # Initialize the base ob.Planner with the space information and a name.
+        super().__init__(si, plannerType)
+        self.si = si
+        self.planner = self._allocate_planner(plannerType)
+
+    def _allocate_planner(self, plannerType: str):
+        if plannerType.lower() == "bfmtstar":
+            return og.BFMT(self.si)
+        elif plannerType.lower() == "bitstar":
+            return og.BITstar(self.si)
+        elif plannerType.lower() == "fmtstar":
+            return og.FMT(self.si)
+        elif plannerType.lower() == "informedrrtstar":
+            return og.InformedRRTstar(self.si)
+        elif plannerType.lower() == "prmstar":
+            return og.PRMstar(self.si)
+        elif plannerType.lower() == "rrtstar":
+            return og.RRTstar(self.si)
+        elif plannerType.lower() == "sorrtstar":
+            return og.SORRTstar(self.si)
+        else:
+            ou.OMPL_ERROR("The specified planner type is not implemented.")
+            return None
+
+    # Delegate planner methods to the internal planner instance.
+    def setProblemDefinition(self, pdef: ob.ProblemDefinition):
+        self.planner.setProblemDefinition(pdef)
+
+    def clear(self):
+        self.planner.clear()
+
+    def setup(self):
+        self.planner.setup()
+
+    def solve(self, allowed_time: float):
+        return self.planner.solve(allowed_time)
+
+
 class PathPlanner:
     """
     Sets up the planning problem using the robot-specific classes.
@@ -224,26 +267,8 @@ class PathPlanner:
         )
         self.problem_definition.setOptimizationObjective(optimization_objective)
 
-        # Allocate the planner.
-        self.planner = self.allocate_planner(planner_name)
-
-    def allocate_planner(self, plannerType: str):
-        if plannerType.lower() == "bfmtstar":
-            return og.BFMT(self.space_information)
-        elif plannerType.lower() == "bitstar":
-            return og.BITstar(self.space_information)
-        elif plannerType.lower() == "fmtstar":
-            return og.FMT(self.space_information)
-        elif plannerType.lower() == "informedrrtstar":
-            return og.InformedRRTstar(self.space_information)
-        elif plannerType.lower() == "prmstar":
-            return og.PRMstar(self.space_information)
-        elif plannerType.lower() == "rrtstar":
-            return og.RRTstar(self.space_information)
-        elif plannerType.lower() == "sorrtstar":
-            return og.SORRTstar(self.space_information)
-        else:
-            ou.OMPL_ERROR("The specified planner type is not implemented.")
+        # Allocate the planner using the new RobotPlanner class.
+        self.planner = RobotPlanner(self.space_information, planner_name)
 
     def plan_start_goal(self, start: dict, goal: dict, allowed_time: float = DEFAULT_PLANNING_TIME):
         """

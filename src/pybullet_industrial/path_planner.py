@@ -126,24 +126,65 @@ class RobotProblemDefinition(ob.ProblemDefinition):
         self.setStartAndGoalStates(start_state, goal_state)
 
 
-class StateCostObjective(ob.StateCostIntegralObjective):
+class RobotOptimizationObjective(ob.OptimizationObjective):
+    """
+    A factory class for creating robot-specific optimization objectives.
+    This class inherits from ob.OptimizationObjective and provides a common
+    interface for creating various objective types.
+    """
+    def __init__(self, si: RobotSpaceInformation):
+        super().__init__(si)
+        self.si = si
+
+    @classmethod
+    def create(cls, si: RobotSpaceInformation, objectiveType: str, state_cost_functions=None):
+        """
+        Factory method to create an optimization objective based on the specified type.
+
+        Available objective types (case-insensitive):
+          - "pathclearance": uses a robot-specific clearance objective.
+          - "pathlength": uses OMPL's PathLengthOptimizationObjective.
+          - "thresholdpathlength": a PathLength objective with a cost threshold.
+          - "weightedlengthandclearancecombo": a multi-objective combining length and clearance.
+        """
+        if objectiveType.lower() == "pathclearance":
+            return RobotPathClearanceObjective(si, state_cost_functions)
+        elif objectiveType.lower() == "pathlength":
+            return ob.PathLengthOptimizationObjective(si)
+        elif objectiveType.lower() == "thresholdpathlength":
+            obj = ob.PathLengthOptimizationObjective(si)
+            obj.setCostThreshold(ob.Cost(1.51))
+            return obj
+        elif objectiveType.lower() == "weightedlengthandclearancecombo":
+            length_obj = ob.PathLengthOptimizationObjective(si)
+            clear_obj = RobotPathClearanceObjective(si, state_cost_functions)
+            opt = ob.MultiOptimizationObjective(si)
+            opt.addObjective(length_obj, 5.0)
+            opt.addObjective(clear_obj, 1.0)
+            return opt
+        else:
+            ou.OMPL_ERROR("The specified optimization objective is not implemented.")
+            return None
+
+
+class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
     """
     An optimization objective that encourages paths with high clearance.
     It uses user-provided cost functions and returns a cost that is the reciprocal
     of the accumulated cost (with a small constant added to avoid division by zero).
     """
-    def __init__(self, space_information: RobotSpaceInformation,
-                 state_cost_functions=None):
-        super().__init__(space_information, True)
-        self.space_information = space_information
+    def __init__(self, si: RobotSpaceInformation, state_cost_functions=None):
+        super().__init__(si, True)
+        self.si = si
         self.state_cost_functions = state_cost_functions
 
     def stateCost(self, state: ob.State):
-        self.space_information.set_state(state)
+        self.si.set_state(state)
         total_cost = 0
         if self.state_cost_functions:
             for state_cost in self.state_cost_functions:
                 total_cost += state_cost()
+        # Return reciprocal cost (adding a small constant to avoid division by zero)
         return ob.Cost(1 / (total_cost + sys.float_info.min))
 
 
@@ -177,31 +218,14 @@ class PathPlanner:
 
         # Define the planning problem with the custom problem definition.
         self.problem_definition = RobotProblemDefinition(self.space_information)
-        self.problem_definition.setOptimizationObjective(
-            self.allocate_objective(objective, state_cost_functions)
+        # Create the optimization objective using the new factory.
+        optimization_objective = RobotOptimizationObjective.create(
+            self.space_information, objective, state_cost_functions
         )
+        self.problem_definition.setOptimizationObjective(optimization_objective)
 
         # Allocate the planner.
         self.planner = self.allocate_planner(planner_name)
-
-    def allocate_objective(self, objectiveType: str, state_cost_functions=None):
-        if objectiveType.lower() == "pathclearance":
-            return StateCostObjective(self.space_information, state_cost_functions)
-        elif objectiveType.lower() == "pathlength":
-            return ob.PathLengthOptimizationObjective(self.space_information)
-        elif objectiveType.lower() == "thresholdpathlength":
-            obj = ob.PathLengthOptimizationObjective(self.space_information)
-            obj.setCostThreshold(ob.Cost(1.51))
-            return obj
-        elif objectiveType.lower() == "weightedlengthandclearancecombo":
-            length_obj = ob.PathLengthOptimizationObjective(self.space_information)
-            clear_obj = StateCostObjective(self.space_information, state_cost_functions)
-            opt = ob.MultiOptimizationObjective(self.space_information)
-            opt.addObjective(length_obj, 5.0)
-            opt.addObjective(clear_obj, 1.0)
-            return opt
-        else:
-            ou.OMPL_ERROR("The specified optimization objective is not implemented.")
 
     def allocate_planner(self, plannerType: str):
         if plannerType.lower() == "bfmtstar":

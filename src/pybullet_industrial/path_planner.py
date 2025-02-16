@@ -101,7 +101,7 @@ class RobotSpaceInformation(ob.SpaceInformation):
         Returns:
             ob.State: The corresponding state object.
         """
-        state = self.allocState()
+        state = ob.State(self.state_space)
         for i, value in enumerate(joint_values):
             state[i] = value
         return state
@@ -401,7 +401,7 @@ class RobotPlanner(ob.Planner):
         return self.planner.solve(allowed_time)
 
 
-class PathPlanner:
+class PathPlanner(og.SimpleSetup):
     """
     Sets up the entire planning problem using robot-specific classes.
 
@@ -435,21 +435,24 @@ class PathPlanner:
         )
         self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()
+        super().__init__(self.space_information)
 
-        # Define the planning problem.
-        self.problem_definition = RobotProblemDefinition(
-            self.space_information
-        )
-        # Create the optimization objective.
-        optimization_objective = RobotOptimizationObjective.create(
-            self.space_information, objective, state_cost_functions
-        )
-        self.problem_definition.setOptimizationObjective(
-            optimization_objective
-        )
+
+        # # Define the planning problem.
+        # self.problem_definition = RobotProblemDefinition(
+        #     self.space_information
+        # )
+        # # Create the optimization objective.
+        # optimization_objective = RobotOptimizationObjective.create(
+        #     self.space_information, objective, state_cost_functions
+        # )
+        # self.problem_definition.setOptimizationObjective(
+        #     optimization_objective
+        # )
 
         # Allocate the planner.
         self.planner = RobotPlanner(self.space_information, planner_name)
+        self.setPlanner(self.planner)
 
     def plan_start_goal(self, start: dict, goal: dict,
                         allowed_time: float = DEFAULT_PLANNING_TIME):
@@ -467,20 +470,20 @@ class PathPlanner:
         Returns:
             tuple: (bool, JointPath) where bool indicates success.
         """
-        self.problem_definition.clearSolutionPaths()
+
         orig_state = start.copy()
-        self.problem_definition.setStartAndGoalStates(start, goal)
+        start = self.state_space.dict_to_list(start)
+        goal = self.state_space.dict_to_list(goal)
+        start_state = self.space_information.list_to_state(start)
+        goal_state = self.space_information.list_to_state(goal)
+        self.setStartAndGoalStates(start_state, goal_state)
 
-        self.planner.setProblemDefinition(self.problem_definition)
-        self.planner.clear()
-        self.planner.setup()
-
-        solved = self.planner.solve(allowed_time)
+        solved = self.solve(allowed_time)
         res = False
         joint_path = None
 
         if solved:
-            sol_path = self.problem_definition.getSolutionPath()
+            sol_path = self.getSolutionPath()
             sol_path.interpolate(INTERPOLATE_NUM)
             states = sol_path.getStates()
             path_list = np.array([

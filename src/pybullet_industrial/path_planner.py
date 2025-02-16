@@ -21,7 +21,7 @@ class RobotStateSpace(ob.RealVectorStateSpace):
     limit is infinite, ±CONTINUOUS_JOINT_BOUNDS is used.
 
     Args:
-        robot (RobotBase): The robot object providing joint information.
+        robot (RobotBase): The robot object providing joint info.
     """
     def __init__(self, robot: RobotBase):
         self.robot = robot
@@ -43,11 +43,35 @@ class RobotStateSpace(ob.RealVectorStateSpace):
                 bounds.setHigh(i, upper_limit[joint])
         self.setBounds(bounds)
 
+    def state_to_list(self, state: ob.State):
+        """
+        Converts an OMPL state into a list of joint values.
+
+        Args:
+            state (ob.State): The OMPL state.
+
+        Returns:
+            list: Joint values in the order defined by joint_order.
+        """
+        return [state[i] for i in range(len(self.joint_order))]
+
+    def dict_to_list(self, joint_dict: dict):
+        """
+        Converts a dictionary of joint values into an ordered list.
+
+        Args:
+            joint_dict (dict): Maps joint names to joint values.
+
+        Returns:
+            list: Joint values ordered as in joint_order.
+        """
+        return [joint_dict[joint] for joint in self.joint_order]
+
 
 class RobotSpaceInformation(ob.SpaceInformation):
     """
-    Wraps the RobotStateSpace to provide helper methods for state
-    conversion and updating the robot configuration.
+    Wraps the RobotStateSpace to provide helper methods for state conversion
+    and updating the robot configuration.
 
     Args:
         state_space (RobotStateSpace): The state space instance for the robot.
@@ -67,18 +91,6 @@ class RobotSpaceInformation(ob.SpaceInformation):
         """
         return self.state_space.allocState()
 
-    def state_to_list(self, state: ob.State):
-        """
-        Converts an OMPL state into a list of joint values.
-
-        Args:
-            state (ob.State): The OMPL state.
-
-        Returns:
-            list: Joint values in the order defined by joint_order.
-        """
-        return [state[i] for i in range(len(self.state_space.joint_order))]
-
     def list_to_state(self, joint_values: list):
         """
         Converts a list of joint values into an OMPL state.
@@ -94,18 +106,6 @@ class RobotSpaceInformation(ob.SpaceInformation):
             state[i] = value
         return state
 
-    def dict_to_list(self, joint_dict: dict):
-        """
-        Converts a dictionary of joint values into an ordered list.
-
-        Args:
-            joint_dict (dict): Maps joint names to joint values.
-
-        Returns:
-            list: Joint values ordered as in joint_order.
-        """
-        return [joint_dict[joint] for joint in self.state_space.joint_order]
-
     def set_state(self, state: ob.State):
         """
         Updates the robot's configuration based on the given state.
@@ -115,9 +115,10 @@ class RobotSpaceInformation(ob.SpaceInformation):
         Args:
             state (ob.State): The state used to update the robot.
         """
-        joint_positions = self.state_to_list(state)
+        joint_positions = self.state_space.state_to_list(state)
         self.robot.reset_joint_position(
-            dict(zip(self.state_space.joint_order, joint_positions)), True
+            dict(zip(self.state_space.joint_order, joint_positions)),
+            True
         )
 
     def setStateValidityChecker(self, validity_checker):
@@ -226,8 +227,9 @@ class RobotProblemDefinition(ob.ProblemDefinition):
             start (dict): Start joint configuration.
             goal (dict): Goal joint configuration.
         """
-        start_state_list = self.space_information.dict_to_list(start)
-        goal_state_list = self.space_information.dict_to_list(goal)
+        rss = self.space_information.state_space
+        start_state_list = rss.dict_to_list(start)
+        goal_state_list = rss.dict_to_list(goal)
         start_state = self.space_information.list_to_state(start_state_list)
         goal_state = self.space_information.list_to_state(goal_state_list)
         super().setStartAndGoalStates(start_state, goal_state)
@@ -442,7 +444,9 @@ class PathPlanner:
         optimization_objective = RobotOptimizationObjective.create(
             self.space_information, objective, state_cost_functions
         )
-        self.problem_definition.setOptimizationObjective(optimization_objective)
+        self.problem_definition.setOptimizationObjective(
+            optimization_objective
+        )
 
         # Allocate the planner.
         self.planner = RobotPlanner(self.space_information, planner_name)
@@ -480,7 +484,7 @@ class PathPlanner:
             sol_path.interpolate(INTERPOLATE_NUM)
             states = sol_path.getStates()
             path_list = np.array([
-                self.space_information.state_to_list(st)
+                self.space_information.state_space.state_to_list(st)
                 for st in states
             ])
             joint_path = JointPath(

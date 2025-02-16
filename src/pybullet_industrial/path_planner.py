@@ -15,15 +15,21 @@ DEFAULT_PLANNING_TIME = 5.0
 
 class RobotStateSpace(ob.RealVectorStateSpace):
     """
-    Constructs an OMPL RealVectorStateSpace from the robot's joint limits.
-    It computes the number of dimensions from the robot’s movable joints and
-    sets each bound. If a joint limit is infinite, it uses ±CONTINUOUS_JOINT_BOUNDS.
+    Constructs an OMPL RealVectorStateSpace based on the robot's joint limits.
+
+    The number of dimensions is derived from the movable joints. If a joint
+    limit is infinite, ±CONTINUOUS_JOINT_BOUNDS is used.
+
+    Args:
+        robot (RobotBase): The robot object providing joint information.
     """
     def __init__(self, robot: RobotBase):
         self.robot = robot
-        # Get the joint order (assumed to be the first element returned).
+        # Get joint order (assumed to be the first element returned).
         self.joint_order = robot.get_moveable_joints()[0]
-        lower_limit, upper_limit = robot.get_joint_limits(set(self.joint_order))
+        lower_limit, upper_limit = robot.get_joint_limits(
+            set(self.joint_order)
+        )
         num_dims = len(self.joint_order)
         # Initialize the underlying RealVectorStateSpace.
         super().__init__(num_dims)
@@ -37,75 +43,135 @@ class RobotStateSpace(ob.RealVectorStateSpace):
                 bounds.setHigh(i, upper_limit[joint])
         self.setBounds(bounds)
 
-    def state_to_list(self, state: ob.State):
-        """Converts an OMPL state to a list of joint values."""
-        return [state[i] for i in range(len(self.joint_order))]
-
 
 class RobotSpaceInformation(ob.SpaceInformation):
     """
-    Wraps the RobotStateSpace and the robot to provide helper methods
-    for state conversion and updating the robot configuration.
+    Wraps the RobotStateSpace to provide helper methods for state
+    conversion and updating the robot configuration.
+
+    Args:
+        state_space (RobotStateSpace): The state space instance for the robot.
     """
-    def __init__(self, state_space: RobotStateSpace, robot: RobotBase):
-        # Pass the state space to the parent (ob.SpaceInformation).
+    def __init__(self, state_space: RobotStateSpace):
+        # Pass the state space to the parent constructor.
         super().__init__(state_space)
-        self.robot = robot
+        self.robot = state_space.robot
         self.state_space = state_space
 
     def allocState(self):
-        """Delegate state allocation to the underlying state space."""
+        """
+        Allocates a new state using the underlying state space.
+
+        Returns:
+            ob.State: A new state object.
+        """
         return self.state_space.allocState()
 
     def state_to_list(self, state: ob.State):
-        """Convert an OMPL state to a list of joint values."""
-        return self.state_space.state_to_list(state)
+        """
+        Converts an OMPL state into a list of joint values.
+
+        Args:
+            state (ob.State): The OMPL state.
+
+        Returns:
+            list: Joint values in the order defined by joint_order.
+        """
+        return [state[i] for i in range(len(self.state_space.joint_order))]
+
+    def list_to_state(self, joint_values: list):
+        """
+        Converts a list of joint values into an OMPL state.
+
+        Args:
+            joint_values (list): Joint values following the joint order.
+
+        Returns:
+            ob.State: The corresponding state object.
+        """
+        state = self.allocState()
+        for i, value in enumerate(joint_values):
+            state[i] = value
+        return state
+
+    def dict_to_list(self, joint_dict: dict):
+        """
+        Converts a dictionary of joint values into an ordered list.
+
+        Args:
+            joint_dict (dict): Maps joint names to joint values.
+
+        Returns:
+            list: Joint values ordered as in joint_order.
+        """
+        return [joint_dict[joint] for joint in self.state_space.joint_order]
 
     def set_state(self, state: ob.State):
         """
         Updates the robot's configuration based on the given state.
-        (Collision/constraint checking is assumed to be done elsewhere.)
+
+        Collision/constraint checking is assumed to be handled elsewhere.
+
+        Args:
+            state (ob.State): The state used to update the robot.
         """
         joint_positions = self.state_to_list(state)
         self.robot.reset_joint_position(
             dict(zip(self.state_space.joint_order, joint_positions)), True
         )
 
-    def set_start_goal_states(self, start: dict, goal: dict):
+    def setStateValidityChecker(self, validity_checker):
         """
-        Creates start and goal OMPL states from dictionaries mapping joint names to values.
+        Sets the state validity checker.
+
+        Args:
+            validity_checker: An object to check state validity.
         """
-        start_state = self.allocState()
-        goal_state = self.allocState()
-        for i, joint in enumerate(self.state_space.joint_order):
-            start_state[i] = start[joint]
-            goal_state[i] = goal[joint]
-        return start_state, goal_state
+        super().setStateValidityChecker(validity_checker)
+
+    def setup(self):
+        """
+        Performs any necessary setup steps for the space information.
+        """
+        super().setup()
 
 
 class RobotValidityChecker(ob.StateValidityChecker):
     """
-    Uses the robot's space information along with collision and constraint functions
-    to determine if a state is valid.
+    Checks if a state is valid using collision and constraint functions.
+
+    Args:
+        space_information (RobotSpaceInformation): The space info instance.
+        collision_check_functions (list): List of collision-check functions.
+        constraint_functions (list, optional): List of constraint functions.
     """
     def __init__(self, space_information: RobotSpaceInformation,
                  collision_check_functions: list,
                  constraint_functions=None):
-        # Pass the RobotSpaceInformation (a subclass of ob.SpaceInformation) to the parent.
+        # Initialize the parent with the space information.
         super().__init__(space_information)
         self.space_information = space_information
         self.collision_check_functions = collision_check_functions
         self.constraint_functions = constraint_functions
 
     def isValid(self, state: ob.State):
-        # Update the robot to match the state.
+        """
+        Determines if the given state is valid.
+
+        Updates the robot configuration before checking collisions and
+        constraints.
+
+        Args:
+            state (ob.State): The state to be validated.
+
+        Returns:
+            bool: True if valid; False otherwise.
+        """
         self.space_information.set_state(state)
-        # Check any extra constraints.
         if self.constraint_functions:
             for constraint in self.constraint_functions:
                 if not constraint():
                     return False
-        # Check collisions.
         for collision_check in self.collision_check_functions:
             if not collision_check():
                 return False
@@ -114,38 +180,92 @@ class RobotValidityChecker(ob.StateValidityChecker):
 
 class RobotProblemDefinition(ob.ProblemDefinition):
     """
-    Wraps OMPL's ProblemDefinition and provides a helper for setting
-    start and goal states using the robot's space information.
+    Defines the planning problem using the robot's space information.
+
+    Provides helper methods to set start/goal states, clear solution paths,
+    and set optimization objectives.
+
+    Args:
+        space_information (RobotSpaceInformation): The space info instance.
     """
     def __init__(self, space_information: RobotSpaceInformation):
         super().__init__(space_information)
         self.space_information = space_information
 
-    def set_start_goal_states(self, start: dict, goal: dict):
-        start_state, goal_state = self.space_information.set_start_goal_states(start, goal)
-        self.setStartAndGoalStates(start_state, goal_state)
+    def clearSolutionPaths(self):
+        """
+        Clears any previously stored solution paths.
+        """
+        super().clearSolutionPaths()
+
+    def getSolutionPath(self):
+        """
+        Retrieves the current solution path.
+
+        Returns:
+            The solution path as provided by the OMPL library.
+        """
+        return super().getSolutionPath()
+
+    def setOptimizationObjective(self, optimization_objective):
+        """
+        Sets the optimization objective for the planning problem.
+
+        Args:
+            optimization_objective: The objective to optimize.
+        """
+        super().setOptimizationObjective(optimization_objective)
+
+    def setStartAndGoalStates(self, start: dict, goal: dict):
+        """
+        Sets start and goal states using the robot's space information.
+
+        Converts the input dictionaries to states and registers them.
+
+        Args:
+            start (dict): Start joint configuration.
+            goal (dict): Goal joint configuration.
+        """
+        start_state_list = self.space_information.dict_to_list(start)
+        goal_state_list = self.space_information.dict_to_list(goal)
+        start_state = self.space_information.list_to_state(start_state_list)
+        goal_state = self.space_information.list_to_state(goal_state_list)
+        super().setStartAndGoalStates(start_state, goal_state)
 
 
 class RobotOptimizationObjective(ob.OptimizationObjective):
     """
-    A factory class for creating robot-specific optimization objectives.
-    This class inherits from ob.OptimizationObjective and provides a common
-    interface for creating various objective types.
+    Factory class for creating robot-specific optimization objectives.
+
+    Provides an interface to create various objective types.
+
+    Args:
+        si (RobotSpaceInformation): The space information instance.
     """
     def __init__(self, si: RobotSpaceInformation):
         super().__init__(si)
         self.si = si
 
     @classmethod
-    def create(cls, si: RobotSpaceInformation, objectiveType: str, state_cost_functions=None):
+    def create(cls, si: RobotSpaceInformation, objectiveType: str,
+               state_cost_functions=None):
         """
-        Factory method to create an optimization objective based on the specified type.
+        Creates an optimization objective based on the given type.
 
         Available objective types (case-insensitive):
-          - "pathclearance": uses a robot-specific clearance objective.
-          - "pathlength": uses OMPL's PathLengthOptimizationObjective.
-          - "thresholdpathlength": a PathLength objective with a cost threshold.
-          - "weightedlengthandclearancecombo": a multi-objective combining length and clearance.
+          - "pathclearance": Uses a robot-specific clearance objective.
+          - "pathlength": Uses OMPL's PathLengthOptimizationObjective.
+          - "thresholdpathlength": PathLength with a cost threshold.
+          - "weightedlengthandclearancecombo": Multi-objective combining
+            length and clearance.
+
+        Args:
+            si (RobotSpaceInformation): The space info instance.
+            objectiveType (str): The objective type.
+            state_cost_functions (list, optional): Cost functions for state.
+
+        Returns:
+            An optimization objective instance.
         """
         if objectiveType.lower() == "pathclearance":
             return RobotPathClearanceObjective(si, state_cost_functions)
@@ -163,15 +283,21 @@ class RobotOptimizationObjective(ob.OptimizationObjective):
             opt.addObjective(clear_obj, 1.0)
             return opt
         else:
-            ou.OMPL_ERROR("The specified optimization objective is not implemented.")
+            ou.OMPL_ERROR("The specified optimization objective is not "
+                          "implemented.")
             return None
 
 
 class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
     """
-    An optimization objective that encourages paths with high clearance.
-    It uses user-provided cost functions and returns a cost that is the reciprocal
-    of the accumulated cost (with a small constant added to avoid division by zero).
+    Encourages paths with high clearance by using cost functions.
+
+    Returns a reciprocal cost of the accumulated cost with a small offset
+    to avoid division by zero.
+
+    Args:
+        si (RobotSpaceInformation): The space information instance.
+        state_cost_functions (list, optional): List of cost functions.
     """
     def __init__(self, si: RobotSpaceInformation, state_cost_functions=None):
         super().__init__(si, True)
@@ -179,63 +305,114 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         self.state_cost_functions = state_cost_functions
 
     def stateCost(self, state: ob.State):
+        """
+        Computes the cost of the given state.
+
+        Args:
+            state (ob.State): The state to evaluate.
+
+        Returns:
+            ob.Cost: The computed cost.
+        """
         self.si.set_state(state)
         total_cost = 0
         if self.state_cost_functions:
             for state_cost in self.state_cost_functions:
                 total_cost += state_cost()
-        # Return reciprocal cost (adding a small constant to avoid division by zero)
         return ob.Cost(1 / (total_cost + sys.float_info.min))
 
 
 class RobotPlanner(ob.Planner):
     """
-    A wrapper for OMPL planners. This class selects and wraps an OMPL planner based on the given type.
+    A wrapper for OMPL planners that selects and wraps a planner type.
+
+    Args:
+        si (RobotSpaceInformation): The space information instance.
+        plannerType (str): The type of planner to allocate.
     """
     def __init__(self, si: RobotSpaceInformation, plannerType: str):
-        # Initialize the base ob.Planner with the space information and a name.
+        # Initialize the base planner with space information and name.
         super().__init__(si, plannerType)
         self.si = si
         self.planner = self._allocate_planner(plannerType)
 
     def _allocate_planner(self, plannerType: str):
-        if plannerType.lower() == "bfmtstar":
+        """
+        Allocates an OMPL planner based on the given planner type.
+
+        Args:
+            plannerType (str): The desired planner type.
+
+        Returns:
+            An OMPL planner instance.
+        """
+        ptype = plannerType.lower()
+        if ptype == "bfmtstar":
             return og.BFMT(self.si)
-        elif plannerType.lower() == "bitstar":
+        elif ptype == "bitstar":
             return og.BITstar(self.si)
-        elif plannerType.lower() == "fmtstar":
+        elif ptype == "fmtstar":
             return og.FMT(self.si)
-        elif plannerType.lower() == "informedrrtstar":
+        elif ptype == "informedrrtstar":
             return og.InformedRRTstar(self.si)
-        elif plannerType.lower() == "prmstar":
+        elif ptype == "prmstar":
             return og.PRMstar(self.si)
-        elif plannerType.lower() == "rrtstar":
+        elif ptype == "rrtstar":
             return og.RRTstar(self.si)
-        elif plannerType.lower() == "sorrtstar":
+        elif ptype == "sorrtstar":
             return og.SORRTstar(self.si)
         else:
             ou.OMPL_ERROR("The specified planner type is not implemented.")
             return None
 
-    # Delegate planner methods to the internal planner instance.
     def setProblemDefinition(self, pdef: ob.ProblemDefinition):
+        """
+        Sets the problem definition for the planner.
+
+        Args:
+            pdef (ob.ProblemDefinition): The problem definition.
+        """
         self.planner.setProblemDefinition(pdef)
 
     def clear(self):
+        """
+        Clears the planner's current configuration.
+        """
         self.planner.clear()
 
     def setup(self):
+        """
+        Performs any necessary setup for the planner.
+        """
         self.planner.setup()
 
     def solve(self, allowed_time: float):
+        """
+        Attempts to solve the planning problem within allowed_time.
+
+        Args:
+            allowed_time (float): The maximum planning time in seconds.
+
+        Returns:
+            bool: True if a solution was found, False otherwise.
+        """
         return self.planner.solve(allowed_time)
 
 
 class PathPlanner:
     """
-    Sets up the planning problem using the robot-specific classes.
-    It creates the state space, space information, validity checker, and problem definition,
-    and then allocates and runs an OMPL planner.
+    Sets up the entire planning problem using robot-specific classes.
+
+    Creates the state space, space information, validity checker, and problem
+    definition, then allocates and runs an OMPL planner.
+
+    Args:
+        robot (RobotBase): The robot to plan for.
+        collision_check_functions (list): Collision-check functions.
+        planner_name (str): The name of the planner to use.
+        objective (str): The optimization objective.
+        constraint_functions (list, optional): Constraint-check functions.
+        state_cost_functions (list, optional): State cost functions.
     """
     def __init__(self, robot: RobotBase,
                  collision_check_functions: list,
@@ -243,12 +420,10 @@ class PathPlanner:
                  objective: str = "PathLength",
                  constraint_functions=None,
                  state_cost_functions=None):
-
         self.robot = robot
-
-        # Create the robot-specific state space and space information.
+        # Create robot-specific state space and space information.
         self.state_space = RobotStateSpace(robot)
-        self.space_information = RobotSpaceInformation(self.state_space, robot)
+        self.space_information = RobotSpaceInformation(self.state_space)
 
         # Attach the validity checker.
         self.validity_checker = RobotValidityChecker(
@@ -259,25 +434,38 @@ class PathPlanner:
         self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()
 
-        # Define the planning problem with the custom problem definition.
-        self.problem_definition = RobotProblemDefinition(self.space_information)
-        # Create the optimization objective using the new factory.
+        # Define the planning problem.
+        self.problem_definition = RobotProblemDefinition(
+            self.space_information
+        )
+        # Create the optimization objective.
         optimization_objective = RobotOptimizationObjective.create(
             self.space_information, objective, state_cost_functions
         )
         self.problem_definition.setOptimizationObjective(optimization_objective)
 
-        # Allocate the planner using the new RobotPlanner class.
+        # Allocate the planner.
         self.planner = RobotPlanner(self.space_information, planner_name)
 
-    def plan_start_goal(self, start: dict, goal: dict, allowed_time: float = DEFAULT_PLANNING_TIME):
+    def plan_start_goal(self, start: dict, goal: dict,
+                        allowed_time: float = DEFAULT_PLANNING_TIME):
         """
-        Plans a path between the given start and goal joint configurations.
-        If a solution is found, it interpolates the path and returns a JointPath.
+        Plans a path between given start and goal joint configurations.
+
+        If a solution is found, the path is interpolated and returned as a
+        JointPath.
+
+        Args:
+            start (dict): The start joint configuration.
+            goal (dict): The goal joint configuration.
+            allowed_time (float): Maximum planning time in seconds.
+
+        Returns:
+            tuple: (bool, JointPath) where bool indicates success.
         """
         self.problem_definition.clearSolutionPaths()
         orig_state = start.copy()
-        self.problem_definition.set_start_goal_states(start, goal)
+        self.problem_definition.setStartAndGoalStates(start, goal)
 
         self.planner.setProblemDefinition(self.problem_definition)
         self.planner.clear()
@@ -291,7 +479,10 @@ class PathPlanner:
             sol_path = self.problem_definition.getSolutionPath()
             sol_path.interpolate(INTERPOLATE_NUM)
             states = sol_path.getStates()
-            path_list = np.array([self.space_information.state_to_list(st) for st in states])
+            path_list = np.array([
+                self.space_information.state_to_list(st)
+                for st in states
+            ])
             joint_path = JointPath(
                 path_list.transpose(),
                 tuple(self.state_space.joint_order)

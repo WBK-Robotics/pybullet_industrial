@@ -5,8 +5,6 @@ from ompl import geometric as og
 from ompl import util as ou
 from pybullet_industrial import CollisionChecker, RobotBase, JointPath
 
-# Global constant for continuous joint bounds.
-CONTINUOUS_JOINT_BOUNDS = 3 * np.pi
 # Number of segments to interpolate along the planned path.
 INTERPOLATE_NUM = 500
 # Maximum allowed planning time in seconds.
@@ -34,15 +32,30 @@ class RobotStateSpace(ob.RealVectorStateSpace):
         num_dims = len(self.joint_order)
         # Initialize the underlying RealVectorStateSpace.
         super().__init__(num_dims)
-        bounds = ob.RealVectorBounds(num_dims)
+        self.setBounds(lower_limit, upper_limit)
+
+    def setBounds(self, lower_limit, upper_limit):
+        """
+        Sets the bounds of the state space.
+
+        Args:
+            lower_limit (list): Lower limits for each dimension.
+            upper_limit (list): Upper limits for each dimension.
+        """
+        bounds = ob.RealVectorBounds(self.getDimension())
         for i, joint in enumerate(self.joint_order):
-            if np.isinf(lower_limit[joint]) or np.isinf(upper_limit[joint]):
-                bounds.setLow(i, -CONTINUOUS_JOINT_BOUNDS)
-                bounds.setHigh(i, CONTINUOUS_JOINT_BOUNDS)
-            else:
-                bounds.setLow(i, lower_limit[joint])
-                bounds.setHigh(i, upper_limit[joint])
-        self.setBounds(bounds)
+            bounds.setLow(i, lower_limit[joint])
+            bounds.setHigh(i, upper_limit[joint])
+        super().setBounds(bounds)
+
+    def getDimension(self):
+        """
+        Returns the dimension of the state space.
+
+        Returns:
+            int: The number of dimensions.
+        """
+        return super().getDimension()
 
     def state_to_list(self, state: ob.State):
         """

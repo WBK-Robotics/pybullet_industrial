@@ -264,84 +264,6 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         return ob.Cost(1 / (total_cost + sys.float_info.min))
 
 
-class RobotPlanner(ob.Planner):
-    """
-    A wrapper for OMPL planners that selects and wraps a planner type.
-
-    Args:
-        si (RobotSpaceInformation): The space information instance.
-        plannerType (str): The type of planner to allocate.
-    """
-
-    def __init__(self, si: RobotSpaceInformation, plannerType: str):
-        # Initialize the base planner with space information and name.
-        super().__init__(si, plannerType)
-        self.si = si
-        self.planner = self._allocate_planner(plannerType)
-
-    def _allocate_planner(self, plannerType: str):
-        """
-        Allocates an OMPL planner based on the given planner type.
-
-        Args:
-            plannerType (str): The desired planner type.
-
-        Returns:
-            An OMPL planner instance.
-        """
-        ptype = plannerType.lower()
-        if ptype == "bfmtstar":
-            return og.BFMT(self.si)
-        elif ptype == "bitstar":
-            return og.BITstar(self.si)
-        elif ptype == "fmtstar":
-            return og.FMT(self.si)
-        elif ptype == "informedrrtstar":
-            return og.InformedRRTstar(self.si)
-        elif ptype == "prmstar":
-            return og.PRMstar(self.si)
-        elif ptype == "rrtstar":
-            return og.RRTstar(self.si)
-        elif ptype == "sorrtstar":
-            return og.SORRTstar(self.si)
-        else:
-            ou.OMPL_ERROR("The specified planner type is not implemented.")
-            return None
-
-    def setProblemDefinition(self, pdef: ob.ProblemDefinition):
-        """
-        Sets the problem definition for the planner.
-
-        Args:
-            pdef (ob.ProblemDefinition): The problem definition.
-        """
-        self.planner.setProblemDefinition(pdef)
-
-    def clear(self):
-        """
-        Clears the planner's current configuration.
-        """
-        self.planner.clear()
-
-    def setup(self):
-        """
-        Performs any necessary setup for the planner.
-        """
-        self.planner.setup()
-
-    def solve(self, allowed_time: float):
-        """
-        Attempts to solve the planning problem within allowed_time.
-
-        Args:
-            allowed_time (float): The maximum planning time in seconds.
-
-        Returns:
-            bool: True if a solution was found, False otherwise.
-        """
-        return self.planner.solve(allowed_time)
-
-
 class PathPlanner(og.SimpleSetup):
     """
     Sets up the entire planning problem using robot-specific classes.
@@ -386,8 +308,37 @@ class PathPlanner(og.SimpleSetup):
         )
 
         # Allocate the planner.
-        planner = RobotPlanner(self.space_information, planner_name)
-        self.setPlanner(planner)
+        optimizing_planner = self.allocate_planner(planner_name)
+        self.setPlanner(optimizing_planner)
+
+    def allocate_planner(self, plannerType: str):
+        """
+        Allocates an OMPL planner based on the given planner type.
+
+        Args:
+            plannerType (str): The desired planner type.
+
+        Returns:
+            An OMPL planner instance.
+        """
+        ptype = plannerType.lower()
+        if ptype == "bfmtstar":
+            return og.BFMT(self.space_information)
+        elif ptype == "bitstar":
+            return og.BITstar(self.space_information)
+        elif ptype == "fmtstar":
+            return og.FMT(self.space_information)
+        elif ptype == "informedrrtstar":
+            return og.InformedRRTstar(self.space_information)
+        elif ptype == "prmstar":
+            return og.PRMstar(self.space_information)
+        elif ptype == "rrtstar":
+            return og.RRTstar(self.space_information)
+        elif ptype == "sorrtstar":
+            return og.SORRTstar(self.space_information)
+        else:
+            ou.OMPL_ERROR("The specified planner type is not implemented.")
+            return None
 
     def plan_start_goal(self, start: dict, goal: dict,
                         allowed_time: float = DEFAULT_PLANNING_TIME):

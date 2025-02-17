@@ -288,8 +288,8 @@ class PathPlanner(og.SimpleSetup):
                  state_cost_functions=None):
         self.robot = robot
         # Create robot-specific state space and space information.
-        state_space = RobotStateSpace(robot)
-        self.space_information = RobotSpaceInformation(state_space)
+        self.state_space = RobotStateSpace(robot)
+        self.space_information = RobotSpaceInformation(self.state_space)
 
         # Attach the validity checker.
         validity_checker = RobotValidityChecker(
@@ -340,6 +340,20 @@ class PathPlanner(og.SimpleSetup):
             ou.OMPL_ERROR("The specified planner type is not implemented.")
             return None
 
+    def setStartAndGoalStates(self, start: ob.State, goal: ob.State):
+        """
+        Sets the start and goal states for the planning problem.
+
+        Args:
+            start (ob.State): The start state.
+            goal (ob.State): The goal state.
+        """
+        start = self.state_space.dict_to_list(start)
+        goal = self.state_space.dict_to_list(goal)
+        start_state = self.space_information.list_to_state(start)
+        goal_state = self.space_information.list_to_state(goal)
+        super().setStartAndGoalStates(start_state, goal_state)
+
     def plan_start_goal(self, start: dict, goal: dict,
                         allowed_time: float = DEFAULT_PLANNING_TIME):
         """
@@ -357,13 +371,10 @@ class PathPlanner(og.SimpleSetup):
             tuple: (bool, JointPath) where bool indicates success.
         """
 
+        self.clear()
         orig_state = start.copy()
-        state_space = self.space_information.state_space
-        start = state_space.dict_to_list(start)
-        goal = state_space.dict_to_list(goal)
-        start_state = self.space_information.list_to_state(start)
-        goal_state = self.space_information.list_to_state(goal)
-        self.setStartAndGoalStates(start_state, goal_state)
+
+        self.setStartAndGoalStates(start, goal)
 
         solved = self.solve(allowed_time)
         res = False
@@ -374,12 +385,12 @@ class PathPlanner(og.SimpleSetup):
             sol_path.interpolate(INTERPOLATE_NUM)
             states = sol_path.getStates()
             path_list = np.array([
-                self.space_information.state_space.state_to_list(st)
+                self.state_space.state_to_list(st)
                 for st in states
             ])
             joint_path = JointPath(
                 path_list.transpose(),
-                tuple(state_space.joint_order)
+                tuple(self.state_space.joint_order)
             )
             res = True
         else:

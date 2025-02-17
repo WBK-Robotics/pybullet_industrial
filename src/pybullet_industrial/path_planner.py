@@ -84,15 +84,6 @@ class RobotSpaceInformation(ob.SpaceInformation):
         self.robot = state_space.robot
         self.state_space = state_space
 
-    def allocState(self):
-        """
-        Allocates a new state using the underlying state space.
-
-        Returns:
-            ob.State: A new state object.
-        """
-        return self.state_space.allocState()
-
     def list_to_state(self, joint_values: list):
         """
         Converts a list of joint values into an OMPL state.
@@ -180,63 +171,6 @@ class RobotValidityChecker(ob.StateValidityChecker):
             if not collision_check():
                 return False
         return True
-
-
-class RobotProblemDefinition(ob.ProblemDefinition):
-    """
-    Defines the planning problem using the robot's space information.
-
-    Provides helper methods to set start/goal states, clear solution paths,
-    and set optimization objectives.
-
-    Args:
-        space_information (RobotSpaceInformation): The space info instance.
-    """
-
-    def __init__(self, space_information: RobotSpaceInformation):
-        super().__init__(space_information)
-        self.space_information = space_information
-
-    def clearSolutionPaths(self):
-        """
-        Clears any previously stored solution paths.
-        """
-        super().clearSolutionPaths()
-
-    def getSolutionPath(self):
-        """
-        Retrieves the current solution path.
-
-        Returns:
-            The solution path as provided by the OMPL library.
-        """
-        return super().getSolutionPath()
-
-    def setOptimizationObjective(self, optimization_objective):
-        """
-        Sets the optimization objective for the planning problem.
-
-        Args:
-            optimization_objective: The objective to optimize.
-        """
-        super().setOptimizationObjective(optimization_objective)
-
-    def setStartAndGoalStates(self, start: dict, goal: dict):
-        """
-        Sets start and goal states using the robot's space information.
-
-        Converts the input dictionaries to states and registers them.
-
-        Args:
-            start (dict): Start joint configuration.
-            goal (dict): Goal joint configuration.
-        """
-        rss = self.space_information.state_space
-        start_state_list = rss.dict_to_list(start)
-        goal_state_list = rss.dict_to_list(goal)
-        start_state = self.space_information.list_to_state(start_state_list)
-        goal_state = self.space_information.list_to_state(goal_state_list)
-        super().setStartAndGoalStates(start_state, goal_state)
 
 
 class RobotOptimizationObjective(ob.OptimizationObjective):

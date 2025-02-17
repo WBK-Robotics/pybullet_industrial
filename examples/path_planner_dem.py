@@ -1,10 +1,12 @@
 import os
 import tkinter as tk
+from ompl import base as ob
 import pybullet as p
 import pybullet_data
 import numpy as np
 import pybullet_industrial as pi
 from path_planner_gui import PathPlannerGUI
+
 
 INTERPOLATE_NUM = 500  # Number of segments for interpolating the path
 DEFAULT_PLANNING_TIME = 5.0  # Maximum planning time in seconds
@@ -103,11 +105,15 @@ if __name__ == "__main__":
     collsion_check = [lambda: collision_checker.check_collision()]
     constraint_functions = [lambda: check_endeffector_upright(robot)]
 
-    def objective(si): return pi.RobotPathClearanceObjective(
+    def clearance_objective(si): return pi.RobotPathClearanceObjective(
         si, collision_checker, 0.3)
-    objective_weight = 1.0
 
-    objectives = [(objective, objective_weight)]
+    def path_length_objective(si): return ob.PathLengthOptimizationObjective(si)
+
+    objective_weight = 1.0
+    objectives = []
+    # objectives.append((clearance_objective, objective_weight))
+    objectives.append((path_length_objective, objective_weight))
 
     path_planner = pi.PathPlanner(
         robot=robot,

@@ -113,7 +113,7 @@ if __name__ == "__main__":
         robot=robot,
         collision_check_functions=collsion_check,
         planner_name="BITstar",
-        constraint_functions=constraint_functions,
+        # constraint_functions=constraint_functions,
         objectives=objectives,
     )
 

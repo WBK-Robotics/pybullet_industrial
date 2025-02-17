@@ -186,7 +186,7 @@ class RobotValidityChecker(ob.StateValidityChecker):
         return True
 
 
-class RobotOptimizationObjective(ob.OptimizationObjective):
+class RobotOptimizationObjective(ob.MultiOptimizationObjective):
     """
     Factory class for creating robot-specific optimization objectives.
 
@@ -196,17 +196,15 @@ class RobotOptimizationObjective(ob.OptimizationObjective):
         si (RobotSpaceInformation): The space information instance.
     """
 
-    def __init__(self, si: RobotSpaceInformation):
+    def __init__(self, si: RobotSpaceInformation, weighted_objective_list: list = None):
         super().__init__(si)
         self.si = si
+        if weighted_objective_list:
+            self.uppdate_objective(weighted_objective_list)
 
-    def create_multi_objective(self, weighted_objective_list: list):
-        multi_optimization_objective = ob.MultiOptimizationObjective(self.si)
-
+    def uppdate_objective(self, weighted_objective_list: list):
         for objective, weight in weighted_objective_list:
-            multi_optimization_objective.addObjective(objective(self.si), weight)
-
-        return multi_optimization_objective
+            self.addObjective(objective(self.si), weight)
 
 
 class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
@@ -286,10 +284,10 @@ class PathPlanner(og.SimpleSetup):
         super().__init__(self.space_information)
 
         optimization_objective = RobotOptimizationObjective(
-            self.space_information
+            self.space_information, objectives
         )
         self.setOptimizationObjective(
-            optimization_objective.create_multi_objective(objectives)
+            optimization_objective
         )
 
         # Allocate the planner.

@@ -122,7 +122,7 @@ if __name__ == "__main__":
     path_planner = pi.PathPlanner(robot=robot,
                                   collision_check_functions=collsion_check,
                                   planner_name="BITstar",
-                                  objective="pathlength",
+                                  # objective="pathclearance",
                                   constraint_functions=constraint_functions,
                                   state_cost_functions=state_cost)
 

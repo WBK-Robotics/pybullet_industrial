@@ -23,6 +23,7 @@ class RobotStateSpace(ob.RealVectorStateSpace):
     Args:
         robot (RobotBase): The robot object providing joint info.
     """
+
     def __init__(self, robot: RobotBase):
         self.robot = robot
         # Get joint order (assumed to be the first element returned).
@@ -76,6 +77,7 @@ class RobotSpaceInformation(ob.SpaceInformation):
     Args:
         state_space (RobotStateSpace): The state space instance for the robot.
     """
+
     def __init__(self, state_space: RobotStateSpace):
         # Pass the state space to the parent constructor.
         super().__init__(state_space)
@@ -146,6 +148,7 @@ class RobotValidityChecker(ob.StateValidityChecker):
         collision_check_functions (list): List of collision-check functions.
         constraint_functions (list, optional): List of constraint functions.
     """
+
     def __init__(self, space_information: RobotSpaceInformation,
                  collision_check_functions: list,
                  constraint_functions=None):
@@ -189,6 +192,7 @@ class RobotProblemDefinition(ob.ProblemDefinition):
     Args:
         space_information (RobotSpaceInformation): The space info instance.
     """
+
     def __init__(self, space_information: RobotSpaceInformation):
         super().__init__(space_information)
         self.space_information = space_information
@@ -244,6 +248,7 @@ class RobotOptimizationObjective(ob.OptimizationObjective):
     Args:
         si (RobotSpaceInformation): The space information instance.
     """
+
     def __init__(self, si: RobotSpaceInformation):
         super().__init__(si)
         self.si = si
@@ -301,6 +306,7 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         si (RobotSpaceInformation): The space information instance.
         state_cost_functions (list, optional): List of cost functions.
     """
+
     def __init__(self, si: RobotSpaceInformation, state_cost_functions=None):
         super().__init__(si, True)
         self.si = si
@@ -332,6 +338,7 @@ class RobotPlanner(ob.Planner):
         si (RobotSpaceInformation): The space information instance.
         plannerType (str): The type of planner to allocate.
     """
+
     def __init__(self, si: RobotSpaceInformation, plannerType: str):
         # Initialize the base planner with space information and name.
         super().__init__(si, plannerType)
@@ -416,6 +423,7 @@ class PathPlanner(og.SimpleSetup):
         constraint_functions (list, optional): Constraint-check functions.
         state_cost_functions (list, optional): State cost functions.
     """
+
     def __init__(self, robot: RobotBase,
                  collision_check_functions: list,
                  planner_name: str = "BITstar",
@@ -424,35 +432,28 @@ class PathPlanner(og.SimpleSetup):
                  state_cost_functions=None):
         self.robot = robot
         # Create robot-specific state space and space information.
-        self.state_space = RobotStateSpace(robot)
-        self.space_information = RobotSpaceInformation(self.state_space)
+        state_space = RobotStateSpace(robot)
+        self.space_information = RobotSpaceInformation(state_space)
 
         # Attach the validity checker.
-        self.validity_checker = RobotValidityChecker(
+        validity_checker = RobotValidityChecker(
             self.space_information,
             collision_check_functions,
             constraint_functions
         )
-        self.space_information.setStateValidityChecker(self.validity_checker)
+        self.space_information.setStateValidityChecker(validity_checker)
         self.space_information.setup()
         super().__init__(self.space_information)
 
-
-        # # Define the planning problem.
-        # self.problem_definition = RobotProblemDefinition(
-        #     self.space_information
-        # )
-        # # Create the optimization objective.
-        # optimization_objective = RobotOptimizationObjective.create(
-        #     self.space_information, objective, state_cost_functions
-        # )
-        # self.problem_definition.setOptimizationObjective(
-        #     optimization_objective
-        # )
+        optimization_objective = RobotOptimizationObjective.create(
+            self.space_information, objective, state_cost_functions)
+        self.setOptimizationObjective(
+            optimization_objective
+        )
 
         # Allocate the planner.
-        self.planner = RobotPlanner(self.space_information, planner_name)
-        self.setPlanner(self.planner)
+        planner = RobotPlanner(self.space_information, planner_name)
+        self.setPlanner(planner)
 
     def plan_start_goal(self, start: dict, goal: dict,
                         allowed_time: float = DEFAULT_PLANNING_TIME):
@@ -472,8 +473,9 @@ class PathPlanner(og.SimpleSetup):
         """
 
         orig_state = start.copy()
-        start = self.state_space.dict_to_list(start)
-        goal = self.state_space.dict_to_list(goal)
+        state_space = self.space_information.state_space
+        start = state_space.dict_to_list(start)
+        goal = state_space.dict_to_list(goal)
         start_state = self.space_information.list_to_state(start)
         goal_state = self.space_information.list_to_state(goal)
         self.setStartAndGoalStates(start_state, goal_state)
@@ -492,7 +494,7 @@ class PathPlanner(og.SimpleSetup):
             ])
             joint_path = JointPath(
                 path_list.transpose(),
-                tuple(self.state_space.joint_order)
+                tuple(state_space.joint_order)
             )
             res = True
         else:

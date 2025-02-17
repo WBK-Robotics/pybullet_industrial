@@ -200,46 +200,13 @@ class RobotOptimizationObjective(ob.OptimizationObjective):
         super().__init__(si)
         self.si = si
 
-    @classmethod
-    def create(cls, si: RobotSpaceInformation, objectiveType: str,
-               state_cost_functions=None):
-        """
-        Creates an optimization objective based on the given type.
+    def create_multi_objective(self, weighted_objective_list: list):
+        multi_optimization_objective = ob.MultiOptimizationObjective(self.si)
 
-        Available objective types (case-insensitive):
-          - "pathclearance": Uses a robot-specific clearance objective.
-          - "pathlength": Uses OMPL's PathLengthOptimizationObjective.
-          - "thresholdpathlength": PathLength with a cost threshold.
-          - "weightedlengthandclearancecombo": Multi-objective combining
-            length and clearance.
+        for objective, weight in weighted_objective_list:
+            multi_optimization_objective.addObjective(objective(self.si), weight)
 
-        Args:
-            si (RobotSpaceInformation): The space info instance.
-            objectiveType (str): The objective type.
-            state_cost_functions (list, optional): Cost functions for state.
-
-        Returns:
-            An optimization objective instance.
-        """
-        if objectiveType.lower() == "pathclearance":
-            return RobotPathClearanceObjective(si, state_cost_functions)
-        elif objectiveType.lower() == "pathlength":
-            return ob.PathLengthOptimizationObjective(si)
-        elif objectiveType.lower() == "thresholdpathlength":
-            obj = ob.PathLengthOptimizationObjective(si)
-            obj.setCostThreshold(ob.Cost(1.51))
-            return obj
-        elif objectiveType.lower() == "weightedlengthandclearancecombo":
-            length_obj = ob.PathLengthOptimizationObjective(si)
-            clear_obj = RobotPathClearanceObjective(si, state_cost_functions)
-            opt = ob.MultiOptimizationObjective(si)
-            opt.addObjective(length_obj, 5.0)
-            opt.addObjective(clear_obj, 1.0)
-            return opt
-        else:
-            ou.OMPL_ERROR("The specified optimization objective is not "
-                          "implemented.")
-            return None
+        return multi_optimization_objective
 
 
 class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
@@ -254,10 +221,11 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         state_cost_functions (list, optional): List of cost functions.
     """
 
-    def __init__(self, si: RobotSpaceInformation, state_cost_functions=None):
+    def __init__(self, si: RobotSpaceInformation, collision_checker: CollisionChecker, clearance_distance: float = 0.0):
         super().__init__(si, True)
         self.si = si
-        self.state_cost_functions = state_cost_functions
+        self.collision_checker = collision_checker
+        self.clearance_distance = clearance_distance
 
     def stateCost(self, state: ob.State):
         """
@@ -270,11 +238,14 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
             ob.Cost: The computed cost.
         """
         self.si.set_state(state)
-        total_cost = 0
-        if self.state_cost_functions:
-            for state_cost in self.state_cost_functions:
-                total_cost += state_cost()
-        return ob.Cost(1 / (total_cost + sys.float_info.min))
+        min_distance = self.clearance_distance
+
+        for (bodyA, bodyB), _ in self.collision_checker.external_collision_pairs:
+            curr_distance = self.collision_checker.get_min_body_distance(bodyA, bodyB, self.clearance_distance)
+            if curr_distance < min_distance:
+                min_distance = curr_distance
+
+        return ob.Cost(1 / (min_distance + sys.float_info.min))
 
 
 class PathPlanner(og.SimpleSetup):
@@ -296,9 +267,9 @@ class PathPlanner(og.SimpleSetup):
     def __init__(self, robot: RobotBase,
                  collision_check_functions: list,
                  planner_name: str = "BITstar",
-                 objective: str = "PathLength",
                  constraint_functions=None,
-                 state_cost_functions=None):
+                 objectives=None
+                 ):
         self.robot = robot
         # Create robot-specific state space and space information.
         self.state_space = RobotStateSpace(robot)
@@ -314,10 +285,11 @@ class PathPlanner(og.SimpleSetup):
         self.space_information.setup()
         super().__init__(self.space_information)
 
-        optimization_objective = RobotOptimizationObjective.create(
-            self.space_information, objective, state_cost_functions)
+        optimization_objective = RobotOptimizationObjective(
+            self.space_information
+        )
         self.setOptimizationObjective(
-            optimization_objective
+            optimization_objective.create_multi_objective(objectives)
         )
 
         # Allocate the planner.

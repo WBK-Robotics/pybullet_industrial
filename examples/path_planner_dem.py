@@ -24,21 +24,6 @@ def check_endeffector_upright(robot: pi.RobotBase):
     return np.all(np.abs(orientation - target) <= tol)
 
 
-def stateCost(collision_checker_list):
-    """Computes the cost of a state based on its clearance.
-
-    Args:
-        s (ob.State): The state for which to compute the cost.
-
-    Returns:
-        ob.Cost: The computed cost.
-    """
-
-    state_cost = [cc.get_min_body_distance(bodyA=0, bodyB=1, distance=1) for cc in collision_checker_list]
-
-    return float(min(state_cost))
-
-
 def seting_up_enviroment():
     """
     Sets up the simulation environment, including paths to URDF files and
@@ -107,7 +92,7 @@ if __name__ == "__main__":
     clearance_obstacles = {obstacle: 1.0}
 
     # Initialize CollisionChecker with the custom clearance.
-    ignored_urdfs = [0] # ignore Fofa
+    ignored_urdfs = [0]  # ignore Fofa
     collision_checker = pi.CollisionChecker(ignored_urdfs)
     collision_checker.set_safe_state()
     internal_collision = collision_checker.check_internal_collisions()
@@ -117,14 +102,20 @@ if __name__ == "__main__":
     # Append constraint functinons
     collsion_check = [lambda: collision_checker.check_collision()]
     constraint_functions = [lambda: check_endeffector_upright(robot)]
-    state_cost = [lambda: stateCost([collision_checker])]
-    # Initialize PathPlanner with the clearance objective.
-    path_planner = pi.PathPlanner(robot=robot,
-                                  collision_check_functions=collsion_check,
-                                  planner_name="BITstar",
-                                  # objective="pathclearance",
-                                  constraint_functions=constraint_functions,
-                                  state_cost_functions=state_cost)
+
+    def objective(si): return pi.RobotPathClearanceObjective(
+        si, collision_checker, 0.3)
+    objective_weight = 1.0
+
+    objectives = [(objective, objective_weight)]
+
+    path_planner = pi.PathPlanner(
+        robot=robot,
+        collision_check_functions=collsion_check,
+        planner_name="BITstar",
+        constraint_functions=constraint_functions,
+        objectives=objectives,
+    )
 
     # Set up initial state (for Comau).
     inital_state = {

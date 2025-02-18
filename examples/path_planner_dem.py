@@ -1,6 +1,7 @@
 import os
 import tkinter as tk
 from ompl import base as ob
+from ompl import geometric as og
 import pybullet as p
 import pybullet_data
 import numpy as np
@@ -106,19 +107,29 @@ if __name__ == "__main__":
     constraint_functions = [lambda: check_endeffector_upright(robot)]
 
     def clearance_objective(si): return pi.RobotPathClearanceObjective(
-        si, collision_checker, 0.3)
+        si, collision_checker, 0.5)
 
     def path_length_objective(si): return ob.PathLengthOptimizationObjective(si)
 
     objective_weight = 1.0
     objectives = []
-    # objectives.append((clearance_objective, objective_weight))
-    objectives.append((path_length_objective, objective_weight))
+    objectives.append((clearance_objective, objective_weight))
+    # objectives.append((path_length_objective, objective_weight))
+
+    def rrtsharp(si): return og.RRTsharp(si)
+
+    def rrt(si): return og.RRT(si)
+
+    def bitstar(si): return og.BITstar(si)
+
+    def abitstar(si): return og.ABITstar(si)
+
+    def aitstar(si): return og.AITstar(si)
 
     path_planner = pi.PathPlanner(
         robot=robot,
         collision_check_functions=collsion_check,
-        planner_name="BITstar",
+        planner_type=bitstar,
         # constraint_functions=constraint_functions,
         objectives=objectives,
     )

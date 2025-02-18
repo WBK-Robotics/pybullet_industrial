@@ -186,7 +186,7 @@ class RobotValidityChecker(ob.StateValidityChecker):
         return True
 
 
-class RobotOptimizationObjective(ob.MultiOptimizationObjective):
+class RobotMultiOptimizationObjective(ob.MultiOptimizationObjective):
     """
     Factory class for creating robot-specific optimization objectives.
 
@@ -224,6 +224,10 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         self.si = si
         self.collision_checker = collision_checker
         self.clearance_distance = clearance_distance
+        # self.setCostToGoHeuristic(ob.CostToGoHeuristic(self.cost_to_go))
+
+    def cost_to_go(self, s1: ob.State, s2: ob.State):
+        return self.si.state_space.distance(s1, s2)
 
     def stateCost(self, state: ob.State):
         """
@@ -239,11 +243,14 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         min_distance = self.clearance_distance
 
         for (bodyA, bodyB), _ in self.collision_checker.external_collision_pairs:
-            curr_distance = self.collision_checker.get_min_body_distance(bodyA, bodyB, self.clearance_distance)
+            curr_distance = self.collision_checker.get_min_body_distance(
+                bodyA, bodyB, self.clearance_distance)
+            if curr_distance < 0:
+                curr_distance = 0
             if curr_distance < min_distance:
                 min_distance = curr_distance
 
-        return ob.Cost(1 / (min_distance + sys.float_info.min))
+        return ob.Cost(self.clearance_distance - min_distance)
 
 
 class PathPlanner(og.SimpleSetup):
@@ -264,7 +271,7 @@ class PathPlanner(og.SimpleSetup):
 
     def __init__(self, robot: RobotBase,
                  collision_check_functions: list,
-                 planner_name: str = "BITstar",
+                 planner_type,
                  constraint_functions=None,
                  objectives=None
                  ):
@@ -283,45 +290,19 @@ class PathPlanner(og.SimpleSetup):
         self.space_information.setup()
         super().__init__(self.space_information)
 
-        optimization_objective = RobotOptimizationObjective(
-            self.space_information, objectives
-        )
-        self.setOptimizationObjective(
-            optimization_objective
-        )
+        if objectives:
+            if len(objectives) == 1:
+                optimization_objective = objectives[0][0](self.space_information)
+            else:
+                optimization_objective = RobotMultiOptimizationObjective(
+                    self.space_information, objectives
+                )
 
-        # Allocate the planner.
-        optimizing_planner = self.allocate_planner(planner_name)
-        self.setPlanner(optimizing_planner)
+            self.setOptimizationObjective(
+                optimization_objective
+            )
 
-    def allocate_planner(self, plannerType: str):
-        """
-        Allocates an OMPL planner based on the given planner type.
-
-        Args:
-            plannerType (str): The desired planner type.
-
-        Returns:
-            An OMPL planner instance.
-        """
-        ptype = plannerType.lower()
-        if ptype == "bfmtstar":
-            return og.BFMT(self.space_information)
-        elif ptype == "bitstar":
-            return og.BITstar(self.space_information)
-        elif ptype == "fmtstar":
-            return og.FMT(self.space_information)
-        elif ptype == "informedrrtstar":
-            return og.InformedRRTstar(self.space_information)
-        elif ptype == "prmstar":
-            return og.PRMstar(self.space_information)
-        elif ptype == "rrtstar":
-            return og.RRTstar(self.space_information)
-        elif ptype == "sorrtstar":
-            return og.SORRTstar(self.space_information)
-        else:
-            ou.OMPL_ERROR("The specified planner type is not implemented.")
-            return None
+        self.setPlanner(planner_type(self.space_information))
 
     def setStartAndGoalStates(self, start: ob.State, goal: ob.State):
         """
@@ -358,7 +339,7 @@ class PathPlanner(og.SimpleSetup):
         orig_state = start.copy()
 
         self.setStartAndGoalStates(start, goal)
-
+        self.setup()
         solved = self.solve(allowed_time)
         res = False
         joint_path = None

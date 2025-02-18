@@ -127,14 +127,8 @@ class RobotBase:
                 - A tuple of joint names (`joint_order`)
                 - A tuple of corresponding joint indices (`joint_index`)
         """
-        # Retrieve the joint names and indices as a list of tuples
-        if selected_joint_names is None:
-            joint_items = self._joint_name_to_index.items()
-        else:
-            joint_items = [
-                (joint_name, self._joint_name_to_index[joint_name])
-                for joint_name in selected_joint_names
-            ]
+
+        joint_items = self._joint_name_to_index.items()
 
         # Sort the joints by their indices
         sorted_joint_items = sorted(joint_items, key=lambda item: item[1])
@@ -297,16 +291,16 @@ class RobotBase:
                                                        lowerLimits=self._lower_joint_limit,
                                                        upperLimits=self._upper_joint_limit)
 
-        for index, joint_position in enumerate(joint_poses):
-            joint_number = self._kinematic_solver_map[index]
-            p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
-                                    force=self.max_joint_force[joint_number],
-                                    targetPosition=joint_position)
-        # for joint_index, joint_value in zip(self.get_moveable_joints()[1], joint_poses):
-        #     p.resetJointState(
-        #          self.urdf,
-        #          joint_index,
-        #          targetValue=joint_value)
+        # for index, joint_position in enumerate(joint_poses):
+        #     joint_number = self._kinematic_solver_map[index]
+        #     p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
+        #                             force=self.max_joint_force[joint_number],
+        #                             targetPosition=joint_position)
+        for joint_index, joint_value in zip(self.get_moveable_joints()[1], joint_poses):
+            p.resetJointState(
+                 self.urdf,
+                 joint_index,
+                 targetValue=joint_value)
 
     def reset_robot(self, start_position: np.array, start_orientation: np.array,
                     joint_values: list = None):

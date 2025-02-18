@@ -81,6 +81,10 @@ class RobotStateSpace(ob.RealVectorStateSpace):
         """
         return [joint_dict[joint] for joint in self.joint_order]
 
+    def freeState(self, state: ob.State):
+        # No operation is needed in Python because of garbage collection.
+        pass
+
 
 class RobotSpaceInformation(ob.SpaceInformation):
     """
@@ -107,7 +111,7 @@ class RobotSpaceInformation(ob.SpaceInformation):
         Returns:
             ob.State: The corresponding state object.
         """
-        state = ob.State(self.state_space)
+        state = self.state_space.allocState()
         for i, value in enumerate(joint_values):
             state[i] = value
         return state
@@ -210,13 +214,6 @@ class RobotMultiOptimizationObjective(ob.MultiOptimizationObjective):
 class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
     """
     Encourages paths with high clearance by using cost functions.
-
-    Returns a reciprocal cost of the accumulated cost with a small offset
-    to avoid division by zero.
-
-    Args:
-        si (RobotSpaceInformation): The space information instance.
-        state_cost_functions (list, optional): List of cost functions.
     """
 
     def __init__(self, si: RobotSpaceInformation, collision_checker: CollisionChecker, clearance_distance: float = 0.0):
@@ -224,21 +221,8 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         self.si = si
         self.collision_checker = collision_checker
         self.clearance_distance = clearance_distance
-        # self.setCostToGoHeuristic(ob.CostToGoHeuristic(self.cost_to_go))
-
-    def cost_to_go(self, s1: ob.State, s2: ob.State):
-        return self.si.state_space.distance(s1, s2)
 
     def stateCost(self, state: ob.State):
-        """
-        Computes the cost of the given state.
-
-        Args:
-            state (ob.State): The state to evaluate.
-
-        Returns:
-            ob.Cost: The computed cost.
-        """
         self.si.set_state(state)
         min_distance = self.clearance_distance
 
@@ -253,7 +237,7 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         return ob.Cost(self.clearance_distance - min_distance)
 
 
-class PathPlanner(og.SimpleSetup):
+class PathPlanner(ob.ProblemDefinition):
     """
     Sets up the entire planning problem using robot-specific classes.
 
@@ -292,17 +276,21 @@ class PathPlanner(og.SimpleSetup):
 
         if objectives:
             if len(objectives) == 1:
-                optimization_objective = objectives[0][0](self.space_information)
+                self.optimization_objective = objectives[0][0](
+                    self.space_information)
             else:
-                optimization_objective = RobotMultiOptimizationObjective(
+                self.optimization_objective = RobotMultiOptimizationObjective(
                     self.space_information, objectives
                 )
-
             self.setOptimizationObjective(
-                optimization_objective
+                self.optimization_objective
             )
 
-        self.setPlanner(planner_type(self.space_information))
+        self.planner_type = planner_type
+        self.objectives = objectives
+
+        self.planner = planner_type(self.space_information)
+
 
     def setStartAndGoalStates(self, start: ob.State, goal: ob.State):
         """
@@ -334,13 +322,15 @@ class PathPlanner(og.SimpleSetup):
         Returns:
             tuple: (bool, JointPath) where bool indicates success.
         """
-
-        self.clear()
+        self.clearSolutionPaths()
+        self.planner.clear()
         orig_state = start.copy()
 
         self.setStartAndGoalStates(start, goal)
-        self.setup()
-        solved = self.solve(allowed_time)
+        self.planner.setProblemDefinition(self)
+        self.planner.setup()
+
+        solved = self.planner.solve(allowed_time)
         res = False
         joint_path = None
 

@@ -113,8 +113,8 @@ if __name__ == "__main__":
 
     objective_weight = 1.0
     objectives = []
-    objectives.append((clearance_objective, objective_weight))
-    # objectives.append((path_length_objective, objective_weight))
+    # objectives.append((clearance_objective, objective_weight))
+    objectives.append((path_length_objective, objective_weight))
 
     def rrtsharp(si): return og.RRTsharp(si)
 

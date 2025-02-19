@@ -15,7 +15,8 @@ class PathPlannerGUI:
 
     def __init__(self, root, robot: pi.RobotBase,
                  path_planner: pi.PathPlanner,
-                 collision_checker_list: list, obstacle, constraint_functions):
+                 collision_check: list, obstacle, constraint_functions,
+                 endeffector=None):
         """
         Initializes the PathPlanner GUI.
 
@@ -31,7 +32,7 @@ class PathPlannerGUI:
         self.root = root
         self.robot = robot
         self.path_planner = path_planner
-        self.collision_checker_list = collision_checker_list
+        self.collision_check = collision_check
         self.obstacle = obstacle
         self.constraint_functions = constraint_functions
         self.start = self.robot.get_joint_state()  # Start config.
@@ -48,8 +49,9 @@ class PathPlannerGUI:
         # Status indicator for constraint functions.
         self.constraint_status = tk.StringVar(value="green")
         self.current_box_size = [0.5, 0.5, 0.05]
+
+        self.endeffector = endeffector
         self.create_widgets()
-        self.set_allowed_collision()
         self.update_joint_positions()
         self.set_initial_obstacle_values()
         self.update_status()
@@ -111,9 +113,6 @@ class PathPlannerGUI:
         tk.Button(self.root, text="Set as End",
                   command=self.set_as_goal).grid(
                       row=control_row, column=1, pady=10)
-        tk.Button(self.root, text="Set Allowed Collision",
-                  command=self.set_allowed_collision).grid(
-                      row=control_row, column=2, pady=10)
         tk.Button(self.root, text="Plan and Execute",
                   command=self.plan_and_execute).grid(
                       row=control_row, column=3, pady=10)
@@ -134,8 +133,10 @@ class PathPlannerGUI:
         """
         Updates the collision status and constraint status indicators.
         """
+        if self.endeffector:
+            self.endeffector.match_endeffector_pose(self.robot)
         # Update collision status.
-        valid_collision = all(cc.check_collision() for cc in self.collision_checker_list)
+        valid_collision = all(cc() for cc in self.collision_check)
         self.collision_status.set("green" if valid_collision else "red")
         self.collision_light.config(bg=self.collision_status.get())
         # Update constraint status.
@@ -245,11 +246,6 @@ class PathPlannerGUI:
                      for i, jn in enumerate(self.joint_order)}
         print("Goal configuration set:", self.goal)
 
-    def set_allowed_collision(self):
-        for cc in self.collision_checker_list:
-            cc.set_safe_state()
-        print("Allowed collisions set.")
-        self.update_status()
 
     def plan_and_execute(self):
         print("Planning and executing path...")
@@ -258,6 +254,8 @@ class PathPlannerGUI:
         if res:
             for joint_conf, tool_act in joint_path:
                 self.robot.reset_joint_position(joint_conf, True)
+                if self.endeffector:
+                    self.endeffector.match_endeffector_pose(self.robot)
                 time.sleep(0.01)
             self.update_joint_positions()
             print("Path execution completed.")

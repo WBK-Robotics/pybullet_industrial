@@ -160,6 +160,69 @@ class EndeffectorTool:
         orientation = np.array(link_state[1])
         return position, orientation
 
+    def set_base_offset(self, base_offset: np.array):
+        self.base_offset = base_offset
+
+    def match_endeffector_pose(self, robot: RobotBase):
+        """
+        Matches the tool's connector frame with the robot's end effector pose,
+        optionally applying an additional offset to the tool's base pose.
+
+        This method computes the new base pose for the tool so that the connector frame
+        (as defined by `connector_frame` during initialization) aligns with the robot's
+        end effector pose (retrieved via robot.get_endeffector_pose()). An additional offset
+        (position and orientation) can be applied to the resulting base pose.
+
+        Args:
+            robot (RobotBase): The robot whose end effector pose should be matched.
+            base_offset (tuple): A tuple (position_offset, orientation_offset) where:
+                - position_offset (list or np.array): 3D translation offset.
+                - orientation_offset (list or np.array): Quaternion [x, y, z, w] offset.
+                Defaults to ([0, 0, 0], [0, 0, 0, 1]) (i.e. no offset).
+        """
+        # 1. Retrieve the robot's end effector pose.
+        ee_pos, ee_ori = robot.get_endeffector_pose()
+
+        # 2. Get the current base pose of the tool.
+        base_pos, base_ori = p.getBasePositionAndOrientation(self.urdf)
+
+        # 3. Compute the transform from the tool's base to its connector frame.
+        if self._connector_id == -1:
+            # If no connector frame is specified, assume the base IS the connector.
+            base_to_connector_translation = [0, 0, 0]
+            base_to_connector_rotation = [0, 0, 0, 1]
+        else:
+            # Get the connector's current pose.
+            connector_state = p.getLinkState(self.urdf, self._connector_id)
+            connector_pos, connector_ori = connector_state[0], connector_state[1]
+            base_to_connector_translation, base_to_connector_rotation = p.multiplyTransforms(
+                *p.invertTransform(base_pos, base_ori),
+                connector_pos, connector_ori
+            )
+
+        # 4. Invert the base-to-connector transform.
+        inv_trans, inv_rot = p.invertTransform(base_to_connector_translation, base_to_connector_rotation)
+
+        # 5. Compute the new base pose such that:
+        #    (new_base_pose) * (base_to_connector) = end effector pose.
+        new_base_pos, new_base_ori = p.multiplyTransforms(
+            ee_pos, ee_ori,
+            inv_trans, inv_rot
+        )
+
+        # 6. Apply the additional base offset.
+        pos_offset, ori_offset = self.base_offset
+        final_base_pos, final_base_ori = p.multiplyTransforms(
+            new_base_pos, new_base_ori,
+            pos_offset, ori_offset
+        )
+
+        # 7. Reset the tool's base pose so that its connector now matches the adjusted end effector pose.
+        p.resetBasePositionAndOrientation(self.urdf, final_base_pos, final_base_ori)
+
+
+
+
     def set_tool_pose(self, target_position: np.array, target_orientation: np.array = None):
         """Allows the control of the tool.
            If the tool is coupled the inverse kinematic control of a coupled robot is used.
@@ -180,7 +243,7 @@ class EndeffectorTool:
                 target_position, target_orientation, tcp_translation_inv, tcp_rotation_inv)
 
             self._coupled_robot.set_endeffector_pose(
-                adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
+               adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
             # Added couplin like behavior
             p.resetBasePositionAndOrientation(self.urdf, adj_target_position, adj_target_orientation)
         else:

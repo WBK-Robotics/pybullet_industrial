@@ -12,6 +12,8 @@ from path_planner_gui import PathPlannerGUI
 INTERPOLATE_NUM = 500  # Number of segments for interpolating the path
 DEFAULT_PLANNING_TIME = 5.0  # Maximum planning time in seconds
 
+def couple_endeffector(gripper: pi.Gripper, robot: pi.RobotBase, link: chr):
+    return gripper.couple(robot, link)
 
 def check_endeffector_upright(robot: pi.RobotBase):
     """Checks if the robot's end-effector is upright within tolerance.
@@ -37,6 +39,9 @@ def seting_up_enviroment():
                               'comau_nj290_robot.urdf')
     urdf_fofa = os.path.join(working_dir, 'Objects', 'FoFa', 'FoFa.urdf')
 
+    urdf_gripper = os.path.join(working_dir,
+                                'robot_descriptions', 'gripper_cad.urdf')
+
     # Comau start position.
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     start_pos = np.array([2.0, -6.5, 0])
@@ -59,7 +64,7 @@ def seting_up_enviroment():
 
     p.loadURDF(urdf_fofa, useFixedBase=True, globalScaling=0.001)
 
-    return urdf_robot, start_pos, start_orientation
+    return urdf_robot, start_pos, start_orientation, urdf_gripper
 
 
 def add_box(box_pos, half_box_size):
@@ -79,9 +84,18 @@ def add_box(box_pos, half_box_size):
 
 if __name__ == "__main__":
     # Initialize the simulation environment.
-    urdf_robot, start_pos, start_orientation = seting_up_enviroment()
+    urdf_robot, start_pos, start_orientation, urdf_gripper = seting_up_enviroment()
 
     robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
+    start_orientation = p.getQuaternionFromEuler([np.pi, 0, 0])
+
+    test_gripper = pi.Gripper(urdf_gripper, [2.7, -0.5, 1.2], start_orientation)
+    position_offset = np.array([0, 0, 0])
+    orientation_offset = p.getQuaternionFromEuler(np.array([-np.pi/2, 0, 0]))
+    base_offset = [position_offset, orientation_offset]
+    test_gripper.set_base_offset(base_offset)
+
+
 
     # Add a box obstacle.
     obstacles = []
@@ -95,12 +109,11 @@ if __name__ == "__main__":
     clearance_obstacles = {obstacle: 1.0}
 
     # Initialize CollisionChecker with the custom clearance.
-    ignored_urdfs = [0]  # ignore Fofa
-    collision_checker = pi.CollisionChecker(ignored_urdfs)
+      # ignore Fofa
+    collision_checker = pi.CollisionChecker()
+    test_gripper.match_endeffector_pose(robot)
     collision_checker.set_safe_state()
-    internal_collision = collision_checker.check_internal_collisions()
-    external_collision = collision_checker.check_external_collisions()
-    global_collision = collision_checker.check_collision()
+
 
     # Append constraint functinons
     collsion_check = [lambda: collision_checker.check_collision()]
@@ -109,7 +122,8 @@ if __name__ == "__main__":
     def clearance_objective(si): return pi.RobotPathClearanceObjective(
         si, collision_checker, 0.5)
 
-    def path_length_objective(si): return ob.PathLengthOptimizationObjective(si)
+    def path_length_objective(
+        si): return ob.PathLengthOptimizationObjective(si)
 
     objective_weight = 1.0
     objectives = []
@@ -128,10 +142,11 @@ if __name__ == "__main__":
 
     path_planner = pi.PathPlanner(
         robot=robot,
+        endeffector=test_gripper,
         collision_check_functions=collsion_check,
         planner_type=bitstar,
         # constraint_functions=constraint_functions,
-        objectives=objectives,
+        # objectives=objectives,
     )
 
     # Set up initial state (for Comau).
@@ -147,6 +162,8 @@ if __name__ == "__main__":
 
     # Create the GUI for motion planning.
     root = tk.Tk()
-    gui = PathPlannerGUI(root, robot, path_planner, [collision_checker],
-                         obstacle, constraint_functions)
+    gui = PathPlannerGUI(root, robot, path_planner, collsion_check,
+                         obstacle, constraint_functions,
+                         test_gripper
+                         )
     root.mainloop()

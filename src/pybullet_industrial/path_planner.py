@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 from ompl import base as ob
 from ompl import geometric as og
@@ -8,7 +7,7 @@ from pybullet_industrial import CollisionChecker, RobotBase, JointPath
 # Number of segments to interpolate along the planned path.
 INTERPOLATE_NUM = 500
 # Maximum allowed planning time in seconds.
-DEFAULT_PLANNING_TIME = 5.0
+DEFAULT_PLANNING_TIME = 10.0
 
 
 class RobotStateSpace(ob.RealVectorStateSpace):
@@ -95,11 +94,12 @@ class RobotSpaceInformation(ob.SpaceInformation):
         state_space (RobotStateSpace): The state space instance for the robot.
     """
 
-    def __init__(self, state_space: RobotStateSpace):
+    def __init__(self, state_space: RobotStateSpace, endeffector=None):
         # Pass the state space to the parent constructor.
         super().__init__(state_space)
         self.robot = state_space.robot
         self.state_space = state_space
+        self.endeffector = endeffector
 
     def list_to_state(self, joint_values: list):
         """
@@ -125,11 +125,15 @@ class RobotSpaceInformation(ob.SpaceInformation):
         Args:
             state (ob.State): The state used to update the robot.
         """
+
         joint_positions = self.state_space.state_to_list(state)
         self.robot.reset_joint_position(
             dict(zip(self.state_space.joint_order, joint_positions)),
             True
-        )
+            )
+
+        if self.endeffector:
+            self.endeffector.match_endeffector_pose(self.robot)
 
     def setStateValidityChecker(self, validity_checker):
         """
@@ -257,12 +261,13 @@ class PathPlanner(ob.ProblemDefinition):
                  collision_check_functions: list,
                  planner_type,
                  constraint_functions=None,
-                 objectives=None
+                 objectives=None,
+                 endeffector=None,
                  ):
         self.robot = robot
         # Create robot-specific state space and space information.
         self.state_space = RobotStateSpace(robot)
-        self.space_information = RobotSpaceInformation(self.state_space)
+        self.space_information = RobotSpaceInformation(self.state_space, endeffector)
 
         # Attach the validity checker.
         validity_checker = RobotValidityChecker(
@@ -290,7 +295,6 @@ class PathPlanner(ob.ProblemDefinition):
         self.objectives = objectives
 
         self.planner = planner_type(self.space_information)
-
 
     def setStartAndGoalStates(self, start: ob.State, goal: ob.State):
         """

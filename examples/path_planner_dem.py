@@ -41,6 +41,8 @@ def seting_up_enviroment():
 
     urdf_gripper = os.path.join(working_dir,
                                 'robot_descriptions', 'gripper_cad.urdf')
+    urdf_small_cube = os.path.join(working_dir,
+                              'robot_descriptions', 'cube_small.urdf')
 
     # Comau start position.
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
@@ -64,7 +66,7 @@ def seting_up_enviroment():
 
     p.loadURDF(urdf_fofa, useFixedBase=True, globalScaling=0.001)
 
-    return urdf_robot, start_pos, start_orientation, urdf_gripper
+    return urdf_robot, start_pos, start_orientation, urdf_gripper, urdf_small_cube
 
 
 def add_box(box_pos, half_box_size):
@@ -84,7 +86,7 @@ def add_box(box_pos, half_box_size):
 
 if __name__ == "__main__":
     # Initialize the simulation environment.
-    urdf_robot, start_pos, start_orientation, urdf_gripper = seting_up_enviroment()
+    urdf_robot, start_pos, start_orientation, urdf_gripper, urdf_cube_small = seting_up_enviroment()
 
     robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
     start_orientation = p.getQuaternionFromEuler([np.pi, 0, 0])
@@ -94,6 +96,9 @@ if __name__ == "__main__":
     orientation_offset = p.getQuaternionFromEuler(np.array([-np.pi/2, 0, 0]))
     base_offset = [position_offset, orientation_offset]
     test_gripper.set_base_offset(base_offset)
+
+    cube_small = p.loadURDF(urdf_cube_small, start_pos + [0,-2,0], useFixedBase=False)
+    test_gripper.set_moving_object_offset([[0, 0, -0.1], [0, 0, 0, 0]])
 
 
 
@@ -108,10 +113,25 @@ if __name__ == "__main__":
     # Here, we set a clearance query distance of 1.0 for the obstacle.
     clearance_obstacles = {obstacle: 1.0}
 
+
+    # Set up initial state (for Comau).
+    inital_state = {
+        'q1': -0.5,
+        'q2': 0,
+        'q3': -(np.pi/2),
+        'q4': 0,
+        'q5': np.pi/2,
+        'q6': 0
+    }
+    robot.reset_joint_position(inital_state)
+
     # Initialize CollisionChecker with the custom clearance.
-      # ignore Fofa
+
     collision_checker = pi.CollisionChecker()
     test_gripper.match_endeffector_pose(robot)
+
+    test_gripper.match_moving_object(cube_small)
+
     collision_checker.set_safe_state()
 
 
@@ -143,27 +163,20 @@ if __name__ == "__main__":
     path_planner = pi.PathPlanner(
         robot=robot,
         endeffector=test_gripper,
+        moved_object=cube_small,
         collision_check_functions=collsion_check,
         planner_type=bitstar,
         # constraint_functions=constraint_functions,
         # objectives=objectives,
     )
 
-    # Set up initial state (for Comau).
-    inital_state = {
-        'q1': -0.5,
-        'q2': 0,
-        'q3': -(np.pi/2),
-        'q4': 0,
-        'q5': np.pi/2,
-        'q6': 0
-    }
-    robot.reset_joint_position(inital_state)
+
 
     # Create the GUI for motion planning.
     root = tk.Tk()
     gui = PathPlannerGUI(root, robot, path_planner, collsion_check,
                          obstacle, constraint_functions,
-                         test_gripper
+                         test_gripper,
+                         cube_small,
                          )
     root.mainloop()

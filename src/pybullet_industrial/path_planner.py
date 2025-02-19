@@ -2,6 +2,7 @@ import numpy as np
 from ompl import base as ob
 from ompl import geometric as og
 from ompl import util as ou
+import pybullet as p
 from pybullet_industrial import CollisionChecker, RobotBase, JointPath
 
 # Number of segments to interpolate along the planned path.
@@ -94,12 +95,13 @@ class RobotSpaceInformation(ob.SpaceInformation):
         state_space (RobotStateSpace): The state space instance for the robot.
     """
 
-    def __init__(self, state_space: RobotStateSpace, endeffector=None):
+    def __init__(self, state_space: RobotStateSpace, endeffector=None, moved_object=None):
         # Pass the state space to the parent constructor.
         super().__init__(state_space)
         self.robot = state_space.robot
         self.state_space = state_space
         self.endeffector = endeffector
+        self.moved_object = moved_object
 
     def list_to_state(self, joint_values: list):
         """
@@ -135,6 +137,8 @@ class RobotSpaceInformation(ob.SpaceInformation):
         if self.endeffector:
             self.endeffector.match_endeffector_pose(self.robot)
 
+            if self.moved_object:
+                self.endeffector.match_moving_object(self.moved_object)
     def setStateValidityChecker(self, validity_checker):
         """
         Sets the state validity checker.
@@ -263,11 +267,12 @@ class PathPlanner(ob.ProblemDefinition):
                  constraint_functions=None,
                  objectives=None,
                  endeffector=None,
+                 moved_object=None
                  ):
         self.robot = robot
         # Create robot-specific state space and space information.
         self.state_space = RobotStateSpace(robot)
-        self.space_information = RobotSpaceInformation(self.state_space, endeffector)
+        self.space_information = RobotSpaceInformation(self.state_space, endeffector, moved_object)
 
         # Attach the validity checker.
         validity_checker = RobotValidityChecker(

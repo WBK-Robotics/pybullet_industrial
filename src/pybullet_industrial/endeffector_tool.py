@@ -163,6 +163,15 @@ class EndeffectorTool:
     def set_base_offset(self, base_offset: np.array):
         self.base_offset = base_offset
 
+    def set_moving_object_offset(self, offset: np.array):
+        self.moving_object_offset = offset
+
+    def match_moving_object(self, moving_object):
+        position, orientation = self.get_tool_pose()
+        target_position = position + self.moving_object_offset[0]
+        target_orientation = orientation + self.moving_object_offset[1]
+        p.resetBasePositionAndOrientation(moving_object, target_position, target_orientation)
+
     def match_endeffector_pose(self, robot: RobotBase):
         """
         Matches the tool's connector frame with the robot's end effector pose,

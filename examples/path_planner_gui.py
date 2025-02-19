@@ -16,7 +16,7 @@ class PathPlannerGUI:
     def __init__(self, root, robot: pi.RobotBase,
                  path_planner: pi.PathPlanner,
                  collision_check: list, obstacle, constraint_functions,
-                 endeffector=None):
+                 endeffector=None, moved_object=None):
         """
         Initializes the PathPlanner GUI.
 
@@ -51,6 +51,7 @@ class PathPlannerGUI:
         self.current_box_size = [0.5, 0.5, 0.05]
 
         self.endeffector = endeffector
+        self.moved_object = moved_object
         self.create_widgets()
         self.update_joint_positions()
         self.set_initial_obstacle_values()
@@ -135,6 +136,8 @@ class PathPlannerGUI:
         """
         if self.endeffector:
             self.endeffector.match_endeffector_pose(self.robot)
+            if self.moved_object:
+                self.endeffector.match_moving_object(self.moved_object)
         # Update collision status.
         valid_collision = all(cc() for cc in self.collision_check)
         self.collision_status.set("green" if valid_collision else "red")
@@ -256,6 +259,8 @@ class PathPlannerGUI:
                 self.robot.reset_joint_position(joint_conf, True)
                 if self.endeffector:
                     self.endeffector.match_endeffector_pose(self.robot)
+                    if self.moved_object:
+                        self.endeffector.match_moving_object(self.moved_object)
                 time.sleep(0.01)
             self.update_joint_positions()
             print("Path execution completed.")

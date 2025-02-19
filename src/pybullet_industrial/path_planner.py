@@ -1,8 +1,6 @@
 import numpy as np
 from ompl import base as ob
 from ompl import geometric as og
-from ompl import util as ou
-import pybullet as p
 from pybullet_industrial import CollisionChecker, RobotBase, JointPath
 
 # Number of segments to interpolate along the planned path.
@@ -81,10 +79,6 @@ class RobotStateSpace(ob.RealVectorStateSpace):
         """
         return [joint_dict[joint] for joint in self.joint_order]
 
-    def freeState(self, state: ob.State):
-        # No operation is needed in Python because of garbage collection.
-        pass
-
 
 class RobotSpaceInformation(ob.SpaceInformation):
     """
@@ -95,7 +89,8 @@ class RobotSpaceInformation(ob.SpaceInformation):
         state_space (RobotStateSpace): The state space instance for the robot.
     """
 
-    def __init__(self, state_space: RobotStateSpace, endeffector=None, moved_object=None):
+    def __init__(self, state_space: RobotStateSpace, endeffector=None,
+                 moved_object=None):
         # Pass the state space to the parent constructor.
         super().__init__(state_space)
         self.robot = state_space.robot
@@ -139,6 +134,7 @@ class RobotSpaceInformation(ob.SpaceInformation):
 
             if self.moved_object:
                 self.endeffector.match_moving_object(self.moved_object)
+
     def setStateValidityChecker(self, validity_checker):
         """
         Sets the state validity checker.
@@ -208,15 +204,24 @@ class RobotMultiOptimizationObjective(ob.MultiOptimizationObjective):
         si (RobotSpaceInformation): The space information instance.
     """
 
-    def __init__(self, si: RobotSpaceInformation, weighted_objective_list: list = None):
+    def __init__(self, si: RobotSpaceInformation, weighted_objective_list):
         super().__init__(si)
         self.si = si
-        if weighted_objective_list:
-            self.uppdate_objective(weighted_objective_list)
+        self.uppdate_objective(weighted_objective_list)
 
     def uppdate_objective(self, weighted_objective_list: list):
         for objective, weight in weighted_objective_list:
             self.addObjective(objective(self.si), weight)
+
+    def addObjective(self, objective, weight):
+        """
+        Adds an objective to the multi-objective.
+
+        Args:
+            objective: The objective to add.
+            weight (float): The weight of the objective.
+        """
+        super().addObjective(objective, weight)
 
 
 class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
@@ -333,7 +338,7 @@ class PathPlanner(ob.ProblemDefinition):
         """
         self.clearSolutionPaths()
         self.planner.clear()
-        orig_state = start.copy()
+
 
         self.setStartAndGoalStates(start, goal)
         self.planner.setProblemDefinition(self)
@@ -359,5 +364,4 @@ class PathPlanner(ob.ProblemDefinition):
         else:
             print("No solution found")
 
-        self.robot.reset_joint_position(orig_state, True)
         return res, joint_path

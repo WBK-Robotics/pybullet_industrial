@@ -6,7 +6,7 @@ from pybullet_industrial import CollisionChecker, RobotBase, JointPath
 # Number of segments to interpolate along the planned path.
 INTERPOLATE_NUM = 500
 # Maximum allowed planning time in seconds.
-DEFAULT_PLANNING_TIME = 10.0
+DEFAULT_PLANNING_TIME = 5.0
 
 
 class RobotStateSpace(ob.RealVectorStateSpace):
@@ -89,14 +89,26 @@ class RobotSpaceInformation(ob.SpaceInformation):
         state_space (RobotStateSpace): The state space instance for the robot.
     """
 
-    def __init__(self, state_space: RobotStateSpace, endeffector=None,
-                 moved_object=None):
+    def __init__(self, state_space: RobotStateSpace,
+                 endeffector=None,
+                 moved_object=None,
+                 validity_resolution=0.0001):
         # Pass the state space to the parent constructor.
         super().__init__(state_space)
+        self.setStateValidityCheckingResolution(validity_resolution)
         self.robot = state_space.robot
         self.state_space = state_space
         self.endeffector = endeffector
         self.moved_object = moved_object
+
+    def setStateValidityCheckingResolution(self, resolution: float):
+        """
+        Sets the resolution for state validity checking.
+
+        Args:
+            resolution (float): The resolution to use.
+        """
+        super().setStateValidityCheckingResolution(resolution)
 
     def list_to_state(self, joint_values: list):
         """
@@ -108,7 +120,7 @@ class RobotSpaceInformation(ob.SpaceInformation):
         Returns:
             ob.State: The corresponding state object.
         """
-        state = self.state_space.allocState()
+        state = ob.State(self.state_space)
         for i, value in enumerate(joint_values):
             state[i] = value
         return state
@@ -127,7 +139,7 @@ class RobotSpaceInformation(ob.SpaceInformation):
         self.robot.reset_joint_position(
             dict(zip(self.state_space.joint_order, joint_positions)),
             True
-            )
+        )
 
         if self.endeffector:
             self.endeffector.match_endeffector_pose(self.robot)
@@ -250,7 +262,7 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         return ob.Cost(self.clearance_distance - min_distance)
 
 
-class PathPlanner(ob.ProblemDefinition):
+class PathPlanner(og.SimpleSetup):
     """
     Sets up the entire planning problem using robot-specific classes.
 
@@ -274,10 +286,63 @@ class PathPlanner(ob.ProblemDefinition):
                  endeffector=None,
                  moved_object=None
                  ):
+
+        self.set_space_information(
+            robot, collision_check_functions, constraint_functions,
+            endeffector, moved_object)
+
+        if objectives:
+            self.set_optimization_objective(objectives)
+
+        self.planner_type = planner_type
+
+        self.set_planner(planner_type)
+
+    def set_planner(self, planner_type):
+        """
+        Sets the planner to use for the problem.
+
+        Args:
+            planner: The planner to use.
+        """
+        self.planner = planner_type(self.space_information)
+        super().setPlanner(self.planner)
+
+    def setPlanner(self, planner):
+        super().setPlanner(planner)
+
+    def set_optimization_objective(self, objectives):
+        if len(objectives) == 1:
+            self.optimization_objective = objectives[0][0](
+                self.space_information)
+        else:
+            self.optimization_objective = RobotMultiOptimizationObjective(
+                self.space_information, objectives
+            )
+        self.setOptimizationObjective(
+            self.optimization_objective
+        )
+
+    def setOptimizationObjective(self, objective):
+        """
+        Sets the optimization objective for the planner.
+
+        Args:
+            objective: The optimization objective to use.
+        """
+        super().setOptimizationObjective(objective)
+
+    def set_space_information(self, robot: RobotBase,
+                              collision_check_functions: list,
+                              constraint_functions=None,
+                              endeffector=None,
+                              moved_object=None
+                              ):
         self.robot = robot
         # Create robot-specific state space and space information.
         self.state_space = RobotStateSpace(robot)
-        self.space_information = RobotSpaceInformation(self.state_space, endeffector, moved_object)
+        self.space_information = RobotSpaceInformation(
+            self.state_space, endeffector, moved_object)
 
         # Attach the validity checker.
         validity_checker = RobotValidityChecker(
@@ -286,25 +351,9 @@ class PathPlanner(ob.ProblemDefinition):
             constraint_functions
         )
         self.space_information.setStateValidityChecker(validity_checker)
+
         self.space_information.setup()
         super().__init__(self.space_information)
-
-        if objectives:
-            if len(objectives) == 1:
-                self.optimization_objective = objectives[0][0](
-                    self.space_information)
-            else:
-                self.optimization_objective = RobotMultiOptimizationObjective(
-                    self.space_information, objectives
-                )
-            self.setOptimizationObjective(
-                self.optimization_objective
-            )
-
-        self.planner_type = planner_type
-        self.objectives = objectives
-
-        self.planner = planner_type(self.space_information)
 
     def setStartAndGoalStates(self, start: ob.State, goal: ob.State):
         """
@@ -336,19 +385,24 @@ class PathPlanner(ob.ProblemDefinition):
         Returns:
             tuple: (bool, JointPath) where bool indicates success.
         """
-        self.clearSolutionPaths()
+
+        self.clear()
         self.planner.clear()
 
-
         self.setStartAndGoalStates(start, goal)
-        self.planner.setProblemDefinition(self)
-        self.planner.setup()
+        self.setup()
 
         solved = self.planner.solve(allowed_time)
         res = False
         joint_path = None
 
         if solved:
+            # print('{0} found solution of path length {1:.4f} with an optimization '
+            #         'objective value of {2:.4f}'.format(
+            #             self.planner.getName(),
+            #             self.getSolutionPath().length(),
+            #             self.getSolutionPath().cost(self.getOptimizationObjective()).value()))
+            self.simplifySolution(5)
             sol_path = self.getSolutionPath()
             sol_path.interpolate(INTERPOLATE_NUM)
             states = sol_path.getStates()
@@ -356,6 +410,7 @@ class PathPlanner(ob.ProblemDefinition):
                 self.state_space.state_to_list(st)
                 for st in states
             ])
+            print("Number of solution states: ", len(states))
             joint_path = JointPath(
                 path_list.transpose(),
                 tuple(self.state_space.joint_order)

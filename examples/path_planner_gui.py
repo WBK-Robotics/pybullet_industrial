@@ -16,7 +16,7 @@ class PathPlannerGUI:
     def __init__(self, root, robot: pi.RobotBase,
                  path_planner: pi.PathPlanner,
                  collision_check: list, obstacle, constraint_functions,
-                 endeffector=None, moved_object=None):
+                 endeffector=None, moved_object=None, collision_checker=None):
         """
         Initializes the PathPlanner GUI.
 
@@ -35,6 +35,7 @@ class PathPlannerGUI:
         self.collision_check = collision_check
         self.obstacle = obstacle
         self.constraint_functions = constraint_functions
+        self.collision_checker = collision_checker
         self.start = self.robot.get_joint_state()  # Start config.
         self.goal = self.robot.get_joint_state()   # Goal config.
         self.joint_order = self.robot.get_moveable_joints()[0]
@@ -249,7 +250,6 @@ class PathPlannerGUI:
                      for i, jn in enumerate(self.joint_order)}
         print("Goal configuration set:", self.goal)
 
-
     def plan_and_execute(self):
         print("Planning and executing path...")
         res, joint_path = self.path_planner.plan_start_goal(
@@ -262,6 +262,8 @@ class PathPlannerGUI:
                     if self.moved_object:
                         self.endeffector.match_moving_object(self.moved_object)
                 time.sleep(0.01)
+                if not self.collision_check[0]():
+                    print("Collision detected!")
             self.update_joint_positions()
             print("Path execution completed.")
         else:

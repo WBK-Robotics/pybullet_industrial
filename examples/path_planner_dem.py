@@ -49,10 +49,10 @@ def seting_up_enviroment():
     start_pos = np.array([2.0, -6.5, 0])
 
     # Set up the GUI camera.
-    p.connect(p.GUI,
-              options='--background_color_red=1 '
-                      '--background_color_green=1 '
-                      '--background_color_blue=1')
+    p.connect(p.GUI)
+            #   options='--background_color_red=1 '
+            #           '--background_color_green=1 '
+            #           '--background_color_blue=1')
     p.resetDebugVisualizerCamera(cameraDistance=2.0, cameraYaw=50.0,
                                  cameraPitch=-30,
                                  cameraTargetPosition=(
@@ -128,9 +128,9 @@ if __name__ == "__main__":
     # Initialize CollisionChecker with the custom clearance.
 
     collision_checker = pi.CollisionChecker()
-    test_gripper.match_endeffector_pose(robot)
+    # test_gripper.match_endeffector_pose(robot)
 
-    test_gripper.match_moving_object(cube_small)
+    # test_gripper.match_moving_object(cube_small)
 
     collision_checker.set_safe_state()
 
@@ -152,7 +152,10 @@ if __name__ == "__main__":
 
     def rrtsharp(si): return og.RRTsharp(si)
 
-    def rrt(si): return og.RRT(si)
+    def rrt(si):
+        rrt = og.RRT(si)
+        rrt.setGoalBias(0.5)
+        return rrt
 
     def bitstar(si): return og.BITstar(si)
 
@@ -162,8 +165,8 @@ if __name__ == "__main__":
 
     path_planner = pi.PathPlanner(
         robot=robot,
-        endeffector=test_gripper,
-        moved_object=cube_small,
+        #endeffector=test_gripper,
+        #moved_object=cube_small,
         collision_check_functions=collsion_check,
         planner_type=bitstar,
         # constraint_functions=constraint_functions,
@@ -176,7 +179,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     gui = PathPlannerGUI(root, robot, path_planner, collsion_check,
                          obstacle, constraint_functions,
-                         test_gripper,
-                         cube_small,
+                         #test_gripper,
+                         #cube_small,
                          )
     root.mainloop()

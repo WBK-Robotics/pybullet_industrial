@@ -61,11 +61,19 @@ class CollisionChecker:
         Determines whether a body is a 'robot' (if it has at least one movable
         joint) or a 'static_body'. Also precomputes internal collision pairs for
         each body.
+
+        Additionally, the name of the URDF (or body name) is added as 'urdf_name'.
         """
         num_bodies = p.getNumBodies()
         for urdf_id in range(num_bodies):
             if urdf_id in ignored_urdf_ids:
                 continue
+
+            # Retrieve body info. p.getBodyInfo returns a tuple (bodyName, additionalInfo).
+            body_info = p.getBodyInfo(urdf_id)
+            # The body name might be a byte string; decode if necessary.
+            urdf_name = body_info[1].decode('utf-8')
+
             links = CollisionChecker.get_collision_links_for_body(urdf_id)
             # Skip bodies that lack collision geometry.
             if not links:
@@ -77,6 +85,7 @@ class CollisionChecker:
             )
             self.bodies_information.append({
                 'urdf_id': urdf_id,
+                'urdf_name': urdf_name,
                 'body_typ': body_typ,
                 'collision_links': links,
                 'collision_pairs': (

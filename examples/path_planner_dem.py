@@ -8,18 +8,33 @@ import numpy as np
 import pybullet_industrial as pi
 from path_planner_gui import PathPlannerGUI
 
+INTERPOLATE_NUM: int = 500  # Segments for path interpolation
+DEFAULT_PLANNING_TIME: float = 5.0  # Max planning time (seconds)
 
-INTERPOLATE_NUM = 500  # Number of segments for interpolating the path
-DEFAULT_PLANNING_TIME = 5.0  # Maximum planning time in seconds
 
-def couple_endeffector(gripper: pi.Gripper, robot: pi.RobotBase, link: chr):
+def couple_endeffector(gripper: pi.Gripper, robot: pi.RobotBase,
+                       link: str) -> any:
+    """
+    Couples the gripper to a specific robot link.
+
+    Args:
+        gripper: The gripper instance.
+        robot: The robot instance.
+        link: The target link name.
+    """
     return gripper.couple(robot, link)
 
-def check_endeffector_upright(robot: pi.RobotBase):
-    """Checks if the robot's end-effector is upright within tolerance.
 
-    Returns:
-        bool: True if upright, False otherwise.
+def check_endeffector_upright(robot: pi.RobotBase) -> bool:
+    """
+    Checks if the robot's end-effector is upright within tolerance.
+
+    Uses Euler angles to verify that the end-effector's orientation
+    is near the target upright pose.
+
+    Args:
+        robot: The robot instance.
+
     """
     orientation = p.getEulerFromQuaternion(
         robot.get_endeffector_pose()[1]
@@ -29,157 +44,169 @@ def check_endeffector_upright(robot: pi.RobotBase):
     return np.all(np.abs(orientation - target) <= tol)
 
 
-def seting_up_enviroment():
+def setup_environment() -> tuple:
     """
-    Sets up the simulation environment, including paths to URDF files and
-    the PyBullet physics simulation.
+    Sets up the simulation environment, including URDF paths and
+    PyBullet configuration.
+
+    Returns:
+        A tuple containing the robot URDF path, start position,
+        start orientation, gripper URDF path, and small cube URDF path.
     """
-    working_dir = os.path.dirname(__file__)
-    urdf_robot = os.path.join(working_dir, 'robot_descriptions',
-                              'comau_nj290_robot.urdf')
-    urdf_fofa = os.path.join(working_dir, 'Objects', 'FoFa', 'FoFa.urdf')
+    working_dir: str = os.path.dirname(__file__)
+    urdf_robot: str = os.path.join(working_dir, 'robot_descriptions',
+                                   'comau_nj290_robot.urdf')
+    urdf_fofa: str = os.path.join(working_dir, 'Objects', 'FoFa', 'FoFa.urdf')
+    urdf_gripper: str = os.path.join(
+        working_dir, 'robot_descriptions', 'gripper_cad.urdf'
+    )
+    urdf_small_cube: str = os.path.join(
+        working_dir, 'robot_descriptions', 'cube_small.urdf'
+    )
 
-    urdf_gripper = os.path.join(working_dir,
-                                'robot_descriptions', 'gripper_cad.urdf')
-    urdf_small_cube = os.path.join(working_dir,
-                              'robot_descriptions', 'cube_small.urdf')
-
-    # Comau start position.
+    # Define the Comau start position and orientation.
     start_orientation = p.getQuaternionFromEuler([0, 0, 0])
     start_pos = np.array([2.0, -6.5, 0])
 
-    # Set up the GUI camera.
+    # Connect to the PyBullet GUI.
     p.connect(p.GUI)
-            #   options='--background_color_red=1 '
-            #           '--background_color_green=1 '
-            #           '--background_color_blue=1')
     p.resetDebugVisualizerCamera(cameraDistance=2.0, cameraYaw=50.0,
                                  cameraPitch=-30,
                                  cameraTargetPosition=(
                                      np.array([1.9, 0, 1]) + start_pos))
-
     p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
     p.setPhysicsEngineParameter(numSolverIterations=5000,
                                 enableFileCaching=0)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     p.setGravity(0, 0, -10)
 
+    # Load a fixed object (FoFa) into the scene.
     p.loadURDF(urdf_fofa, useFixedBase=True, globalScaling=0.001)
 
-    return urdf_robot, start_pos, start_orientation, urdf_gripper, urdf_small_cube
+    return (urdf_robot, start_pos, start_orientation, urdf_gripper,
+            urdf_small_cube)
 
 
-def add_box(box_pos, half_box_size):
+def add_box(box_pos: list, half_box_size: list) -> int:
     """
     Adds a box-shaped obstacle to the simulation.
+
+    Args:
+        box_pos: The position of the box.
+        half_box_size: Half the dimensions of the box.
+
+    Returns:
+        The unique ID of the created box obstacle.
     """
-    colBoxId = p.createCollisionShape(
-        p.GEOM_BOX, halfExtents=half_box_size)
+    col_box_id = p.createCollisionShape(
+        p.GEOM_BOX, halfExtents=half_box_size
+    )
     box_id = p.createMultiBody(
         baseMass=0,
-        baseCollisionShapeIndex=colBoxId,
+        baseCollisionShapeIndex=col_box_id,
         basePosition=box_pos,
-        baseOrientation=p.getQuaternionFromEuler([-np.pi/2, 0, 0])
+        baseOrientation=p.getQuaternionFromEuler([-np.pi / 2, 0, 0])
     )
     return box_id
 
 
 if __name__ == "__main__":
-    # Initialize the simulation environment.
-    urdf_robot, start_pos, start_orientation, urdf_gripper, urdf_cube_small = seting_up_enviroment()
+    # Set up the simulation environment.
+    (urdf_robot, start_pos, start_orientation, urdf_gripper,
+     urdf_cube_small) = setup_environment()
 
+    # Create the robot instance.
     robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
     start_orientation = p.getQuaternionFromEuler([np.pi, 0, 0])
 
-    test_gripper = pi.Gripper(urdf_gripper, [2.7, -0.5, 1.2], start_orientation)
+    # Create the gripper and adjust its base offset.
+    test_gripper = pi.Gripper(urdf_gripper,
+                              [2.7, -0.5, 1.2],
+                              start_orientation)
     position_offset = np.array([0, 0, 0])
-    orientation_offset = p.getQuaternionFromEuler(np.array([-np.pi/2, 0, 0]))
+    orientation_offset = p.getQuaternionFromEuler(np.array([-np.pi / 2, 0, 0]))
     base_offset = [position_offset, orientation_offset]
     test_gripper.set_base_offset(base_offset)
 
-    cube_small = p.loadURDF(urdf_cube_small, start_pos + [0,-2,0], useFixedBase=False)
+    # Load a small cube and set the moving object offset.
+    cube_small = p.loadURDF(urdf_cube_small,
+                            start_pos + [0, -2, 0],
+                            useFixedBase=False)
     test_gripper.set_moving_object_offset([[0, 0, -0.1], [0, 0, 0, 0]])
 
-
-
-    # Add a box obstacle.
+    # Add a box obstacle near the robot.
     obstacles = []
-
-    # Create a box obstacle near the robot.
     obstacle = add_box(start_pos + [1.8, 0, 1.8], [0.5, 0.5, 0.05])
     obstacles.append(obstacle)
 
-    # Define custom clearance query distances for each obstacle.
-    # Here, we set a clearance query distance of 1.0 for the obstacle.
+    # Define clearance distance for the obstacle.
     clearance_obstacles = {obstacle: 1.0}
 
-
-    # Set up initial state (for Comau).
-    inital_state = {
+    # Set up an initial joint state for the robot.
+    initial_state = {
         'q1': -0.5,
         'q2': 0,
-        'q3': -(np.pi/2),
+        'q3': -(np.pi / 2),
         'q4': 0,
-        'q5': np.pi/2,
+        'q5': np.pi / 2,
         'q6': 0
     }
-    robot.reset_joint_position(inital_state)
+    robot.reset_joint_position(initial_state)
 
-    # Initialize CollisionChecker with the custom clearance.
-
+    # Initialize the collision checker.
     collision_checker = pi.CollisionChecker()
-    # test_gripper.match_endeffector_pose(robot)
-
-    # test_gripper.match_moving_object(cube_small)
-
     collision_checker.set_safe_state()
 
+    # Append constraint functions.
+    collision_check: list = [lambda: collision_checker.check_collision()]
+    constraint_functions: list = [lambda: check_endeffector_upright(robot)]
 
-    # Append constraint functinons
-    collsion_check = [lambda: collision_checker.check_collision()]
-    constraint_functions = [lambda: check_endeffector_upright(robot)]
+    # Define objectives (uncomment as needed).
+    def clearance_objective(si):
+        return pi.RobotPathClearanceObjective(si, collision_checker, 0.5)
 
-    def clearance_objective(si): return pi.RobotPathClearanceObjective(
-        si, collision_checker, 0.5)
+    def path_length_objective(si):
+        return ob.PathLengthOptimizationObjective(si)
 
-    def path_length_objective(
-        si): return ob.PathLengthOptimizationObjective(si)
-
-    objective_weight = 1.0
-    objectives = []
+    objective_weight: float = 1.0
+    objectives: list = []
     # objectives.append((clearance_objective, objective_weight))
     objectives.append((path_length_objective, objective_weight))
 
-    def rrtsharp(si): return og.RRTsharp(si)
+    # Define planner types.
+    def rrtsharp(si):
+        return og.RRTsharp(si)
 
     def rrt(si):
-        rrt = og.RRT(si)
-        rrt.setGoalBias(0.5)
-        return rrt
+        rrt_inst = og.RRT(si)
+        rrt_inst.setGoalBias(0.5)
+        return rrt_inst
 
-    def bitstar(si): return og.BITstar(si)
+    def bitstar(si):
+        return og.BITstar(si)
 
-    def abitstar(si): return og.ABITstar(si)
+    def abitstar(si):
+        return og.ABITstar(si)
 
-    def aitstar(si): return og.AITstar(si)
+    def aitstar(si):
+        return og.AITstar(si)
 
+    # Initialize the path planner.
     path_planner = pi.PathPlanner(
         robot=robot,
-        #endeffector=test_gripper,
-        #moved_object=cube_small,
-        collision_check_functions=collsion_check,
+        # endeffector=test_gripper,
+        # moved_object=cube_small,
+        collision_check_functions=collision_check,
         planner_type=bitstar,
         # constraint_functions=constraint_functions,
         # objectives=objectives,
     )
 
-
-
     # Create the GUI for motion planning.
     root = tk.Tk()
-    gui = PathPlannerGUI(root, robot, path_planner, collsion_check,
+    gui = PathPlannerGUI(root, robot, path_planner, collision_check,
                          obstacle, constraint_functions,
-                         #test_gripper,
-                         #cube_small,
+                         # test_gripper,
+                         # cube_small,
                          )
     root.mainloop()

@@ -155,6 +155,8 @@ if __name__ == "__main__":
 
     # Initialize the collision checker.
     collision_checker = pi.CollisionChecker()
+    test_gripper.match_endeffector_pose(robot)
+    test_gripper.match_moving_object(cube_small)
     collision_checker.set_safe_state()
 
     # Append constraint functions.
@@ -192,21 +194,21 @@ if __name__ == "__main__":
         return og.AITstar(si)
 
     # Initialize the path planner.
-    path_planner = pi.PathPlanner(
+    path_planner = pi.RobotPlannerSimpleSetup(
         robot=robot,
-        # endeffector=test_gripper,
-        # moved_object=cube_small,
+        endeffector=test_gripper,
+        moved_object=cube_small,
         collision_check_functions=collision_check,
         planner_type=bitstar,
-        # constraint_functions=constraint_functions,
-        # objectives=objectives,
+        constraint_functions=constraint_functions,
+        objectives=objectives,
     )
 
     # Create the GUI for motion planning.
     root = tk.Tk()
     gui = PathPlannerGUI(root, robot, path_planner, collision_check,
                          obstacle, constraint_functions,
-                         # test_gripper,
-                         # cube_small,
+                         test_gripper,
+                         cube_small,
                          )
     root.mainloop()

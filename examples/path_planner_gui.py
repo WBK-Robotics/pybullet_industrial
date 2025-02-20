@@ -16,7 +16,7 @@ class PathPlannerGUI:
     """
 
     def __init__(self, root: tk.Tk, robot: pi.RobotBase,
-                 path_planner: pi.PathPlanner,
+                 path_planner: pi.RobotPlannerSimpleSetup,
                  collision_check: list,
                  obstacle,
                  constraint_functions: list,

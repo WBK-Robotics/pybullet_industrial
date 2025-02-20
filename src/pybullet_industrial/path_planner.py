@@ -2,12 +2,7 @@ import numpy as np
 from ompl import base as ob
 from ompl import geometric as og
 from pybullet_industrial import (CollisionChecker, RobotBase,
-                                  JointPath)
-
-# Constant for path interpolation segments.
-INTERPOLATE_NUM: int = 500
-# Maximum allowed planning time in seconds.
-DEFAULT_PLANNING_TIME: float = 5.0
+                                 JointPath)
 
 
 class RobotStateSpace(ob.RealVectorStateSpace):
@@ -37,26 +32,6 @@ class RobotStateSpace(ob.RealVectorStateSpace):
         super().__init__(num_dims)
         self.set_bounds(lower_limit, upper_limit)
 
-    def set_bounds(self, lower_limit: list, upper_limit: list) -> None:
-        """
-        Configures the bounds of the state space based on joint limits.
-
-        Args:
-            lower_limit (list): Lower limits for each joint.
-            upper_limit (list): Upper limits for each joint.
-        """
-        bounds = ob.RealVectorBounds(self.getDimension())
-        for i, joint in enumerate(self.joint_order):
-            bounds.setLow(i, lower_limit[joint])
-            bounds.setHigh(i, upper_limit[joint])
-        super().setBounds(bounds)
-
-    def get_dimension(self) -> int:
-        """
-        Retrieves the dimension (number of joints) of the state space.
-        """
-        return super().getDimension()
-
     def state_to_list(self, state: ob.State) -> list:
         """
         Converts an OMPL state to a list of joint values following the
@@ -82,6 +57,26 @@ class RobotStateSpace(ob.RealVectorStateSpace):
             list: Ordered joint values.
         """
         return [joint_dict[joint] for joint in self.joint_order]
+
+    def set_bounds(self, lower_limit: list, upper_limit: list) -> None:
+        """
+        Configures the bounds of the state space based on joint limits.
+
+        Args:
+            lower_limit (list): Lower limits for each joint.
+            upper_limit (list): Upper limits for each joint.
+        """
+        bounds = ob.RealVectorBounds(self.getDimension())
+        for i, joint in enumerate(self.joint_order):
+            bounds.setLow(i, lower_limit[joint])
+            bounds.setHigh(i, upper_limit[joint])
+        super().setBounds(bounds)
+
+    def get_dimension(self) -> int:
+        """
+        Retrieves the dimension (number of joints) of the state space.
+        """
+        return super().getDimension()
 
 
 class RobotSpaceInformation(ob.SpaceInformation):
@@ -116,16 +111,6 @@ class RobotSpaceInformation(ob.SpaceInformation):
         self.endeffector = endeffector
         self.moved_object = moved_object
 
-    def set_state_validity_checking_resolution(
-            self, resolution: float) -> None:
-        """
-        Sets the resolution for state validity checking.
-
-        Args:
-            resolution (float): The resolution value.
-        """
-        super().setStateValidityCheckingResolution(resolution)
-
     def list_to_state(self, joint_values: list) -> ob.State:
         """
         Converts a list of joint values into an OMPL state.
@@ -154,11 +139,21 @@ class RobotSpaceInformation(ob.SpaceInformation):
             dict(zip(self.state_space.joint_order, joint_positions)),
             True
         )
-        # If an endeffector is provided, update its pose.
+        # Update endeffector and moved object if provided.
         if self.endeffector:
             self.endeffector.match_endeffector_pose(self.robot)
             if self.moved_object:
                 self.endeffector.match_moving_object(self.moved_object)
+
+    def set_state_validity_checking_resolution(
+            self, resolution: float) -> None:
+        """
+        Sets the resolution for state validity checking.
+
+        Args:
+            resolution (float): The resolution value.
+        """
+        super().setStateValidityCheckingResolution(resolution)
 
     def set_state_validity_checker(self, validity_checker) -> None:
         """
@@ -269,9 +264,7 @@ class RobotMultiOptimizationObjective(ob.MultiOptimizationObjective):
 class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
     """
     Defines a cost objective that rewards paths with higher clearance.
-
-    The cost is computed by penalizing low clearances between the robot
-    and obstacles.
+    The cost penalizes low clearances between the robot and obstacles.
     """
 
     def __init__(self, si: RobotSpaceInformation,
@@ -302,12 +295,11 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         """
         self.si.set_state(state)
         min_distance: float = self.clearance_distance
-        # Iterate over all collision pairs to find the minimum clearance.
+        # Determine the minimum clearance over all collision pairs.
         for (bodyA, bodyB), _ in (
                 self.collision_checker.external_collision_pairs):
             curr_distance = self.collision_checker.get_min_body_distance(
                 bodyA, bodyB, self.clearance_distance)
-            # Clamp negative distances to zero.
             if curr_distance < 0:
                 curr_distance = 0
             if curr_distance < min_distance:
@@ -315,13 +307,12 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         return ob.Cost(self.clearance_distance - min_distance)
 
 
-class PathPlanner(og.SimpleSetup):
+class RobotPlannerSimpleSetup(og.SimpleSetup):
     """
     Integrates all components to define and solve a robot planning problem.
-
-    This class sets up the state space, space information, validity
-    checker, optimization objective, and planner. It provides an API
-    to plan a path between start and goal joint configurations.
+    Sets up the state space, space information, validity checker,
+    optimization objective, and planner. Provides an API to plan a path
+    between start and goal joint configurations.
     """
 
     def __init__(self, robot: RobotBase,
@@ -337,7 +328,7 @@ class PathPlanner(og.SimpleSetup):
 
         Args:
             robot (RobotBase): The robot instance.
-            collision_check_functions (list): List of collision-check funcs.
+            collision_check_functions (list): Collision-check functions.
             planner_type: The planner class/type to use.
             interpolation_precision (float): Spacing for interpolation.
             constraint_functions (list, optional): Constraint functions.
@@ -345,39 +336,43 @@ class PathPlanner(og.SimpleSetup):
             endeffector: Optional endeffector instance.
             moved_object: Optional moved object instance.
         """
-        self.set_space_information(robot, collision_check_functions,
-                                   constraint_functions, endeffector,
-                                   moved_object)
+        self.setup_space_information(robot, collision_check_functions,
+                                     constraint_functions, endeffector,
+                                     moved_object)
         if objectives:
-            self.set_optimization_objective(objectives)
+            self.setOptimizationObjective(objectives)
         self.set_interpolation_precision(interpolation_precision)
         self.planner_type = planner_type
-        self.set_planner(planner_type)
+        self.setPlanner(planner_type)
 
-    def set_interpolation_precision(self, precision: float) -> None:
+    def setup_space_information(self, robot: RobotBase,
+                                collision_check_functions: list,
+                                constraint_functions: list = None,
+                                endeffector=None,
+                                moved_object=None) -> None:
         """
-        Sets the interpolation precision for path smoothing.
+        Initializes the state space and configures the validity checker.
 
         Args:
-            precision (float): Distance between interpolated states.
+            robot (RobotBase): The robot instance.
+            collision_check_functions (list): Collision-check functions.
+            constraint_functions (list, optional): Constraint functions.
+            endeffector: Optional endeffector instance.
+            moved_object: Optional moved object instance.
         """
-        self.interpolation_precision = precision
+        self.robot = robot
+        self.state_space = RobotStateSpace(robot)
+        self.space_information = RobotSpaceInformation(
+            self.state_space, endeffector, moved_object)
+        # Attach the validity checker.
+        validity_checker = RobotValidityChecker(
+            self.space_information, collision_check_functions,
+            constraint_functions)
+        self.space_information.setStateValidityChecker(validity_checker)
+        self.space_information.setup()
+        super().__init__(self.space_information)
 
-    def set_planner(self, planner_type) -> None:
-        """
-        Configures the planner based on the given planner type.
-
-        Args:
-            planner_type: The planner class/type.
-        """
-        self.planner = planner_type(self.space_information)
-        super().setPlanner(self.planner)
-
-    def setPlanner(self, planner) -> None:
-        # Compatibility method with OMPL's API.
-        super().setPlanner(planner)
-
-    def set_optimization_objective(self, objectives: list) -> None:
+    def setOptimizationObjective(self, objectives: list) -> None:
         """
         Configures the optimization objective for the planner.
 
@@ -390,47 +385,28 @@ class PathPlanner(og.SimpleSetup):
         else:
             self.optimization_objective = RobotMultiOptimizationObjective(
                 self.space_information, objectives)
-        self.set_optimization_objective_impl(self.optimization_objective)
+        super().setOptimizationObjective(self.optimization_objective)
 
-    def set_optimization_objective_impl(self, objective) -> None:
+    def setPlanner(self, planner_type) -> None:
         """
-        Registers the optimization objective with the planner.
+        Configures the planner based on the given planner type.
 
         Args:
-            objective: The optimization objective.
+            planner_type: The planner class/type.
         """
-        super().setOptimizationObjective(objective)
+        self.planner = planner_type(self.space_information)
+        super().setPlanner(self.planner)
 
-    def set_space_information(self, robot: RobotBase,
-                              collision_check_functions: list,
-                              constraint_functions: list = None,
-                              endeffector=None,
-                              moved_object=None) -> None:
+    def set_interpolation_precision(self, precision: float) -> None:
         """
-        Initializes the state space and configures the validity checker.
+        Sets the interpolation precision for path smoothing.
 
         Args:
-            robot (RobotBase): The robot instance.
-            collision_check_functions (list): Collision-check functions.
-            constraint_functions (list, optional): Constraint functions.
-            endeffector: Optional endeffector instance.
-            moved_object: Optional moved object instance.
+            precision (float): Distance between interpolated states.
         """
-        self.robot = robot
-        # Create a custom state space based on the robot.
-        self.state_space = RobotStateSpace(robot)
-        # Create space information for the robot.
-        self.space_information = RobotSpaceInformation(
-            self.state_space, endeffector, moved_object)
-        # Attach a validity checker to handle collisions and constraints.
-        validity_checker = RobotValidityChecker(
-            self.space_information, collision_check_functions,
-            constraint_functions)
-        self.space_information.setStateValidityChecker(validity_checker)
-        self.space_information.setup()
-        super().__init__(self.space_information)
+        self.interpolation_precision = precision
 
-    def set_start_and_goal_states(self, start: dict, goal: dict) -> None:
+    def setStartAndGoalStates(self, start: dict, goal: dict) -> None:
         """
         Sets the start and goal joint configurations for planning.
 
@@ -443,6 +419,51 @@ class PathPlanner(og.SimpleSetup):
         start_state = self.space_information.list_to_state(start_list)
         goal_state = self.space_information.list_to_state(goal_list)
         super().setStartAndGoalStates(start_state, goal_state)
+
+    def plan_start_goal(self, start: dict, goal: dict,
+                        allowed_time: float = 5.0,
+                        simplify: float = 1.0) -> tuple:
+        """
+        Plans a path from the start to goal configuration and returns the
+        resulting JointPath if successful.
+
+        Args:
+            start (dict): Start joint configuration.
+            goal (dict): Goal joint configuration.
+            allowed_time (float): Maximum planning time in seconds.
+            simplify (float): Factor for solution simplification.
+
+        Returns:
+            tuple: (solved (bool), JointPath or None)
+        """
+        self.clear()
+        self.planner.clear()
+        self.setStartAndGoalStates(start, goal)
+        self.setup()
+
+        solved = self.solve(allowed_time)
+        joint_path = None
+
+        if solved:
+            if simplify:
+                self.simplifySolution(simplify)
+            sol_path = self.getSolutionPath()
+            path_length = sol_path.length()
+            interpolation_num = int(path_length /
+                                    self.interpolation_precision)
+            sol_path.interpolate(interpolation_num)
+            states = sol_path.getStates()
+            # Convert each state to a list of joint values.
+            path_list = np.array([
+                self.state_space.state_to_list(st) for st in states])
+            print("Number of solution states: ", len(states))
+            joint_path = JointPath(
+                path_list.transpose(),
+                tuple(self.state_space.joint_order)
+            )
+        else:
+            print("No solution found")
+        return solved, joint_path
 
     def clear(self) -> None:
         """
@@ -468,48 +489,11 @@ class PathPlanner(og.SimpleSetup):
         """
         return super().solve(allowed_time)
 
-    def plan_start_goal(self, start: dict, goal: dict,
-                        allowed_time: float = 5.0,
-                        simplify: float = 1.0) -> tuple:
+    def simplifySolution(self, factor: float = 1.0) -> None:
         """
-        Plans a path from the start to goal configuration and returns the
-        resulting JointPath if successful.
+        Simplifies the solution path using a factor.
 
         Args:
-            start (dict): Start joint configuration.
-            goal (dict): Goal joint configuration.
-            allowed_time (float): Maximum planning time in seconds.
-            simplify (float): Factor for solution simplification.
-
-        Returns:
-            tuple: (solved (bool), JointPath or None)
+            factor (float): The simplification factor.
         """
-        self.clear()
-        self.planner.clear()
-        self.set_start_and_goal_states(start, goal)
-        self.setup()
-
-        solved = self.solve(allowed_time)
-        joint_path = None
-
-        if solved:
-            # Simplify the solution if requested.
-            if simplify:
-                self.simplifySolution(simplify)
-            sol_path = self.getSolutionPath()
-            path_length = sol_path.length()
-            interpolation_num = int(path_length /
-                                    self.interpolation_precision)
-            sol_path.interpolate(interpolation_num)
-            states = sol_path.getStates()
-            # Convert each state to a list of joint values.
-            path_list = np.array([
-                self.state_space.state_to_list(st) for st in states])
-            print("Number of solution states: ", len(states))
-            joint_path = JointPath(
-                path_list.transpose(),
-                tuple(self.state_space.joint_order)
-            )
-        else:
-            print("No solution found")
-        return solved, joint_path
+        super().simplifySolution(factor)

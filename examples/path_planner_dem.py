@@ -125,6 +125,7 @@ if __name__ == "__main__":
                               start_orientation)
     position_offset = np.array([0, 0, 0])
     orientation_offset = p.getQuaternionFromEuler(np.array([-np.pi / 2, 0, 0]))
+    orientation_offset = np.array(orientation_offset)
     base_offset = [position_offset, orientation_offset]
     test_gripper.set_base_offset(base_offset)
 
@@ -132,7 +133,8 @@ if __name__ == "__main__":
     cube_small = p.loadURDF(urdf_cube_small,
                             start_pos + [0, -2, 0],
                             useFixedBase=False)
-    test_gripper.set_moving_object_offset([[0, 0, -0.1], [0, 0, 0, 0]])
+    test_gripper.set_moving_object_offset(
+        [np.array([0, 0, 0.1]), np.array([0, 0, 0, 1])])
 
     # Add a box obstacle near the robot.
     obstacles = []

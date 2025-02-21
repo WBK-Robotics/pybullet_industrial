@@ -196,21 +196,40 @@ if __name__ == "__main__":
         return og.AITstar(si)
 
     # Initialize the path planner.
-    path_planner = pi.RobotPlannerSimpleSetup(
+    path_planner_1 = pi.RobotPlannerSimpleSetup(
         robot=robot,
         endeffector=test_gripper,
         moved_object=cube_small,
         collision_check_functions=collision_check,
         planner_type=bitstar,
-        constraint_functions=constraint_functions,
+        # constraint_functions=constraint_functions,
         objectives=objectives,
     )
 
+    path_planner_2 = pi.RobotPlannerSimpleSetup(
+        robot=robot,
+        endeffector=test_gripper,
+        # moved_object=cube_small,
+        collision_check_functions=collision_check,
+        planner_type=bitstar,
+        # constraint_functions=constraint_functions,
+        objectives=objectives,
+    )
+
+    path_planner_3 = pi.RobotPlannerSimpleSetup(
+        robot=robot,
+        # endeffector=test_gripper,
+        # moved_object=cube_small,
+        collision_check_functions=collision_check,
+        planner_type=bitstar,
+        # constraint_functions=constraint_functions,
+        objectives=objectives,
+    )
+
+    path_planner = [path_planner_1, path_planner_2, path_planner_3]
+
     # Create the GUI for motion planning.
     root = tk.Tk()
-    gui = PathPlannerGUI(root, robot, path_planner, collision_check,
-                         obstacle, constraint_functions,
-                         test_gripper,
-                         cube_small,
-                         )
+    gui = PathPlannerGUI(root, path_planner, obstacle)
+
     root.mainloop()

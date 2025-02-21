@@ -365,10 +365,10 @@ class RobotPlannerSimpleSetup(og.SimpleSetup):
         self.space_information = RobotSpaceInformation(
             self.state_space, endeffector, moved_object)
         # Attach the validity checker.
-        validity_checker = RobotValidityChecker(
+        self.validity_checker = RobotValidityChecker(
             self.space_information, collision_check_functions,
             constraint_functions)
-        self.space_information.setStateValidityChecker(validity_checker)
+        self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()
         super().__init__(self.space_information)
 

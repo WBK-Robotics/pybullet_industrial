@@ -12,59 +12,67 @@ class PathPlannerGUI:
     """
     GUI for the Path Planner, allowing users to control joints,
     update obstacles, and execute paths. Displays collision and
-    constraint status.
+    constraint status. Supports multiple planner instances via a
+    dropdown menu.
     """
 
-    def __init__(self, root: tk.Tk, robot: pi.RobotBase,
-                 path_planner: pi.RobotPlannerSimpleSetup,
-                 collision_check: list,
-                 obstacle,
-                 constraint_functions: list,
-                 endeffector=None,
-                 moved_object=None,
-                 collision_checker=None) -> None:
+    def __init__(self, root: tk.Tk, path_planner, obstacle) -> None:
         """
         Initializes the PathPlanner GUI.
 
         Args:
             root: The root Tkinter window.
-            robot: The robot instance from PyBullet Industrial.
-            path_planner: The PathPlanner instance for motion planning.
-            collision_check: List of collision-check functions.
+            path_planner: A single RobotPlannerSimpleSetup instance or a list
+                of such instances.
             obstacle: The obstacle to manipulate.
-            constraint_functions: List of no-arg lambdas that return a
-                boolean indicating if a constraint is satisfied.
-            endeffector: Optional endeffector instance.
-            moved_object: Optional moved object instance.
-            collision_checker: Optional collision checker.
         """
         self.root: tk.Tk = root
-        self.robot: pi.RobotBase = robot
-        self.path_planner: pi.PathPlanner = path_planner
-        self.collision_check: list = collision_check
+
+        # Support multiple planner instances.
+        if isinstance(path_planner, list):
+            self.path_planners = path_planner
+            self.planner_mapping = {}
+            for idx, planner in enumerate(self.path_planners):
+                name = f"Planner {idx + 1}"
+                self.planner_mapping[name] = planner
+            self.selected_planner_var = tk.StringVar(
+                value=list(self.planner_mapping.keys())[0])
+            self.path_planner = self.planner_mapping[
+                self.selected_planner_var.get()]
+        else:
+            self.path_planners = [path_planner]
+            self.planner_mapping = {"Planner 1": path_planner}
+            self.selected_planner_var = tk.StringVar(value="Planner 1")
+            self.path_planner = path_planner
+
+        # Retrieve robot and related objects from the planner instance.
+        self.robot = self.path_planner.robot
+        self.collision_check = self.path_planner.validity_checker.collision_check_functions
+        self.constraint_functions = self.path_planner.validity_checker.constraint_functions
+        self.endeffector = self.path_planner.space_information.endeffector
+        self.moved_object = self.path_planner.space_information.moved_object
+
         self.obstacle = obstacle
-        self.constraint_functions: list = constraint_functions
-        self.collision_checker = collision_checker
-        # Get initial start and goal configurations.
+
+        # Get initial start and goal configurations from the robot.
         self.start: dict = self.robot.get_joint_state()
         self.goal: dict = self.robot.get_joint_state()
         self.joint_order: list = self.robot.get_moveable_joints()[0]
         self.joint_limits = self.robot.get_joint_limits()
         self.root.title("PyBullet Path Planning")
-        # Create StringVar list for joint values.
+
+        # Create StringVars for joint values.
         self.joint_values: list = [tk.StringVar(value="0")
                                    for _ in range(len(self.joint_order))]
-        # Create StringVar list for obstacle values (pos & orient).
+        # Create StringVars for obstacle position and orientation.
         self.obstacle_values: list = [tk.StringVar(value="0")
                                       for _ in range(6)]
-        # Status indicator for collision.
+        # Status indicators.
         self.collision_status: tk.StringVar = tk.StringVar(value="green")
-        # Status indicator for constraint functions.
         self.constraint_status: tk.StringVar = tk.StringVar(value="green")
         # Initial obstacle box size.
         self.current_box_size: list = [0.5, 0.5, 0.05]
-        self.endeffector = endeffector
-        self.moved_object = moved_object
+
         self.create_widgets()
         self.update_joint_positions()
         self.set_initial_obstacle_values()
@@ -74,7 +82,7 @@ class PathPlannerGUI:
         """
         Creates and arranges the widgets in the GUI.
         """
-        # Create layout for each robot joint.
+        # Layout for each robot joint.
         for i, joint_name in enumerate(self.joint_order):
             tk.Label(self.root, text=f"{joint_name}").grid(
                 row=i, column=0, padx=5, pady=5)
@@ -87,7 +95,7 @@ class PathPlannerGUI:
             tk.Entry(self.root, textvariable=self.joint_values[i],
                      width=10).grid(row=i, column=3, padx=5, pady=5)
 
-        # Create layout for obstacle position and orientation.
+        # Layout for obstacle position and orientation.
         obstacle_labels = ["X", "Y", "Z", "A", "B", "C"]
         for i, label in enumerate(obstacle_labels):
             tk.Label(self.root, text=f"{label}").grid(
@@ -101,8 +109,21 @@ class PathPlannerGUI:
             tk.Entry(self.root, textvariable=self.obstacle_values[i],
                      width=10).grid(row=i, column=7, padx=5, pady=5)
 
-        # Create status indicators for collision and constraints.
-        status_row: int = len(self.joint_order)
+        # Row for additional controls.
+        base_row: int = len(self.joint_order)
+        # Dropdown for selecting planner instance.
+        tk.Label(self.root, text="Select Planner:").grid(
+            row=base_row, column=0, padx=5, pady=5)
+        planner_menu = tk.OptionMenu(
+            self.root,
+            self.selected_planner_var,
+            *self.planner_mapping.keys(),
+            command=self.update_selected_planner
+        )
+        planner_menu.grid(row=base_row, column=1, padx=5, pady=5)
+
+        # Status indicators.
+        status_row: int = base_row + 1
         tk.Label(self.root, text="Collision Status:").grid(
             row=status_row, column=0, padx=5, pady=10)
         self.collision_light = tk.Label(
@@ -120,7 +141,7 @@ class PathPlannerGUI:
         self.constraint_light.grid(row=status_row, column=3,
                                    padx=5, pady=10)
 
-        # Create control buttons.
+        # Control buttons.
         control_row: int = status_row + 1
         tk.Button(self.root, text="Set as Start",
                   command=self.set_as_start).grid(
@@ -144,28 +165,44 @@ class PathPlannerGUI:
                       row=control_row + 2, column=0, columnspan=4,
                       pady=20)
 
+    def update_selected_planner(self, selection: str) -> None:
+        """
+        Updates the active planner based on the dropdown selection.
+
+        Args:
+            selection (str): The name of the selected planner.
+        """
+        self.path_planner = self.planner_mapping[selection]
+        # Update dependent objects from the newly selected planner.
+        self.robot = self.path_planner.robot
+        self.collision_check = self.path_planner.validity_checker.\
+            collision_check_functions
+        self.constraint_functions = (self.path_planner.validity_checker.\
+            constraint_functions or [])
+        self.endeffector = self.path_planner.space_information.endeffector
+        self.moved_object = self.path_planner.space_information.moved_object
+        print(f"Selected planner: {selection}")
+
     def update_status(self) -> None:
         """
-        Updates the collision and constraint status indicators.
+        Updates collision and constraint status indicators.
         """
-        # Update endeffector and moved object if available.
         if self.endeffector:
             self.endeffector.match_endeffector_pose(self.robot)
             if self.moved_object:
                 self.endeffector.match_moving_object(self.moved_object)
-        # Check collision status.
         valid_collision: bool = all(cc() for cc in self.collision_check)
         self.collision_status.set("green" if valid_collision else "red")
         self.collision_light.config(bg=self.collision_status.get())
-        # Update constraint status.
         self.update_constraint_status()
 
     def update_constraint_status(self) -> None:
         """
         Checks all constraint functions and updates the indicator.
         """
-        valid_constraints: bool = all(fn() for fn in
-                                      self.constraint_functions)
+        valid_constraints = True
+        if self.constraint_functions:
+            valid_constraints: bool = all(fn() for fn in self.constraint_functions)
         self.constraint_status.set("green" if valid_constraints else "red")
         self.constraint_light.config(bg=self.constraint_status.get())
 
@@ -174,7 +211,6 @@ class PathPlannerGUI:
         Shrinks the obstacle size by 20% and updates its display.
         """
         pos, orn = p.getBasePositionAndOrientation(self.obstacle)
-        # Scale down each box extent.
         self.current_box_size = [
             extent - (extent * 0.2) for extent in self.current_box_size
         ]
@@ -193,7 +229,6 @@ class PathPlannerGUI:
         Grows the obstacle size by 20% and updates its display.
         """
         pos, orn = p.getBasePositionAndOrientation(self.obstacle)
-        # Increase each box extent.
         self.current_box_size = [
             extent + (extent * 0.2) for extent in self.current_box_size
         ]
@@ -209,22 +244,18 @@ class PathPlannerGUI:
 
     def set_initial_obstacle_values(self) -> None:
         """
-        Sets the GUI entries for the obstacle's initial position
-        and orientation.
+        Sets GUI entries for the obstacle's initial position and orientation.
         """
         pos, orn_q = p.getBasePositionAndOrientation(self.obstacle)
         orn_e = p.getEulerFromQuaternion(orn_q)
-        # Set position values.
         for i in range(3):
             self.obstacle_values[i].set(f"{pos[i]:.2f}")
-        # Set orientation values.
         for i in range(3, 6):
             self.obstacle_values[i].set(f"{orn_e[i-3]:.2f}")
 
     def update_joint_positions(self) -> None:
         """
-        Retrieves current joint positions from the robot and updates
-        the GUI.
+        Retrieves current joint positions from the robot and updates the GUI.
         """
         joint_state = self.robot.get_joint_state()
         for i, jn in enumerate(self.joint_order):
@@ -239,7 +270,6 @@ class PathPlannerGUI:
         cur: float = float(self.joint_values[index].get())
         new_val: float = cur + JOINT_INCREMENT
         joint_name: str = self.joint_order[index]
-        # Ensure new value does not exceed upper limit.
         if new_val <= self.joint_limits[1][joint_name]:
             self.joint_values[index].set(f"{new_val:.2f}")
             self.apply_joint_position(index, new_val)
@@ -251,7 +281,6 @@ class PathPlannerGUI:
         cur: float = float(self.joint_values[index].get())
         new_val: float = cur - JOINT_INCREMENT
         joint_name: str = self.joint_order[index]
-        # Ensure new value is above lower limit.
         if new_val >= self.joint_limits[0][joint_name]:
             self.joint_values[index].set(f"{new_val:.2f}")
             self.apply_joint_position(index, new_val)
@@ -276,8 +305,7 @@ class PathPlannerGUI:
 
     def update_obstacle(self) -> None:
         """
-        Updates the obstacle's position and orientation based on the
-        GUI values.
+        Updates the obstacle's position and orientation based on GUI values.
         """
         pos: list = [float(self.obstacle_values[i].get())
                      for i in range(3)]
@@ -289,7 +317,7 @@ class PathPlannerGUI:
 
     def apply_joint_position(self, index: int, position: float) -> None:
         """
-        Applies the joint position change to the robot and updates status.
+        Applies a joint position change to the robot and updates status.
         """
         joint_name: str = self.joint_order[index]
         target: dict = {joint_name: position}
@@ -314,24 +342,21 @@ class PathPlannerGUI:
 
     def plan_and_execute(self) -> None:
         """
-        Plans a path from the start to goal configuration and executes it.
+        Plans a path from start to goal configuration and executes it.
         """
         print("Planning and executing path...")
         res, joint_path = self.path_planner.plan_start_goal(
             self.start, self.goal)
         if res:
-            # Execute each joint configuration along the path.
             for joint_conf, tool_act in joint_path:
                 self.robot.reset_joint_position(joint_conf, True)
                 if self.endeffector:
                     self.endeffector.match_endeffector_pose(self.robot)
                     if self.moved_object:
-                        self.endeffector.match_moving_object(
-                            self.moved_object)
-                time.sleep(0.01)
-                # Check for collision during execution.
-                if not self.collision_check[0]():
-                    print("Collision detected!")
+                        self.endeffector.match_moving_object(self.moved_object)
+                time.sleep(0.005)
+                # if not self.collision_check[0]():
+                #     print("Collision detected!")
             self.update_joint_positions()
             print("Path execution completed.")
         else:

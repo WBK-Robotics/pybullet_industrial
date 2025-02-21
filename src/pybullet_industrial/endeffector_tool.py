@@ -182,8 +182,6 @@ class EndeffectorTool:
         p.resetBasePositionAndOrientation(
             moving_object, target_position, target_orientation)
 
-        print("test")
-
     def match_endeffector_pose(self, robot: RobotBase):
         """
         Matches the tool's connector frame with the robot's end effector pose,

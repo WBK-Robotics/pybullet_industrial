@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     # Define objectives (uncomment as needed).
     def clearance_objective(si):
-        return pi.RobotPathClearanceObjective(si, collision_checker, 0.5)
+        return pi.PbiRobotPathClearanceObjective(si, collision_checker, 0.5)
 
     def path_length_objective(si):
         return ob.PathLengthOptimizationObjective(si)
@@ -196,17 +196,17 @@ if __name__ == "__main__":
         return og.AITstar(si)
 
     # Initialize the path planner.
-    path_planner_1 = pi.RobotPlannerSimpleSetup(
+    path_planner_1 = pi.PbiRobotPlannerSimpleSetup(
         robot=robot,
         endeffector=test_gripper,
         moved_object=cube_small,
         collision_check_functions=collision_check,
         planner_type=bitstar,
-        # constraint_functions=constraint_functions,
+        constraint_functions=constraint_functions,
         objectives=objectives,
     )
 
-    path_planner_2 = pi.RobotPlannerSimpleSetup(
+    path_planner_2 = pi.PbiRobotPlannerSimpleSetup(
         robot=robot,
         endeffector=test_gripper,
         # moved_object=cube_small,
@@ -216,7 +216,7 @@ if __name__ == "__main__":
         objectives=objectives,
     )
 
-    path_planner_3 = pi.RobotPlannerSimpleSetup(
+    path_planner_3 = pi.PbiRobotPlannerSimpleSetup(
         robot=robot,
         # endeffector=test_gripper,
         # moved_object=cube_small,

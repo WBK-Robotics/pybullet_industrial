@@ -5,7 +5,7 @@ from pybullet_industrial import (CollisionChecker, RobotBase,
                                  JointPath)
 
 
-class RobotStateSpace(ob.RealVectorStateSpace):
+class PbiRobotStateSpace(ob.RealVectorStateSpace):
     """
     An OMPL state space that represents the robot's joint configuration,
     using the robot's joint limits for bounds.
@@ -72,14 +72,8 @@ class RobotStateSpace(ob.RealVectorStateSpace):
             bounds.setHigh(i, upper_limit[joint])
         super().setBounds(bounds)
 
-    def get_dimension(self) -> int:
-        """
-        Retrieves the dimension (number of joints) of the state space.
-        """
-        return super().getDimension()
 
-
-class RobotSpaceInformation(ob.SpaceInformation):
+class PbiRobotSpaceInformation(ob.SpaceInformation):
     """
     Provides robot-specific extensions to OMPL's SpaceInformation,
     including state conversion and robot configuration update.
@@ -91,7 +85,7 @@ class RobotSpaceInformation(ob.SpaceInformation):
         moved_object: Optional object moved by the robot.
     """
 
-    def __init__(self, state_space: RobotStateSpace,
+    def __init__(self, state_space: PbiRobotStateSpace,
                  endeffector=None,
                  moved_object=None,
                  validity_resolution: float = 0.0001) -> None:
@@ -107,7 +101,7 @@ class RobotSpaceInformation(ob.SpaceInformation):
         super().__init__(state_space)
         self.setStateValidityCheckingResolution(validity_resolution)
         self.robot: RobotBase = state_space.robot
-        self.state_space: RobotStateSpace = state_space
+        self.state_space: PbiRobotStateSpace = state_space
         self.endeffector = endeffector
         self.moved_object = moved_object
 
@@ -171,7 +165,7 @@ class RobotSpaceInformation(ob.SpaceInformation):
         super().setup()
 
 
-class RobotValidityChecker(ob.StateValidityChecker):
+class PbiRobotValidityChecker(ob.StateValidityChecker):
     """
     Checks the validity of a state using collision and constraint tests.
 
@@ -181,7 +175,7 @@ class RobotValidityChecker(ob.StateValidityChecker):
         constraint_functions (list): Functions to check constraints.
     """
 
-    def __init__(self, space_information: RobotSpaceInformation,
+    def __init__(self, space_information: PbiRobotSpaceInformation,
                  collision_check_functions: list,
                  constraint_functions: list = None) -> None:
         """
@@ -193,7 +187,7 @@ class RobotValidityChecker(ob.StateValidityChecker):
             constraint_functions (list, optional): Constraint functions.
         """
         super().__init__(space_information)
-        self.space_information: RobotSpaceInformation = space_information
+        self.space_information: PbiRobotSpaceInformation = space_information
         self.collision_check_functions: list = collision_check_functions
         self.constraint_functions: list = constraint_functions
 
@@ -219,7 +213,7 @@ class RobotValidityChecker(ob.StateValidityChecker):
         return True
 
 
-class RobotMultiOptimizationObjective(ob.MultiOptimizationObjective):
+class PbiRobotMultiOptimizationObjective(ob.MultiOptimizationObjective):
     """
     Aggregates multiple robot-specific optimization objectives.
 
@@ -227,7 +221,7 @@ class RobotMultiOptimizationObjective(ob.MultiOptimizationObjective):
         si (RobotSpaceInformation): The robot's space information.
     """
 
-    def __init__(self, si: RobotSpaceInformation,
+    def __init__(self, si: PbiRobotSpaceInformation,
                  weighted_objective_list: list) -> None:
         """
         Initializes the multi-objective.
@@ -237,7 +231,7 @@ class RobotMultiOptimizationObjective(ob.MultiOptimizationObjective):
             weighted_objective_list (list): List of (objective, weight) pairs.
         """
         super().__init__(si)
-        self.si: RobotSpaceInformation = si
+        self.si: PbiRobotSpaceInformation = si
         self.update_objective(weighted_objective_list)
 
     def update_objective(self, weighted_objective_list: list) -> None:
@@ -248,26 +242,16 @@ class RobotMultiOptimizationObjective(ob.MultiOptimizationObjective):
             weighted_objective_list (list): (objective, weight) pairs.
         """
         for objective, weight in weighted_objective_list:
-            self.add_objective(objective(self.si), weight)
-
-    def add_objective(self, objective, weight: float) -> None:
-        """
-        Adds a single objective with its weight to the multi-objective.
-
-        Args:
-            objective: The objective to add.
-            weight (float): The weight assigned.
-        """
-        super().addObjective(objective, weight)
+            self.addObjective(objective(self.si), weight)
 
 
-class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
+class PbiRobotPathClearanceObjective(ob.StateCostIntegralObjective):
     """
     Defines a cost objective that rewards paths with higher clearance.
     The cost penalizes low clearances between the robot and obstacles.
     """
 
-    def __init__(self, si: RobotSpaceInformation,
+    def __init__(self, si: PbiRobotSpaceInformation,
                  collision_checker: CollisionChecker,
                  clearance_distance: float = 0.0) -> None:
         """
@@ -279,7 +263,7 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
             clearance_distance (float): Base clearance distance.
         """
         super().__init__(si, True)
-        self.si: RobotSpaceInformation = si
+        self.si: PbiRobotSpaceInformation = si
         self.collision_checker: CollisionChecker = collision_checker
         self.clearance_distance: float = clearance_distance
 
@@ -307,7 +291,7 @@ class RobotPathClearanceObjective(ob.StateCostIntegralObjective):
         return ob.Cost(self.clearance_distance - min_distance)
 
 
-class RobotPlannerSimpleSetup(og.SimpleSetup):
+class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
     """
     Integrates all components to define and solve a robot planning problem.
     Sets up the state space, space information, validity checker,
@@ -361,11 +345,11 @@ class RobotPlannerSimpleSetup(og.SimpleSetup):
             moved_object: Optional moved object instance.
         """
         self.robot = robot
-        self.state_space = RobotStateSpace(robot)
-        self.space_information = RobotSpaceInformation(
+        self.state_space = PbiRobotStateSpace(robot)
+        self.space_information = PbiRobotSpaceInformation(
             self.state_space, endeffector, moved_object)
         # Attach the validity checker.
-        self.validity_checker = RobotValidityChecker(
+        self.validity_checker = PbiRobotValidityChecker(
             self.space_information, collision_check_functions,
             constraint_functions)
         self.space_information.setStateValidityChecker(self.validity_checker)
@@ -383,7 +367,7 @@ class RobotPlannerSimpleSetup(og.SimpleSetup):
             self.optimization_objective = objectives[0][0](
                 self.space_information)
         else:
-            self.optimization_objective = RobotMultiOptimizationObjective(
+            self.optimization_objective = PbiRobotMultiOptimizationObjective(
                 self.space_information, objectives)
         super().setOptimizationObjective(self.optimization_objective)
 
@@ -464,36 +448,3 @@ class RobotPlannerSimpleSetup(og.SimpleSetup):
         else:
             print("No solution found")
         return solved, joint_path
-
-    def clear(self) -> None:
-        """
-        Clears previous planning data.
-        """
-        super().clear()
-
-    def setup(self) -> None:
-        """
-        Performs necessary setup before solving the planning problem.
-        """
-        super().setup()
-
-    def solve(self, allowed_time: float = 5.0) -> bool:
-        """
-        Attempts to solve the planning problem within the given time.
-
-        Args:
-            allowed_time (float): Maximum time allowed for planning.
-
-        Returns:
-            bool: True if a solution is found, False otherwise.
-        """
-        return super().solve(allowed_time)
-
-    def simplifySolution(self, factor: float = 1.0) -> None:
-        """
-        Simplifies the solution path using a factor.
-
-        Args:
-            factor (float): The simplification factor.
-        """
-        super().simplifySolution(factor)

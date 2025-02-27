@@ -79,90 +79,112 @@ class PathPlannerGUI:
 
     def create_widgets(self) -> None:
         """
-        Creates and arranges the widgets in the GUI.
+        Creates and arranges the widgets in the GUI by grouping related
+        controls into separate frames.
         """
-        # Layout for each robot joint.
-        for i, joint_name in enumerate(self.joint_order):
-            tk.Label(self.root, text=f"{joint_name}").grid(
-                row=i, column=0, padx=5, pady=5)
-            tk.Button(self.root, text="+",
-                      command=lambda i=i: self.increment_joint(i)
-                      ).grid(row=i, column=1, padx=5, pady=5)
-            tk.Button(self.root, text="-",
-                      command=lambda i=i: self.decrement_joint(i)
-                      ).grid(row=i, column=2, padx=5, pady=5)
-            tk.Entry(self.root, textvariable=self.joint_values[i],
-                     width=10).grid(row=i, column=3, padx=5, pady=5)
+        # Create a frame for robot joint controls.
+        joints_frame = tk.LabelFrame(self.root, text="Robot Joints",
+                                    padx=5, pady=5)
+        joints_frame.grid(row=0, column=0, columnspan=4, sticky="nw",
+                        padx=5, pady=5)
 
-        # Layout for obstacle position and orientation.
+        # Layout for each robot joint in the joints frame.
+        for i, joint_name in enumerate(self.joint_order):
+            tk.Label(joints_frame, text=joint_name).grid(
+                row=i, column=0, padx=5, pady=5)
+            tk.Button(joints_frame, text="+",
+                    command=lambda i=i: self.increment_joint(i)
+                    ).grid(row=i, column=1, padx=5, pady=5)
+            tk.Button(joints_frame, text="-",
+                    command=lambda i=i: self.decrement_joint(i)
+                    ).grid(row=i, column=2, padx=5, pady=5)
+            tk.Entry(joints_frame, textvariable=self.joint_values[i],
+                    width=10).grid(row=i, column=3, padx=5, pady=5)
+
+        # Create a frame for obstacle controls.
+        obstacle_frame = tk.LabelFrame(self.root, text="Obstacle Controls",
+                                    padx=5, pady=5)
+        obstacle_frame.grid(row=0, column=4, columnspan=4, sticky="ne",
+                            padx=5, pady=5)
+
+        # Layout for obstacle position and orientation in the obstacle frame.
         obstacle_labels = ["X", "Y", "Z", "A", "B", "C"]
         for i, label in enumerate(obstacle_labels):
-            tk.Label(self.root, text=f"{label}").grid(
-                row=i, column=4, padx=5, pady=5)
-            tk.Button(self.root, text="+",
-                      command=lambda i=i: self.increment_obstacle(i)
-                      ).grid(row=i, column=5, padx=5, pady=5)
-            tk.Button(self.root, text="-",
-                      command=lambda i=i: self.decrement_obstacle(i)
-                      ).grid(row=i, column=6, padx=5, pady=5)
-            tk.Entry(self.root, textvariable=self.obstacle_values[i],
-                     width=10).grid(row=i, column=7, padx=5, pady=5)
+            tk.Label(obstacle_frame, text=label).grid(
+                row=i, column=0, padx=5, pady=5)
+            tk.Button(obstacle_frame, text="+",
+                    command=lambda i=i: self.increment_obstacle(i)
+                    ).grid(row=i, column=1, padx=5, pady=5)
+            tk.Button(obstacle_frame, text="-",
+                    command=lambda i=i: self.decrement_obstacle(i)
+                    ).grid(row=i, column=2, padx=5, pady=5)
+            tk.Entry(obstacle_frame, textvariable=self.obstacle_values[i],
+                    width=10).grid(row=i, column=3, padx=5, pady=5)
 
-        # Row for additional controls.
-        base_row: int = len(self.joint_order)
-        # Dropdown for selecting planner instance.
-        tk.Label(self.root, text="Select Planner:").grid(
-            row=base_row, column=0, padx=5, pady=5)
+        # Create a frame for planner selection, status indicators, and path controls.
+        control_frame = tk.Frame(self.root, padx=5, pady=5)
+        control_frame.grid(row=1, column=0, columnspan=8, sticky="ew",
+                        padx=5, pady=5)
+
+        # Planner selection dropdown.
+        tk.Label(control_frame, text="Select Planner:").grid(
+            row=0, column=0, padx=5, pady=5, sticky="w")
         planner_menu = tk.OptionMenu(
-            self.root,
+            control_frame,
             self.selected_planner_var,
             *self.planner_mapping.keys(),
             command=self.update_selected_planner
         )
-        planner_menu.grid(row=base_row, column=1, padx=5, pady=5)
+        planner_menu.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 
         # Status indicators.
-        status_row: int = base_row + 1
-        tk.Label(self.root, text="Collision Status:").grid(
-            row=status_row, column=0, padx=5, pady=10)
+        tk.Label(control_frame, text="Collision Status:").grid(
+            row=1, column=0, padx=5, pady=10, sticky="w")
         self.collision_light = tk.Label(
-            self.root,
+            control_frame,
             bg=self.collision_status.get(),
-            width=10, height=2)
-        self.collision_light.grid(row=status_row, column=1,
-                                  padx=5, pady=10)
-        tk.Label(self.root, text="Constraint Status:").grid(
-            row=status_row, column=2, padx=5, pady=10)
+            width=10, height=2
+        )
+        self.collision_light.grid(row=1, column=1, padx=5, pady=10, sticky="w")
+        tk.Label(control_frame, text="Constraint Status:").grid(
+            row=1, column=2, padx=5, pady=10, sticky="w")
         self.constraint_light = tk.Label(
-            self.root,
+            control_frame,
             bg=self.constraint_status.get(),
-            width=10, height=2)
-        self.constraint_light.grid(row=status_row, column=3,
-                                   padx=5, pady=10)
+            width=10, height=2
+        )
+        self.constraint_light.grid(row=1, column=3, padx=5, pady=10, sticky="w")
 
-        # Control buttons.
-        control_row: int = status_row + 1
-        tk.Button(self.root, text="Set as Start",
-                  command=self.set_as_start).grid(
-                      row=control_row, column=0, pady=10)
-        tk.Button(self.root, text="Set as End",
-                  command=self.set_as_goal).grid(
-                      row=control_row, column=1, pady=10)
-        tk.Button(self.root, text="Plan and Execute",
-                  command=self.plan_and_execute).grid(
-                      row=control_row, column=3, pady=10)
-        # Obstacle size control buttons.
-        tk.Button(self.root, text="Shrink Obstacle",
-                  command=self.shrink_obstacle).grid(
-                      row=control_row + 1, column=4, pady=10)
-        tk.Button(self.root, text="Grow Obstacle",
-                  command=self.grow_obstacle).grid(
-                      row=control_row + 1, column=5, pady=10)
-        # Exit button.
-        tk.Button(self.root, text="Exit",
-                  command=self.root.quit).grid(
-                      row=control_row + 2, column=0, columnspan=4,
-                      pady=20)
+        # Create a labeled frame for path control buttons.
+        path_controls_frame = tk.LabelFrame(
+            control_frame, text="Path Controls", padx=5, pady=5)
+        path_controls_frame.grid(row=2, column=0, columnspan=4, sticky="ew",
+                                padx=5, pady=10)
+
+        tk.Button(path_controls_frame, text="Set as Start",
+                command=self.set_as_start).grid(
+                    row=0, column=0, padx=5, pady=10)
+        tk.Button(path_controls_frame, text="Set as End",
+                command=self.set_as_goal).grid(
+                    row=0, column=1, padx=5, pady=10)
+        tk.Button(path_controls_frame, text="Plan and Execute",
+                command=self.plan_and_execute).grid(
+                    row=0, column=2, padx=5, pady=10)
+        # Move obstacle size control buttons inside the path controls frame.
+        tk.Button(path_controls_frame, text="Shrink Obstacle",
+                command=self.shrink_obstacle).grid(
+                    row=1, column=0, padx=5, pady=10)
+        tk.Button(path_controls_frame, text="Grow Obstacle",
+                command=self.grow_obstacle).grid(
+                    row=1, column=1, padx=5, pady=10)
+
+        # Exit button (placed in the control frame).
+        tk.Button(control_frame, text="Exit",
+                command=self.root.quit).grid(
+                    row=3, column=0, columnspan=4, padx=5, pady=20)
+
+
+
 
     def update_selected_planner(self, selection: str) -> None:
         """

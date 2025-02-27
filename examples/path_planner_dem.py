@@ -207,7 +207,7 @@ if __name__ == "__main__":
         constraint_functions=constraint_functions,
         objectives=objectives,
     )
-    path_planner_1.name = "With Objects Mover"
+    path_planner_1.name = "Robot+ Gripper+ Object"
 
     path_planner_2 = pi.PbiRobotPlannerSimpleSetup(
         robot=robot,
@@ -217,7 +217,7 @@ if __name__ == "__main__":
         # constraint_functions=constraint_functions,
         objectives=objectives,
     )
-    path_planner_2.name = "With Gripper Mover"
+    path_planner_2.name = "Robot+ Gripper"
 
     path_planner_3 = pi.PbiRobotPlannerSimpleSetup(
         robot=robot,

@@ -3,7 +3,7 @@ from ompl import base as ob
 from ompl import geometric as og
 import pybullet as p
 from pybullet_industrial import (CollisionChecker, RobotBase,
-                                  JointPath)
+                                 JointPath)
 
 
 class PbiObjectMover:
@@ -93,7 +93,7 @@ class PbiRobotStateSpace(ob.RealVectorStateSpace):
         num_dims: int = len(self.joint_order)
         # Initialize the underlying RealVectorStateSpace.
         super().__init__(num_dims)
-        self.set_bounds(lower_limit, upper_limit)
+        self.setBounds(lower_limit, upper_limit)
 
     def state_to_list(self, state: ob.State) -> list:
         """
@@ -119,7 +119,7 @@ class PbiRobotStateSpace(ob.RealVectorStateSpace):
         """
         return [joint_dict[joint] for joint in self.joint_order]
 
-    def set_bounds(self, lower_limit: list, upper_limit: list) -> None:
+    def setBounds(self, lower_limit: list, upper_limit: list) -> None:
         """
         Sets the state space bounds using the provided joint limits.
 
@@ -196,31 +196,6 @@ class PbiRobotSpaceInformation(ob.SpaceInformation):
             position, orientation = self.robot.get_endeffector_pose()
             self.object_mover.match_moving_objects(position, orientation)
 
-    def set_state_validity_checking_resolution(self,
-                                                resolution: float) -> None:
-        """
-        Sets the resolution used in state validity checking.
-
-        Args:
-            resolution (float): The resolution value.
-        """
-        super().setStateValidityCheckingResolution(resolution)
-
-    def set_state_validity_checker(self, validity_checker) -> None:
-        """
-        Registers the state validity checker.
-
-        Args:
-            validity_checker: The state validity checker instance.
-        """
-        super().setStateValidityChecker(validity_checker)
-
-    def setup(self) -> None:
-        """
-        Finalizes the configuration of the space information.
-        """
-        super().setup()
-
 
 class PbiRobotValidityChecker(ob.StateValidityChecker):
     """
@@ -290,17 +265,10 @@ class PbiRobotMultiOptimizationObjective(ob.MultiOptimizationObjective):
         """
         super().__init__(si)
         self.si: PbiRobotSpaceInformation = si
-        self.update_objective(weighted_objective_list)
 
-    def update_objective(self, weighted_objective_list: list) -> None:
-        """
-        Updates the multi-objective with new (objective, weight) pairs.
-
-        Args:
-            weighted_objective_list (list): List of (objective, weight) pairs.
-        """
         for objective, weight in weighted_objective_list:
             self.addObjective(objective(self.si), weight)
+        self.lock()
 
 
 class PbiRobotPathClearanceObjective(ob.StateCostIntegralObjective):

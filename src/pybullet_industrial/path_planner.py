@@ -332,7 +332,7 @@ class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
                  planner_type,
                  interpolation_precision: float = 0.001,
                  constraint_functions: list = None,
-                 objectives: list = None,
+                 objective=None,
                  object_mover=None,
                  name: str = None) -> None:
         """
@@ -360,10 +360,19 @@ class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
         self.planner_type = planner_type
         self.setPlanner(planner_type)
 
-        if objectives:
-            self.setOptimizationObjective(objectives)
+        self.setOptimizationObjective(objective)
 
+    def setOptimizationObjective(self, objective) -> None:
+        """
+        Sets the optimization objective for the planner.
 
+        Args:
+            objective: The objective to be set.
+        """
+        if objective is not None:
+            super().setOptimizationObjective(objective(self.space_information))
+        else:
+            super().setOptimizationObjective(None)
     def __setup_space_information(self, robot: RobotBase,
                                 collision_check_functions: list,
                                 constraint_functions: list = None,
@@ -388,21 +397,6 @@ class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
         self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()
         super().__init__(self.space_information)
-
-    def setOptimizationObjective(self, objectives: list) -> None:
-        """
-        Sets the planner's optimization objective.
-
-        Args:
-            objectives (list): List of (objective, weight) pairs.
-        """
-        if len(objectives) == 1:
-            self.optimization_objective = objectives[0][0](
-                self.space_information)
-        else:
-            self.optimization_objective = PbiRobotMultiOptimizationObjective(
-                self.space_information, objectives)
-        super().setOptimizationObjective(self.optimization_objective)
 
     def setPlanner(self, planner_type) -> None:
         """

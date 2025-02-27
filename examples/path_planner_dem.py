@@ -177,8 +177,11 @@ if __name__ == "__main__":
 
     objective_weight: float = 1.0
     objectives: list = []
-    # objectives.append((clearance_objective, objective_weight))
+    objectives.append((clearance_objective, objective_weight))
     objectives.append((path_length_objective, objective_weight))
+
+    def multi_objective(si):
+        return pi.PbiRobotMultiOptimizationObjective(si, objectives)
 
     # Define planner types.
     def rrtsharp(si):
@@ -204,8 +207,8 @@ if __name__ == "__main__":
         object_mover=object_mover,
         collision_check_functions=collision_check,
         planner_type=bitstar,
-        constraint_functions=constraint_functions,
-        objectives=objectives,
+        #constraint_functions=constraint_functions,
+        # objective=objectives,
     )
     path_planner_1.name = "Robot+ Gripper+ Object"
 
@@ -215,7 +218,7 @@ if __name__ == "__main__":
         collision_check_functions=collision_check,
         planner_type=bitstar,
         # constraint_functions=constraint_functions,
-        objectives=objectives,
+        #objective=objectives,
     )
     path_planner_2.name = "Robot+ Gripper"
 
@@ -224,13 +227,15 @@ if __name__ == "__main__":
         collision_check_functions=collision_check,
         planner_type=bitstar,
         # constraint_functions=constraint_functions,
-        objectives=objectives,
+        #objective=objectives,
     )
     path_planner_3.name = "Solely Robot"
     path_planner = [path_planner_1, path_planner_2, path_planner_3]
 
     # Create the GUI for motion planning.
     root = tk.Tk()
-    gui = PathPlannerGUI(root, path_planner, obstacle)
+    planner_list = [rrt, rrtsharp, bitstar, abitstar, aitstar]
+    objective_list = [clearance_objective, path_length_objective, multi_objective, None]
+    gui = PathPlannerGUI(root, path_planner, obstacle, planner_list, objective_list)
 
     root.mainloop()

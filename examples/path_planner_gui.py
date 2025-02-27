@@ -10,97 +10,71 @@ JOINT_INCREMENT: float = 0.1
 
 class PathPlannerGUI:
     """
-    GUI for the Path Planner, allowing users to control joints,
-    update obstacles, and execute paths. Displays collision and
-    constraint status. Supports multiple planner setups, planner types,
-    optimization objectives, and planning time selection via a slider.
+    Compact GUI for the Path Planner. Provides controls for robot joints,
+    obstacle parameters, planner selections (setup, type, optimization objective,
+    constraint functions), planning time, and path execution.
     """
 
-    def __init__(self, root: tk.Tk, planner_setup, obstacle, planner_list, objective_list) -> None:
-        """
-        Initializes the PathPlanner GUI.
-
-        Args:
-            root: The root Tkinter window.
-            planner_setup: A single RobotPlannerSimpleSetup instance or a list
-                of such instances.
-            obstacle: The obstacle to manipulate.
-            planner_list: List of planner types (classes) that can be set using
-                planner_setup.setPlanner(planner_type)
-            objective_list: List of optimization objective options. Each option
-                is expected to be a list of (objective, weight) pairs or None.
-        """
+    def __init__(self, root: tk.Tk, planner_setup, obstacle, planner_list, objective_list, constraint_list) -> None:
         self.root: tk.Tk = root
 
         # Support multiple planner setups.
         if isinstance(planner_setup, list):
             self.planner_setups = planner_setup
-            self.planner_mappings = {}
-            for planner in self.planner_setups:
-                self.planner_mappings[planner.name] = planner
-            self.selected_planner_var = tk.StringVar(
-                value=list(self.planner_mappings.keys())[0])
-            self.planner_setup = self.planner_mappings[
-                self.selected_planner_var.get()]
+            self.planner_mappings = {p.name: p for p in self.planner_setups}
+            self.selected_planner_var = tk.StringVar(value=list(self.planner_mappings.keys())[0])
+            self.planner_setup = self.planner_mappings[self.selected_planner_var.get()]
         else:
             self.planner_setups = [planner_setup]
             self.planner_mappings = {planner_setup.name: planner_setup}
             self.selected_planner_var = tk.StringVar(value=planner_setup.name)
             self.planner_setup = planner_setup
 
-        # Store planner types.
-        self.planner_types = planner_list
-        # Create a mapping from planner type names to planner classes.
-        self.planner_type_mapping = {ptype.__name__: ptype for ptype in self.planner_types}
-        self.selected_planner_type_var = tk.StringVar(
-            value=list(self.planner_type_mapping.keys())[0])
+        # Planner types mapping.
+        self.planner_type_mapping = {ptype.__name__: ptype for ptype in planner_list}
+        default_ptype = "bitstar" if "bitstar" in self.planner_type_mapping else list(self.planner_type_mapping.keys())[0]
+        self.selected_planner_type_var = tk.StringVar(value=default_ptype)
+        self.planner_setup.setPlanner(self.planner_type_mapping[self.selected_planner_type_var.get()])
 
-        # Store optimization objective options.
-        self.objective_options = objective_list
-        # Build a mapping for displaying names.
-        # If an option is None, we display "None". Otherwise, if it has a __name__,
-        # we use that; if not, we use its string representation.
+        # Optimization objective mapping.
         self.objective_mapping = {}
-        for obj in self.objective_options:
-            if obj is None:
-                key = "None"
-            elif hasattr(obj, "__name__"):
-                key = obj.__name__
-            else:
-                key = str(obj)
+        for obj in objective_list:
+            key = "None" if obj is None else (obj.__name__ if hasattr(obj, "__name__") else str(obj))
             self.objective_mapping[key] = obj
-        self.selected_objective_var = tk.StringVar(
-            value=list(self.objective_mapping.keys())[0])
+        default_obj = "None" if "None" in self.objective_mapping else list(self.objective_mapping.keys())[0]
+        self.selected_objective_var = tk.StringVar(value=default_obj)
+        self.planner_setup.setOptimizationObjective(self.objective_mapping[self.selected_objective_var.get()])
+
+        # Constraint functions mapping.
+        self.constraint_mapping = {}
+        for cf in constraint_list:
+            key = "None" if cf is None else (cf.__name__ if hasattr(cf, "__name__") else str(cf))
+            self.constraint_mapping[key] = cf
+        default_constraint = "None" if "None" in self.constraint_mapping else list(self.constraint_mapping.keys())[0]
+        self.selected_constraint_var = tk.StringVar(value=default_constraint)
+        self.planner_setup.update_constraints(self.constraint_mapping[self.selected_constraint_var.get()])
 
         # Planning time slider variable.
         self.planning_time_var = tk.IntVar(value=5)
 
-        # Retrieve robot and related objects from the planner setup.
+        # Retrieve robot and related objects.
         self.robot = self.planner_setup.robot
         self.collision_check = self.planner_setup.validity_checker.collision_check_functions
         self.constraint_functions = self.planner_setup.validity_checker.constraint_functions
         self.object_mover = self.planner_setup.space_information.object_mover
-
         self.obstacle = obstacle
 
-        # Get initial start and goal configurations from the robot.
-        self.start: dict = self.robot.get_joint_state()
-        self.goal: dict = self.robot.get_joint_state()
-        self.joint_order: list = self.robot.get_moveable_joints()[0]
+        self.start = self.robot.get_joint_state()
+        self.goal = self.robot.get_joint_state()
+        self.joint_order = self.robot.get_moveable_joints()[0]
         self.joint_limits = self.robot.get_joint_limits()
         self.root.title("PyBullet Path Planning")
 
-        # Create StringVars for joint values.
-        self.joint_values: list = [tk.StringVar(value="0")
-                                   for _ in range(len(self.joint_order))]
-        # Create StringVars for obstacle position and orientation.
-        self.obstacle_values: list = [tk.StringVar(value="0")
-                                      for _ in range(6)]
-        # Status indicators.
-        self.collision_status: tk.StringVar = tk.StringVar(value="green")
-        self.constraint_status: tk.StringVar = tk.StringVar(value="green")
-        # Initial obstacle box size.
-        self.current_box_size: list = [0.5, 0.5, 0.05]
+        self.joint_values = [tk.StringVar(value="0") for _ in self.joint_order]
+        self.obstacle_values = [tk.StringVar(value="0") for _ in range(6)]
+        self.collision_status = tk.StringVar(value="green")
+        self.constraint_status = tk.StringVar(value="green")
+        self.current_box_size = [0.5, 0.5, 0.05]
 
         self.create_widgets()
         self.update_joint_positions()
@@ -108,226 +82,127 @@ class PathPlannerGUI:
         self.update_status()
 
     def create_widgets(self) -> None:
-        """
-        Creates and arranges the widgets in the GUI by grouping related
-        controls into separate frames.
-        """
-        # Create a frame for robot joint controls.
-        joints_frame = tk.LabelFrame(self.root, text="Robot Joints",
-                                     padx=5, pady=5)
-        joints_frame.grid(row=0, column=0, columnspan=4, sticky="nw",
-                          padx=5, pady=5)
+        # Top frame: Joint and obstacle controls.
+        top_frame = tk.Frame(self.root)
+        top_frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
 
+        joints_frame = tk.LabelFrame(top_frame, text="Joints", padx=3, pady=3)
+        joints_frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
         for i, joint_name in enumerate(self.joint_order):
-            tk.Label(joints_frame, text=joint_name).grid(
-                row=i, column=0, padx=5, pady=5)
-            tk.Button(joints_frame, text="+",
-                      command=lambda i=i: self.increment_joint(i)
-                      ).grid(row=i, column=1, padx=5, pady=5)
-            tk.Button(joints_frame, text="-",
-                      command=lambda i=i: self.decrement_joint(i)
-                      ).grid(row=i, column=2, padx=5, pady=5)
-            tk.Entry(joints_frame, textvariable=self.joint_values[i],
-                     width=10).grid(row=i, column=3, padx=5, pady=5)
+            tk.Label(joints_frame, text=joint_name).grid(row=i, column=0, sticky="w", padx=2, pady=1)
+            tk.Button(joints_frame, text="+", command=lambda i=i: self.increment_joint(i), width=2).grid(row=i, column=1, padx=2, pady=1)
+            tk.Button(joints_frame, text="-", command=lambda i=i: self.decrement_joint(i), width=2).grid(row=i, column=2, padx=2, pady=1)
+            tk.Entry(joints_frame, textvariable=self.joint_values[i], width=6).grid(row=i, column=3, padx=2, pady=1)
 
-        # Create a frame for obstacle controls.
-        obstacle_frame = tk.LabelFrame(self.root, text="Obstacle Controls",
-                                       padx=5, pady=5)
-        obstacle_frame.grid(row=0, column=4, columnspan=4, sticky="ne",
-                            padx=5, pady=5)
+        obstacle_frame = tk.LabelFrame(top_frame, text="Obstacle", padx=3, pady=3)
+        obstacle_frame.grid(row=0, column=1, padx=3, pady=3, sticky="nsew")
+        obs_labels = ["X", "Y", "Z", "A", "B", "C"]
+        for i, label in enumerate(obs_labels):
+            tk.Label(obstacle_frame, text=label).grid(row=i, column=0, sticky="w", padx=2, pady=1)
+            tk.Button(obstacle_frame, text="+", command=lambda i=i: self.increment_obstacle(i), width=2).grid(row=i, column=1, padx=2, pady=1)
+            tk.Button(obstacle_frame, text="-", command=lambda i=i: self.decrement_obstacle(i), width=2).grid(row=i, column=2, padx=2, pady=1)
+            tk.Entry(obstacle_frame, textvariable=self.obstacle_values[i], width=6).grid(row=i, column=3, padx=2, pady=1)
 
-        obstacle_labels = ["X", "Y", "Z", "A", "B", "C"]
-        for i, label in enumerate(obstacle_labels):
-            tk.Label(obstacle_frame, text=label).grid(
-                row=i, column=0, padx=5, pady=5)
-            tk.Button(obstacle_frame, text="+",
-                      command=lambda i=i: self.increment_obstacle(i)
-                      ).grid(row=i, column=1, padx=5, pady=5)
-            tk.Button(obstacle_frame, text="-",
-                      command=lambda i=i: self.decrement_obstacle(i)
-                      ).grid(row=i, column=2, padx=5, pady=5)
-            tk.Entry(obstacle_frame, textvariable=self.obstacle_values[i],
-                     width=10).grid(row=i, column=3, padx=5, pady=5)
+        # Middle frame: Planner and status controls.
+        mid_frame = tk.Frame(self.root)
+        mid_frame.grid(row=1, column=0, padx=3, pady=3, sticky="ew")
+        # Planner selections.
+        planner_frame = tk.Frame(mid_frame)
+        planner_frame.grid(row=0, column=0, padx=3, pady=3, sticky="w")
+        tk.Label(planner_frame, text="Setup:").grid(row=0, column=0, sticky="w")
+        tk.OptionMenu(planner_frame, self.selected_planner_var, *self.planner_mappings.keys(), command=self.update_selected_planner).grid(row=0, column=1, padx=2)
+        tk.Label(planner_frame, text="Type:").grid(row=0, column=2, sticky="w")
+        tk.OptionMenu(planner_frame, self.selected_planner_type_var, *self.planner_type_mapping.keys(), command=self.update_planner_type).grid(row=0, column=3, padx=2)
+        tk.Label(planner_frame, text="Objective:").grid(row=0, column=4, sticky="w")
+        tk.OptionMenu(planner_frame, self.selected_objective_var, *self.objective_mapping.keys(), command=self.update_objective).grid(row=0, column=5, padx=2)
+        tk.Label(planner_frame, text="Constraints:").grid(row=0, column=6, sticky="w")
+        tk.OptionMenu(planner_frame, self.selected_constraint_var, *self.constraint_mapping.keys(), command=self.update_constraints).grid(row=0, column=7, padx=2)
 
-        # Create a frame for planner selection, type, objective, planning time, status indicators, and path controls.
-        control_frame = tk.Frame(self.root, padx=5, pady=5)
-        control_frame.grid(row=1, column=0, columnspan=8, sticky="ew",
-                          padx=5, pady=5)
+        # Status and planning time.
+        status_frame = tk.Frame(mid_frame)
+        status_frame.grid(row=0, column=1, padx=3, pady=3, sticky="e")
+        tk.Label(status_frame, text="Time (s):").grid(row=0, column=0, sticky="w")
+        tk.Scale(status_frame, variable=self.planning_time_var, from_=1, to=180, orient=tk.HORIZONTAL, resolution=1, length=120).grid(row=0, column=1)
+        tk.Label(status_frame, text="Collision:").grid(row=1, column=0, sticky="w")
+        self.collision_light = tk.Label(status_frame, bg=self.collision_status.get(), width=6)
+        self.collision_light.grid(row=1, column=1, padx=2)
+        tk.Label(status_frame, text="Constraint:").grid(row=2, column=0, sticky="w")
+        self.constraint_light = tk.Label(status_frame, bg=self.constraint_status.get(), width=6)
+        self.constraint_light.grid(row=2, column=1, padx=2)
 
-        # Planner setup selection dropdown.
-        tk.Label(control_frame, text="Select Planner Setup:").grid(
-            row=0, column=0, padx=5, pady=5, sticky="w")
-        planner_setup_menu = tk.OptionMenu(
-            control_frame,
-            self.selected_planner_var,
-            *self.planner_mappings.keys(),
-            command=self.update_selected_planner
-        )
-        planner_setup_menu.grid(row=0, column=1, padx=5, pady=5, sticky="w")
-
-        # Planner type selection dropdown.
-        tk.Label(control_frame, text="Select Planner Type:").grid(
-            row=0, column=2, padx=5, pady=5, sticky="w")
-        planner_type_menu = tk.OptionMenu(
-            control_frame,
-            self.selected_planner_type_var,
-            *self.planner_type_mapping.keys(),
-            command=self.update_planner_type
-        )
-        planner_type_menu.grid(row=0, column=3, padx=5, pady=5, sticky="w")
-
-        # Optimization objective selection dropdown.
-        tk.Label(control_frame, text="Select Optimization Objective:").grid(
-            row=0, column=4, padx=5, pady=5, sticky="w")
-        objective_menu = tk.OptionMenu(
-            control_frame,
-            self.selected_objective_var,
-            *self.objective_mapping.keys(),
-            command=self.update_objective
-        )
-        objective_menu.grid(row=0, column=5, padx=5, pady=5, sticky="w")
-
-        # Planning time slider.
-        tk.Label(control_frame, text="Planning Time (s):").grid(
-            row=0, column=6, padx=5, pady=5, sticky="w")
-        self.planning_time_slider = tk.Scale(control_frame,
-                                             variable=self.planning_time_var,
-                                             from_=1,
-                                             to=180,
-                                             orient=tk.HORIZONTAL,
-                                             resolution=1,
-                                             length=150)
-        self.planning_time_slider.grid(row=0, column=7, padx=5, pady=5, sticky="w")
-
-        # Status indicators.
-        tk.Label(control_frame, text="Collision Status:").grid(
-            row=1, column=0, padx=5, pady=10, sticky="w")
-        self.collision_light = tk.Label(
-            control_frame,
-            bg=self.collision_status.get(),
-            width=10, height=2
-        )
-        self.collision_light.grid(row=1, column=1, padx=5, pady=10, sticky="w")
-        tk.Label(control_frame, text="Constraint Status:").grid(
-            row=1, column=2, padx=5, pady=10, sticky="w")
-        self.constraint_light = tk.Label(
-            control_frame,
-            bg=self.constraint_status.get(),
-            width=10, height=2
-        )
-        self.constraint_light.grid(row=1, column=3, padx=5, pady=10, sticky="w")
-
-        # Create a frame for path control buttons.
-        path_controls_frame = tk.LabelFrame(
-            control_frame, text="Path Controls", padx=5, pady=5)
-        path_controls_frame.grid(row=2, column=0, columnspan=8, sticky="ew",
-                                  padx=5, pady=10)
-
-        tk.Button(path_controls_frame, text="Set as Start",
-                  command=self.set_as_start).grid(
-            row=0, column=0, padx=5, pady=10)
-        tk.Button(path_controls_frame, text="Set as End",
-                  command=self.set_as_goal).grid(
-            row=0, column=1, padx=5, pady=10)
-        tk.Button(path_controls_frame, text="Plan and Execute",
-                  command=self.plan_and_execute).grid(
-            row=0, column=2, padx=5, pady=10)
-        tk.Button(path_controls_frame, text="Shrink Obstacle",
-                  command=self.shrink_obstacle).grid(
-            row=1, column=0, padx=5, pady=10)
-        tk.Button(path_controls_frame, text="Grow Obstacle",
-                  command=self.grow_obstacle).grid(
-            row=1, column=1, padx=5, pady=10)
-
-        tk.Button(control_frame, text="Exit",
-                  command=self.root.quit).grid(
-            row=3, column=0, columnspan=8, padx=5, pady=20)
+        # Bottom frame: Path control buttons.
+        bottom_frame = tk.Frame(self.root)
+        bottom_frame.grid(row=2, column=0, padx=3, pady=3, sticky="ew")
+        tk.Button(bottom_frame, text="Start", command=self.set_as_start, width=8).grid(row=0, column=0, padx=3, pady=3)
+        tk.Button(bottom_frame, text="Goal", command=self.set_as_goal, width=8).grid(row=0, column=1, padx=3, pady=3)
+        tk.Button(bottom_frame, text="Plan/Execute", command=self.plan_and_execute, width=12).grid(row=0, column=2, padx=3, pady=3)
+        tk.Button(bottom_frame, text="Shrink Obs", command=self.shrink_obstacle, width=10).grid(row=0, column=3, padx=3, pady=3)
+        tk.Button(bottom_frame, text="Grow Obs", command=self.grow_obstacle, width=10).grid(row=0, column=4, padx=3, pady=3)
+        tk.Button(bottom_frame, text="Exit", command=self.root.quit, width=8).grid(row=0, column=5, padx=3, pady=3)
 
     def update_selected_planner(self, selection: str) -> None:
-        """
-        Updates the active planner setup based on the dropdown selection.
-        """
         self.planner_setup = self.planner_mappings[selection]
         self.robot = self.planner_setup.robot
         self.collision_check = self.planner_setup.validity_checker.collision_check_functions
-        self.constraint_functions = (self.planner_setup.validity_checker.constraint_functions or [])
+        self.constraint_functions = self.planner_setup.validity_checker.constraint_functions or []
         self.object_mover = self.planner_setup.space_information.object_mover
-        print(f"Selected planner setup: {selection}")
+        print(f"Selected setup: {selection}")
 
     def update_planner_type(self, selection: str) -> None:
-        """
-        Updates the planner type of the currently active planner setup.
-        """
         planner_type = self.planner_type_mapping[selection]
         self.planner_setup.setPlanner(planner_type)
-        print(f"Set planner type to: {selection}")
+        print(f"Set type: {selection}")
 
     def update_objective(self, selection: str) -> None:
-        """
-        Updates the optimization objective of the currently active planner setup.
-        Calls planner_setup.setOptimizationObjective(objectives) with the
-        selected objective option.
-        """
-        selected_objective = self.objective_mapping[selection]
-        self.planner_setup.setOptimizationObjective(selected_objective)
-        print(f"Set optimization objective to: {selection}")
+        selected_obj = self.objective_mapping[selection]
+        self.planner_setup.setOptimizationObjective(selected_obj)
+        print(f"Set objective: {selection}")
+
+    def update_constraints(self, selection: str) -> None:
+        selected_constraint = self.constraint_mapping[selection]
+        self.planner_setup.update_constraints(selected_constraint)
+        # Update collision check functions as well.
+        self.collision_check = self.planner_setup.validity_checker.collision_check_functions
+        self.constraint_functions = self.planner_setup.validity_checker.constraint_functions or []
+        print(f"Set constraints: {selection}")
 
     def update_status(self) -> None:
-        """
-        Updates collision and constraint status indicators.
-        """
         if self.object_mover:
             pos, ori = self.robot.get_endeffector_pose()
             self.object_mover.match_moving_objects(pos, ori)
-        valid_collision: bool = all(cc() for cc in self.collision_check)
+        valid_collision = all(cc() for cc in self.collision_check)
         self.collision_status.set("green" if valid_collision else "red")
         self.collision_light.config(bg=self.collision_status.get())
         self.update_constraint_status()
 
     def update_constraint_status(self) -> None:
-        """
-        Checks all constraint functions and updates the indicator.
-        """
-        valid_constraints = True
-        if self.constraint_functions:
-            valid_constraints = all(fn() for fn in self.constraint_functions)
+        valid_constraints = all(fn() for fn in self.constraint_functions) if self.constraint_functions else True
         self.constraint_status.set("green" if valid_constraints else "red")
         self.constraint_light.config(bg=self.constraint_status.get())
 
     def shrink_obstacle(self) -> None:
-        """
-        Shrinks the obstacle size by 20% and updates its display.
-        """
         pos, orn = p.getBasePositionAndOrientation(self.obstacle)
-        self.current_box_size = [extent - (extent * 0.2) for extent in self.current_box_size]
+        self.current_box_size = [e - e * 0.2 for e in self.current_box_size]
         p.removeBody(self.obstacle)
         self.obstacle = p.createMultiBody(
             baseMass=0,
             baseCollisionShapeIndex=p.createCollisionShape(p.GEOM_BOX, halfExtents=self.current_box_size),
-            basePosition=pos, baseOrientation=orn
-        )
+            basePosition=pos, baseOrientation=orn)
         self.set_initial_obstacle_values()
         self.update_status()
 
     def grow_obstacle(self) -> None:
-        """
-        Grows the obstacle size by 20% and updates its display.
-        """
         pos, orn = p.getBasePositionAndOrientation(self.obstacle)
-        self.current_box_size = [extent + (extent * 0.2) for extent in self.current_box_size]
+        self.current_box_size = [e + e * 0.2 for e in self.current_box_size]
         p.removeBody(self.obstacle)
         self.obstacle = p.createMultiBody(
             baseMass=0,
             baseCollisionShapeIndex=p.createCollisionShape(p.GEOM_BOX, halfExtents=self.current_box_size),
-            basePosition=pos, baseOrientation=orn
-        )
+            basePosition=pos, baseOrientation=orn)
         self.set_initial_obstacle_values()
         self.update_status()
 
     def set_initial_obstacle_values(self) -> None:
-        """
-        Sets GUI entries for the obstacle's initial position and orientation.
-        """
         pos, orn_q = p.getBasePositionAndOrientation(self.obstacle)
         orn_e = p.getEulerFromQuaternion(orn_q)
         for i in range(3):
@@ -336,106 +211,72 @@ class PathPlannerGUI:
             self.obstacle_values[i].set(f"{orn_e[i-3]:.2f}")
 
     def update_joint_positions(self) -> None:
-        """
-        Retrieves current joint positions from the robot and updates the GUI.
-        """
         joint_state = self.robot.get_joint_state()
         for i, jn in enumerate(self.joint_order):
-            pos = joint_state[jn]['position']
-            self.joint_values[i].set(f"{pos:.2f}")
+            self.joint_values[i].set(f"{joint_state[jn]['position']:.2f}")
         self.update_status()
 
     def increment_joint(self, index: int) -> None:
-        """
-        Increments the joint value at the specified index.
-        """
-        cur: float = float(self.joint_values[index].get())
-        new_val: float = cur + JOINT_INCREMENT
-        joint_name: str = self.joint_order[index]
+        cur = float(self.joint_values[index].get())
+        new_val = cur + JOINT_INCREMENT
+        joint_name = self.joint_order[index]
         if new_val <= self.joint_limits[1][joint_name]:
             self.joint_values[index].set(f"{new_val:.2f}")
             self.apply_joint_position(index, new_val)
 
     def decrement_joint(self, index: int) -> None:
-        """
-        Decrements the joint value at the specified index.
-        """
-        cur: float = float(self.joint_values[index].get())
-        new_val: float = cur - JOINT_INCREMENT
-        joint_name: str = self.joint_order[index]
+        cur = float(self.joint_values[index].get())
+        new_val = cur - JOINT_INCREMENT
+        joint_name = self.joint_order[index]
         if new_val >= self.joint_limits[0][joint_name]:
             self.joint_values[index].set(f"{new_val:.2f}")
             self.apply_joint_position(index, new_val)
 
     def increment_obstacle(self, index: int) -> None:
-        """
-        Increments the obstacle parameter at the given index.
-        """
-        cur: float = float(self.obstacle_values[index].get())
-        new_val: float = cur + 0.1
+        cur = float(self.obstacle_values[index].get())
+        new_val = cur + 0.1
         self.obstacle_values[index].set(f"{new_val:.2f}")
         self.update_obstacle()
 
     def decrement_obstacle(self, index: int) -> None:
-        """
-        Decrements the obstacle parameter at the given index.
-        """
-        cur: float = float(self.obstacle_values[index].get())
-        new_val: float = cur - 0.1
+        cur = float(self.obstacle_values[index].get())
+        new_val = cur - 0.1
         self.obstacle_values[index].set(f"{new_val:.2f}")
         self.update_obstacle()
 
     def update_obstacle(self) -> None:
-        """
-        Updates the obstacle's position and orientation based on GUI values.
-        """
-        pos: list = [float(self.obstacle_values[i].get()) for i in range(3)]
-        orn_e: list = [float(self.obstacle_values[i].get()) for i in range(3, 6)]
+        pos = [float(self.obstacle_values[i].get()) for i in range(3)]
+        orn_e = [float(self.obstacle_values[i].get()) for i in range(3, 6)]
         orn_q = p.getQuaternionFromEuler(orn_e)
         p.resetBasePositionAndOrientation(self.obstacle, pos, orn_q)
         self.update_status()
 
     def apply_joint_position(self, index: int, position: float) -> None:
-        """
-        Applies a joint position change to the robot and updates status.
-        """
-        joint_name: str = self.joint_order[index]
-        target: dict = {joint_name: position}
-        self.robot.reset_joint_position(target)
+        joint_name = self.joint_order[index]
+        self.robot.reset_joint_position({joint_name: position})
         self.update_status()
 
     def set_as_start(self) -> None:
-        """
-        Sets the current joint configuration as the start configuration.
-        """
         self.start = {jn: float(self.joint_values[i].get()) for i, jn in enumerate(self.joint_order)}
-        print("Start configuration set:", self.start)
+        print("Start set:", self.start)
 
     def set_as_goal(self) -> None:
-        """
-        Sets the current joint configuration as the goal configuration.
-        """
         self.goal = {jn: float(self.joint_values[i].get()) for i, jn in enumerate(self.joint_order)}
-        print("Goal configuration set:", self.goal)
+        print("Goal set:", self.goal)
 
     def plan_and_execute(self) -> None:
-        """
-        Plans a path from start to goal configuration and executes it.
-        The allowed planning time is obtained from the slider.
-        """
         planning_time = self.planning_time_var.get()
-        print(f"Planning and executing path with allowed time = {planning_time}s...")
-        res, joint_path = self.planner_setup.plan_start_goal(self.start, self.goal,
-                                                             allowed_time=planning_time)
+        print(f"Planning (allowed time = {planning_time}s)...")
+        res, joint_path = self.planner_setup.plan_start_goal(self.start, self.goal, allowed_time=planning_time)
         if res:
-            for joint_conf, tool_act in joint_path:
+            for joint_conf, _ in joint_path:
                 self.robot.reset_joint_position(joint_conf, True)
                 if self.object_mover:
                     pos, ori = self.robot.get_endeffector_pose()
                     self.object_mover.match_moving_objects(pos, ori)
                 time.sleep(0.005)
             self.update_joint_positions()
-            print("Path execution completed.")
+            print("Execution completed.")
         else:
             print("No solution found.")
         self.update_status()

@@ -236,6 +236,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     planner_list = [rrt, rrtsharp, bitstar, abitstar, aitstar]
     objective_list = [clearance_objective, path_length_objective, multi_objective, None]
-    gui = PathPlannerGUI(root, path_planner, obstacle, planner_list, objective_list)
+    constraint_list = [constraint_functions, None]
+    gui = PathPlannerGUI(root, path_planner, obstacle, planner_list, objective_list, constraint_list)
 
     root.mainloop()

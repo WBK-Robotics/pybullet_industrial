@@ -354,13 +354,32 @@ class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
 
         self.set_interpolation_precision(interpolation_precision)
 
-        self.__setup_space_information(robot, collision_check_functions,
-                                     constraint_functions, object_mover)
+        self.robot = robot
+        self.state_space = PbiRobotStateSpace(robot)
+        self.space_information = PbiRobotSpaceInformation(
+            self.state_space, object_mover)
+        self.validity_checker = PbiRobotValidityChecker(
+            self.space_information, collision_check_functions)
 
         self.planner_type = planner_type
-        self.setPlanner(planner_type)
+        self.objective = objective
 
-        self.setOptimizationObjective(objective)
+        self.update_constraints(constraint_functions)
+
+    def update_constraints(self, constraint_functions) -> None:
+        """
+        Activates the constraint functions.
+
+        Args:
+            constraint_functions (list): Functions for constraints.
+        """
+        self.validity_checker.constraint_functions = constraint_functions
+        self.space_information.setStateValidityChecker(self.validity_checker)
+        self.space_information.setup()
+        super().__init__(self.space_information)
+
+        self.setPlanner(self.planner_type)
+        self.setOptimizationObjective(self.objective)
 
     def setOptimizationObjective(self, objective) -> None:
         """
@@ -369,34 +388,11 @@ class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
         Args:
             objective: The objective to be set.
         """
+        self.objective = objective
         if objective is not None:
             super().setOptimizationObjective(objective(self.space_information))
         else:
             super().setOptimizationObjective(None)
-    def __setup_space_information(self, robot: RobotBase,
-                                collision_check_functions: list,
-                                constraint_functions: list = None,
-                                object_mover: PbiObjectMover = None) -> None:
-        """
-        Sets up the state space and space information, including the
-        validity checker.
-
-        Args:
-            robot (RobotBase): The robot instance.
-            collision_check_functions (list): Collision check functions.
-            constraint_functions (list, optional): Constraint functions.
-            object_mover (PbiObjectMover, optional): Object mover instance.
-        """
-        self.robot = robot
-        self.state_space = PbiRobotStateSpace(robot)
-        self.space_information = PbiRobotSpaceInformation(
-            self.state_space, object_mover)
-        self.validity_checker = PbiRobotValidityChecker(
-            self.space_information, collision_check_functions,
-            constraint_functions)
-        self.space_information.setStateValidityChecker(self.validity_checker)
-        self.space_information.setup()
-        super().__init__(self.space_information)
 
     def setPlanner(self, planner_type) -> None:
         """

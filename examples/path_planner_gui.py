@@ -49,8 +49,7 @@ class PathPlannerGUI:
         self.robot = self.path_planner.robot
         self.collision_check = self.path_planner.validity_checker.collision_check_functions
         self.constraint_functions = self.path_planner.validity_checker.constraint_functions
-        self.endeffector = self.path_planner.space_information.endeffector
-        self.moved_object = self.path_planner.space_information.moved_object
+        self.object_mover = self.path_planner.space_information.object_mover
 
         self.obstacle = obstacle
 
@@ -179,18 +178,17 @@ class PathPlannerGUI:
             collision_check_functions
         self.constraint_functions = (self.path_planner.validity_checker.\
             constraint_functions or [])
-        self.endeffector = self.path_planner.space_information.endeffector
-        self.moved_object = self.path_planner.space_information.moved_object
+        self.object_mover = self.path_planner.space_information.object_mover
         print(f"Selected planner: {selection}")
 
     def update_status(self) -> None:
         """
         Updates collision and constraint status indicators.
         """
-        if self.endeffector:
-            self.endeffector.match_endeffector_pose(self.robot)
-            if self.moved_object:
-                self.endeffector.match_moving_object(self.moved_object)
+        if self.object_mover:
+            pos, ori = self.robot.get_endeffector_pose()
+            self.object_mover.match_moving_objects(
+                pos, ori)
         valid_collision: bool = all(cc() for cc in self.collision_check)
         self.collision_status.set("green" if valid_collision else "red")
         self.collision_light.config(bg=self.collision_status.get())
@@ -350,10 +348,10 @@ class PathPlannerGUI:
         if res:
             for joint_conf, tool_act in joint_path:
                 self.robot.reset_joint_position(joint_conf, True)
-                if self.endeffector:
-                    self.endeffector.match_endeffector_pose(self.robot)
-                    if self.moved_object:
-                        self.endeffector.match_moving_object(self.moved_object)
+                if self.object_mover:
+                    pos, ori = self.robot.get_endeffector_pose()
+                    self.object_mover.match_moving_objects(
+                        pos, ori)
                 time.sleep(0.005)
                 # if not self.collision_check[0]():
                 #     print("Collision detected!")

@@ -119,22 +119,25 @@ if __name__ == "__main__":
     robot = pi.RobotBase(urdf_robot, start_pos, start_orientation)
     start_orientation = p.getQuaternionFromEuler([np.pi, 0, 0])
 
-    # Create the gripper and adjust its base offset.
+    object_mover = pi.PbiObjectMover()
+    gripper_mover = pi.PbiObjectMover()
     test_gripper = pi.Gripper(urdf_gripper,
                               [2.7, -0.5, 1.2],
                               start_orientation)
     position_offset = np.array([0, 0, 0])
     orientation_offset = p.getQuaternionFromEuler(np.array([-np.pi / 2, 0, 0]))
     orientation_offset = np.array(orientation_offset)
-    base_offset = [position_offset, orientation_offset]
-    test_gripper.set_base_offset(base_offset)
 
+    object_mover.add_object(test_gripper.urdf, position_offset,
+                            orientation_offset)
+    gripper_mover.add_object(test_gripper.urdf, position_offset,
+                             orientation_offset)
     # Load a small cube and set the moving object offset.
     cube_small = p.loadURDF(urdf_cube_small,
                             start_pos + [0, -2, 0],
                             useFixedBase=False)
-    test_gripper.set_moving_object_offset(
-        [np.array([0, 0, 0.1]), np.array([0, 0, 0, 1])])
+    position_offset = np.array([0, 0.5, 0])
+    object_mover.add_object(cube_small, position_offset)
 
     # Add a box obstacle near the robot.
     obstacles = []
@@ -157,8 +160,8 @@ if __name__ == "__main__":
 
     # Initialize the collision checker.
     collision_checker = pi.CollisionChecker()
-    test_gripper.match_endeffector_pose(robot)
-    test_gripper.match_moving_object(cube_small)
+    position, orientation = robot.get_endeffector_pose()
+    object_mover.match_moving_objects(position, orientation)
     collision_checker.set_safe_state()
 
     # Append constraint functions.
@@ -198,8 +201,7 @@ if __name__ == "__main__":
     # Initialize the path planner.
     path_planner_1 = pi.PbiRobotPlannerSimpleSetup(
         robot=robot,
-        endeffector=test_gripper,
-        moved_object=cube_small,
+        object_mover=object_mover,
         collision_check_functions=collision_check,
         planner_type=bitstar,
         constraint_functions=constraint_functions,
@@ -208,8 +210,7 @@ if __name__ == "__main__":
 
     path_planner_2 = pi.PbiRobotPlannerSimpleSetup(
         robot=robot,
-        endeffector=test_gripper,
-        # moved_object=cube_small,
+        object_mover=gripper_mover,
         collision_check_functions=collision_check,
         planner_type=bitstar,
         # constraint_functions=constraint_functions,
@@ -218,8 +219,6 @@ if __name__ == "__main__":
 
     path_planner_3 = pi.PbiRobotPlannerSimpleSetup(
         robot=robot,
-        # endeffector=test_gripper,
-        # moved_object=cube_small,
         collision_check_functions=collision_check,
         planner_type=bitstar,
         # constraint_functions=constraint_functions,

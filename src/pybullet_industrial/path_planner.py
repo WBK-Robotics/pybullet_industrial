@@ -95,6 +95,21 @@ class PbiRobotStateSpace(ob.RealVectorStateSpace):
         super().__init__(num_dims)
         self.setBounds(lower_limit, upper_limit)
 
+    def list_to_state(self, joint_values: list) -> ob.State:
+        """
+        Converts a list of joint values to an OMPL state.
+
+        Args:
+            joint_values (list): Ordered list of joint values.
+
+        Returns:
+            ob.State: The corresponding OMPL state.
+        """
+        state = ob.State(self)
+        for i, value in enumerate(joint_values):
+            state[i] = value
+        return state
+
     def state_to_list(self, state: ob.State) -> list:
         """
         Converts an OMPL state to a list of joint values.
@@ -162,21 +177,6 @@ class PbiRobotSpaceInformation(ob.SpaceInformation):
         self.robot: RobotBase = state_space.robot
         self.state_space: PbiRobotStateSpace = state_space
         self.object_mover = object_mover
-
-    def list_to_state(self, joint_values: list) -> ob.State:
-        """
-        Converts a list of joint values to an OMPL state.
-
-        Args:
-            joint_values (list): Ordered list of joint values.
-
-        Returns:
-            ob.State: The corresponding OMPL state.
-        """
-        state = ob.State(self.state_space)
-        for i, value in enumerate(joint_values):
-            state[i] = value
-        return state
 
     def set_state(self, state: ob.State) -> None:
         """
@@ -352,15 +352,19 @@ class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
         else:
             self.name = "PbiRobotPlannerSimpleSetup"
 
-        self.setup_space_information(robot, collision_check_functions,
-                                     constraint_functions, object_mover)
-        if objectives:
-            self.setOptimizationObjective(objectives)
         self.set_interpolation_precision(interpolation_precision)
+
+        self.__setup_space_information(robot, collision_check_functions,
+                                     constraint_functions, object_mover)
+
         self.planner_type = planner_type
         self.setPlanner(planner_type)
 
-    def setup_space_information(self, robot: RobotBase,
+        if objectives:
+            self.setOptimizationObjective(objectives)
+
+
+    def __setup_space_information(self, robot: RobotBase,
                                 collision_check_functions: list,
                                 constraint_functions: list = None,
                                 object_mover: PbiObjectMover = None) -> None:
@@ -429,8 +433,8 @@ class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
         """
         start_list = self.state_space.dict_to_list(start)
         goal_list = self.state_space.dict_to_list(goal)
-        start_state = self.space_information.list_to_state(start_list)
-        goal_state = self.space_information.list_to_state(goal_list)
+        start_state = self.state_space.list_to_state(start_list)
+        goal_state = self.state_space.list_to_state(goal_list)
         super().setStartAndGoalStates(start_state, goal_state)
 
     def plan_start_goal(self, start: dict, goal: dict,

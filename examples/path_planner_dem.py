@@ -207,7 +207,7 @@ if __name__ == "__main__":
         object_mover=object_mover,
         collision_check_functions=collision_check,
         planner_type=bitstar,
-        #constraint_functions=constraint_functions,
+        # constraint_functions=constraint_functions,
         # objective=objectives,
     )
     path_planner_1.name = "Robot+ Gripper+ Object"

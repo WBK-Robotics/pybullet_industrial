@@ -13,7 +13,7 @@ class PathPlannerGUI:
     GUI for the Path Planner, allowing users to control joints,
     update obstacles, and execute paths. Displays collision and
     constraint status. Supports multiple planner setups, planner types,
-    and optimization objectives via dropdown menus.
+    optimization objectives, and planning time selection via a slider.
     """
 
     def __init__(self, root: tk.Tk, planner_setup, obstacle, planner_list, objective_list) -> None:
@@ -71,6 +71,9 @@ class PathPlannerGUI:
             self.objective_mapping[key] = obj
         self.selected_objective_var = tk.StringVar(
             value=list(self.objective_mapping.keys())[0])
+
+        # Planning time slider variable.
+        self.planning_time_var = tk.IntVar(value=5)
 
         # Retrieve robot and related objects from the planner setup.
         self.robot = self.planner_setup.robot
@@ -146,8 +149,7 @@ class PathPlannerGUI:
             tk.Entry(obstacle_frame, textvariable=self.obstacle_values[i],
                      width=10).grid(row=i, column=3, padx=5, pady=5)
 
-        # Create a frame for planner selection, type, objective dropdowns,
-        # status indicators, and path controls.
+        # Create a frame for planner selection, type, objective, planning time, status indicators, and path controls.
         control_frame = tk.Frame(self.root, padx=5, pady=5)
         control_frame.grid(row=1, column=0, columnspan=8, sticky="ew",
                           padx=5, pady=5)
@@ -185,6 +187,18 @@ class PathPlannerGUI:
         )
         objective_menu.grid(row=0, column=5, padx=5, pady=5, sticky="w")
 
+        # Planning time slider.
+        tk.Label(control_frame, text="Planning Time (s):").grid(
+            row=0, column=6, padx=5, pady=5, sticky="w")
+        self.planning_time_slider = tk.Scale(control_frame,
+                                             variable=self.planning_time_var,
+                                             from_=1,
+                                             to=180,
+                                             orient=tk.HORIZONTAL,
+                                             resolution=1,
+                                             length=150)
+        self.planning_time_slider.grid(row=0, column=7, padx=5, pady=5, sticky="w")
+
         # Status indicators.
         tk.Label(control_frame, text="Collision Status:").grid(
             row=1, column=0, padx=5, pady=10, sticky="w")
@@ -206,7 +220,7 @@ class PathPlannerGUI:
         # Create a frame for path control buttons.
         path_controls_frame = tk.LabelFrame(
             control_frame, text="Path Controls", padx=5, pady=5)
-        path_controls_frame.grid(row=2, column=0, columnspan=6, sticky="ew",
+        path_controls_frame.grid(row=2, column=0, columnspan=8, sticky="ew",
                                   padx=5, pady=10)
 
         tk.Button(path_controls_frame, text="Set as Start",
@@ -227,7 +241,7 @@ class PathPlannerGUI:
 
         tk.Button(control_frame, text="Exit",
                   command=self.root.quit).grid(
-            row=3, column=0, columnspan=6, padx=5, pady=20)
+            row=3, column=0, columnspan=8, padx=5, pady=20)
 
     def update_selected_planner(self, selection: str) -> None:
         """
@@ -407,9 +421,12 @@ class PathPlannerGUI:
     def plan_and_execute(self) -> None:
         """
         Plans a path from start to goal configuration and executes it.
+        The allowed planning time is obtained from the slider.
         """
-        print("Planning and executing path...")
-        res, joint_path = self.planner_setup.plan_start_goal(self.start, self.goal)
+        planning_time = self.planning_time_var.get()
+        print(f"Planning and executing path with allowed time = {planning_time}s...")
+        res, joint_path = self.planner_setup.plan_start_goal(self.start, self.goal,
+                                                             allowed_time=planning_time)
         if res:
             for joint_conf, tool_act in joint_path:
                 self.robot.reset_joint_position(joint_conf, True)

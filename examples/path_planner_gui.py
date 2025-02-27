@@ -33,7 +33,7 @@ class PathPlannerGUI:
             self.path_planners = path_planner
             self.planner_mapping = {}
             for idx, planner in enumerate(self.path_planners):
-                name = f"Planner {idx + 1}"
+                name = planner.name
                 self.planner_mapping[name] = planner
             self.selected_planner_var = tk.StringVar(
                 value=list(self.planner_mapping.keys())[0])
@@ -42,7 +42,7 @@ class PathPlannerGUI:
         else:
             self.path_planners = [path_planner]
             self.planner_mapping = {"Planner 1": path_planner}
-            self.selected_planner_var = tk.StringVar(value="Planner 1")
+            self.selected_planner_var = tk.StringVar(value=path_planner.name)
             self.path_planner = path_planner
 
         # Retrieve robot and related objects from the planner instance.

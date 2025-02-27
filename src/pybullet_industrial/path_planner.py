@@ -333,7 +333,8 @@ class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
                  interpolation_precision: float = 0.001,
                  constraint_functions: list = None,
                  objectives: list = None,
-                 object_mover=None) -> None:
+                 object_mover=None,
+                 name: str = None) -> None:
         """
         Initializes the planning setup.
 
@@ -346,6 +347,11 @@ class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
             objectives (list, optional): List of optimization objectives.
             object_mover (PbiObjectMover, optional): Object mover for updates.
         """
+        if name is not None:
+            self.name = name
+        else:
+            self.name = "PbiRobotPlannerSimpleSetup"
+
         self.setup_space_information(robot, collision_check_functions,
                                      constraint_functions, object_mover)
         if objectives:

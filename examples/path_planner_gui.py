@@ -62,8 +62,8 @@ class PathPlannerGUI:
 
         # Retrieve robot and related objects.
         self.robot = self.planner_setup.robot
-        self.collision_check = self.planner_setup.validity_checker.collision_check_functions
-        self.constraint_functions = self.planner_setup.validity_checker.constraint_functions
+        self.collision_check = self.planner_setup.validity_checker.collision_check_function
+        self.constraint_function = self.planner_setup.validity_checker.constraint_function
         self.object_mover = self.planner_setup.space_information.object_mover
         self.obstacle = obstacle
 
@@ -146,8 +146,8 @@ class PathPlannerGUI:
     def update_selected_planner(self, selection: str) -> None:
         self.planner_setup = self.planner_mappings[selection]
         self.robot = self.planner_setup.robot
-        self.collision_check = self.planner_setup.validity_checker.collision_check_functions
-        self.constraint_functions = self.planner_setup.validity_checker.constraint_functions or []
+        self.collision_check = self.planner_setup.validity_checker.collision_check_function
+        self.constraint_function = self.planner_setup.validity_checker.constraint_function or []
         self.object_mover = self.planner_setup.space_information.object_mover
         print(f"Selected setup: {selection}")
 
@@ -165,21 +165,21 @@ class PathPlannerGUI:
         selected_constraint = self.constraint_mapping[selection]
         self.planner_setup.update_constraints(selected_constraint)
         # Update collision check functions as well.
-        self.collision_check = self.planner_setup.validity_checker.collision_check_functions
-        self.constraint_functions = self.planner_setup.validity_checker.constraint_functions or []
+        self.collision_check = self.planner_setup.validity_checker.collision_check_function
+        self.constraint_function = self.planner_setup.validity_checker.constraint_function or []
         print(f"Set constraints: {selection}")
 
     def update_status(self) -> None:
         if self.object_mover:
             pos, ori = self.robot.get_endeffector_pose()
             self.object_mover.match_moving_objects(pos, ori)
-        valid_collision = all(cc() for cc in self.collision_check)
+        valid_collision = self.collision_check()
         self.collision_status.set("green" if valid_collision else "red")
         self.collision_light.config(bg=self.collision_status.get())
         self.update_constraint_status()
 
     def update_constraint_status(self) -> None:
-        valid_constraints = all(fn() for fn in self.constraint_functions) if self.constraint_functions else True
+        valid_constraints = self.constraint_function() if self.constraint_function else True
         self.constraint_status.set("green" if valid_constraints else "red")
         self.constraint_light.config(bg=self.constraint_status.get())
 

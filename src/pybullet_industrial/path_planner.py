@@ -3,7 +3,7 @@ import numpy as np
 from ompl import base as ob
 from ompl import geometric as og
 import pybullet as p
-from pybullet_industrial import (CollisionChecker, RobotBase,
+from pybullet_industrial import (RobotBase,
                                  JointPath)
 
 
@@ -205,25 +205,30 @@ class PbiValidityChecker(ob.StateValidityChecker):
 
     Attributes:
         space_information (PbiSpaceInformation): The robot's space info.
-        collision_check_functions (list): Functions for collision checks.
-        constraint_functions (list): Functions for additional constraints.
+        collision_check_function (list): Functions for collision checks.
+        constraint_function (list): Functions for additional constraints.
     """
 
     def __init__(self, space_information: PbiSpaceInformation,
-                 collision_check_functions: list,
-                 constraint_functions: list = None) -> None:
+                 collision_check_function: bool,
+                 constraint_function: bool = None,
+                 clearance_function: ob.Cost = None,
+                 clearance_distance: float = 0.0
+                 ) -> None:
         """
         Initializes the validity checker.
 
         Args:
             space_information (PbiSpaceInformation): The space info.
-            collision_check_functions (list): Functions for collision checks.
-            constraint_functions (list, optional): Functions for constraints.
+            collision_check_function (list): Functions for collision checks.
+            constraint_function (list, optional): Functions for constraints.
         """
         super().__init__(space_information)
         self.space_information: PbiSpaceInformation = space_information
-        self.collision_check_functions: list = collision_check_functions
-        self.constraint_functions: list = constraint_functions
+        self.collision_check_function: bool = collision_check_function
+        self.constraint_function: bool = constraint_function
+
+        self.clearance_function = clearance_function
 
     def isValid(self, state: ob.State) -> bool:
         """
@@ -236,15 +241,38 @@ class PbiValidityChecker(ob.StateValidityChecker):
         Returns:
             bool: True if valid; False otherwise.
         """
-        self.space_information.set_state(state)
-        if self.constraint_functions:
-            for constraint in self.constraint_functions:
-                if not constraint():
-                    return False
-        for collision_check in self.collision_check_functions:
-            if not collision_check():
+        self.clearance(state)
+        if self.constraint_function:
+            if not self.constraint_function():
                 return False
+        if not self.collision_check_function():
+            return False
         return True
+
+    def clearance(self, state: ob.State) -> float:
+        """
+        Computes the clearance of a state by applying collision tests.
+
+        Args:
+            state (ob.State): The state to evaluate.
+
+        Returns:
+            float: The minimum clearance distance.
+        """
+        self.space_information.set_state(state)
+
+        if self.clearance_function is None:
+            return ob.Cost(0)
+        else:
+            return self.clearance_function()
+            # for (bodyA, bodyB), _ in self.clearance_checker.external_collision_pairs:
+            #     curr_distance = self.clearance_checker.get_min_body_distance(
+            #         bodyA, bodyB, self.clearance_distance)
+            #     if curr_distance < 0:
+            #         curr_distance = 0
+            #     if curr_distance < min_distance:
+            #         min_distance = curr_distance
+            # return ob.Cost(self.clearance_distance / (min_distance + sys.float_info.min))
 
 
 class PbiMultiOptimizationObjective(ob.MultiOptimizationObjective):
@@ -279,9 +307,7 @@ class PbiPathClearanceObjective(ob.StateCostIntegralObjective):
     The cost increases when the robot is too close to obstacles.
     """
 
-    def __init__(self, si: PbiSpaceInformation,
-                 collision_checker: CollisionChecker,
-                 clearance_distance: float = 0.0) -> None:
+    def __init__(self, si: PbiSpaceInformation) -> None:
         """
         Initializes the clearance objective.
 
@@ -292,8 +318,6 @@ class PbiPathClearanceObjective(ob.StateCostIntegralObjective):
         """
         super().__init__(si, True)
         self.si: PbiSpaceInformation = si
-        self.collision_checker: CollisionChecker = collision_checker
-        self.clearance_distance: float = clearance_distance
 
     def stateCost(self, state: ob.State) -> ob.Cost:
         """
@@ -306,16 +330,8 @@ class PbiPathClearanceObjective(ob.StateCostIntegralObjective):
             ob.Cost: The computed cost, where lower clearance yields a
                 higher cost.
         """
-        self.si.set_state(state)
-        min_distance: float = self.clearance_distance
-        for (bodyA, bodyB), _ in self.collision_checker.external_collision_pairs:
-            curr_distance = self.collision_checker.get_min_body_distance(
-                bodyA, bodyB, self.clearance_distance)
-            if curr_distance < 0:
-                curr_distance = 0
-            if curr_distance < min_distance:
-                min_distance = curr_distance
-        return ob.Cost(self.clearance_distance / (min_distance + sys.float_info.min))
+        return ob.Cost(1 / (self.si_.getStateValidityChecker().clearance(state) +
+                            sys.float_info.min))
 
 
 class PbiPlannerSimpleSetup(og.SimpleSetup):
@@ -329,10 +345,11 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
     """
 
     def __init__(self, robot: RobotBase,
-                 collision_check_functions: list,
+                 collision_check_function: bool,
                  planner_type,
                  interpolation_precision: float = 0.001,
-                 constraint_functions: list = None,
+                 constraint_function: bool = None,
+                 clearance_fucntion: ob.Cost = None,
                  objective=None,
                  object_mover=None,
                  name: str = None) -> None:
@@ -341,10 +358,10 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
 
         Args:
             robot (RobotBase): The robot instance.
-            collision_check_functions (list): Functions for collision checks.
+            collision_check_function (list): Functions for collision checks.
             planner_type: The planner class/type.
             interpolation_precision (float): Precision for path interpolation.
-            constraint_functions (list, optional): Constraint functions.
+            constraint_function (list, optional): Constraint function.
             objectives (list, optional): List of optimization objectives.
             object_mover (PbiObjectMover, optional): Object mover for updates.
         """
@@ -360,21 +377,22 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
         self.space_information = PbiSpaceInformation(
             self.state_space, object_mover)
         self.validity_checker = PbiValidityChecker(
-            self.space_information, collision_check_functions)
+            self.space_information, collision_check_function,
+            clearance_function=clearance_fucntion)
 
         self.planner_type = planner_type
         self.objective = objective
 
-        self.update_constraints(constraint_functions)
+        self.update_constraints(constraint_function)
 
-    def update_constraints(self, constraint_functions) -> None:
+    def update_constraints(self, constraint_function) -> None:
         """
-        Activates the constraint functions.
+        Activates the constraint function.
 
         Args:
-            constraint_functions (list): Functions for constraints.
+            constraint_function (list): Functions for constraints.
         """
-        self.validity_checker.constraint_functions = constraint_functions
+        self.validity_checker.constraint_function = constraint_function
         self.space_information.setStateValidityChecker(self.validity_checker)
         self.space_information.setup()
         super().__init__(self.space_information)

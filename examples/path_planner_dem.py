@@ -164,9 +164,15 @@ if __name__ == "__main__":
     object_mover.match_moving_objects(position, orientation)
     collision_checker.set_safe_state()
 
-    # Append constraint functions.
-    collision_check: list = [lambda: collision_checker.check_collision()]
-    constraint_functions: list = [lambda: check_endeffector_upright(robot)]
+    def collision_check():
+        return all([collision_checker.check_collision()])
+
+    def constraint_function():
+        return all([check_endeffector_upright(robot)])
+
+    # # Append constraint functions.
+    # collision_check: list = [lambda: collision_checker.check_collision()]
+    # constraint_functions: list = [lambda: check_endeffector_upright(robot)]
 
     # Maximize distanc between gripping object and obstacle
     clearance_collision_checker = pi.CollisionChecker([obstacle, cube_small])
@@ -208,7 +214,7 @@ if __name__ == "__main__":
     path_planner_1 = pi.PbiPlannerSimpleSetup(
         robot=robot,
         object_mover=object_mover,
-        collision_check_functions=collision_check,
+        collision_check_function=collision_check,
         planner_type=bitstar,
         # constraint_functions=constraint_functions,
         # objective=objectives,
@@ -218,7 +224,7 @@ if __name__ == "__main__":
     path_planner_2 = pi.PbiPlannerSimpleSetup(
         robot=robot,
         object_mover=gripper_mover,
-        collision_check_functions=collision_check,
+        collision_check_function=collision_check,
         planner_type=bitstar,
         # constraint_functions=constraint_functions,
         #objective=objectives,
@@ -227,7 +233,7 @@ if __name__ == "__main__":
 
     path_planner_3 = pi.PbiPlannerSimpleSetup(
         robot=robot,
-        collision_check_functions=collision_check,
+        collision_check_function=collision_check,
         planner_type=bitstar,
         # constraint_functions=constraint_functions,
         #objective=objectives,
@@ -239,7 +245,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     planner_list = [bitstar, rrt, rrtsharp, abitstar, aitstar]
     objective_list = [None, clearance_objective, path_length_objective, multi_objective]
-    constraint_list = [None, constraint_functions]
+    constraint_list = [None, constraint_function]
     gui = PathPlannerGUI(root, path_planner, obstacle, planner_list, objective_list, constraint_list)
 
     root.mainloop()

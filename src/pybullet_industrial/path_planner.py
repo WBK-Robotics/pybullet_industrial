@@ -212,8 +212,7 @@ class PbiValidityChecker(ob.StateValidityChecker):
     def __init__(self, space_information: PbiSpaceInformation,
                  collision_check_function: bool,
                  constraint_function: bool = None,
-                 clearance_function: ob.Cost = None,
-                 clearance_distance: float = 0.0
+                 clearance_function: float = None
                  ) -> None:
         """
         Initializes the validity checker.
@@ -264,15 +263,7 @@ class PbiValidityChecker(ob.StateValidityChecker):
         if self.clearance_function is None:
             return ob.Cost(0)
         else:
-            return self.clearance_function()
-            # for (bodyA, bodyB), _ in self.clearance_checker.external_collision_pairs:
-            #     curr_distance = self.clearance_checker.get_min_body_distance(
-            #         bodyA, bodyB, self.clearance_distance)
-            #     if curr_distance < 0:
-            #         curr_distance = 0
-            #     if curr_distance < min_distance:
-            #         min_distance = curr_distance
-            # return ob.Cost(self.clearance_distance / (min_distance + sys.float_info.min))
+            return ob.Cost(self.clearance_function())
 
 
 class PbiMultiOptimizationObjective(ob.MultiOptimizationObjective):
@@ -349,7 +340,7 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
                  planner_type,
                  interpolation_precision: float = 0.001,
                  constraint_function: bool = None,
-                 clearance_fucntion: ob.Cost = None,
+                 clearance_function: float = None,
                  objective=None,
                  object_mover=None,
                  name: str = None) -> None:
@@ -378,7 +369,7 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
             self.state_space, object_mover)
         self.validity_checker = PbiValidityChecker(
             self.space_information, collision_check_function,
-            clearance_function=clearance_fucntion)
+            clearance_function=clearance_function)
 
         self.planner_type = planner_type
         self.objective = objective

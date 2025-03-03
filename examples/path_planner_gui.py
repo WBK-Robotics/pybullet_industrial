@@ -64,6 +64,7 @@ class PathPlannerGUI:
         self.robot = self.planner_setup.robot
         self.collision_check = self.planner_setup.validity_checker.collision_check_function
         self.constraint_function = self.planner_setup.validity_checker.constraint_function
+        self.clearance_function = self.planner_setup.validity_checker.clearance_function
         self.object_mover = self.planner_setup.space_information.object_mover
         self.obstacle = obstacle
 
@@ -132,6 +133,10 @@ class PathPlannerGUI:
         tk.Label(status_frame, text="Constraint:").grid(row=2, column=0, sticky="w")
         self.constraint_light = tk.Label(status_frame, bg=self.constraint_status.get(), width=6)
         self.constraint_light.grid(row=2, column=1, padx=2)
+        # New Clearance display.
+        tk.Label(status_frame, text="Clearance:").grid(row=3, column=0, sticky="w")
+        self.clearance_label = tk.Label(status_frame, text="0.00", width=6)
+        self.clearance_label.grid(row=3, column=1, padx=2)
 
         # Bottom frame: Path control buttons.
         bottom_frame = tk.Frame(self.root)
@@ -177,6 +182,15 @@ class PathPlannerGUI:
         self.collision_status.set("green" if valid_collision else "red")
         self.collision_light.config(bg=self.collision_status.get())
         self.update_constraint_status()
+        self.update_clearance_status()
+
+    def update_clearance_status(self) -> None:
+        if self.clearance_function:
+            clearance_val = self.clearance_function()
+            self.clearance_label.config(text=f"{clearance_val:.2f}")
+        else:
+            clearance_val = "N/A"
+            self.clearance_label.config(text=clearance_val)
 
     def update_constraint_status(self) -> None:
         valid_constraints = self.constraint_function() if self.constraint_function else True

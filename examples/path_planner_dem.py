@@ -170,16 +170,12 @@ if __name__ == "__main__":
     def constraint_function():
         return all([check_endeffector_upright(robot)])
 
-    # # Append constraint functions.
-    # collision_check: list = [lambda: collision_checker.check_collision()]
-    # constraint_functions: list = [lambda: check_endeffector_upright(robot)]
-
     # Maximize distanc between gripping object and obstacle
-    clearance_collision_checker = pi.CollisionChecker([obstacle, cube_small])
+    clearance_checker = pi.CollisionChecker([obstacle, cube_small])
 
     # Define objectives (uncomment as needed).
     def clearance_objective(si):
-        return pi.PbiPathClearanceObjective(si, clearance_collision_checker, 2)
+        return pi.PbiPathClearanceObjective(si)
 
     def path_length_objective(si):
         return ob.PathLengthOptimizationObjective(si)
@@ -210,12 +206,22 @@ if __name__ == "__main__":
     def aitstar(si):
         return og.AITstar(si)
 
+    def get_clearance():
+        min_distance = 1
+        for (bodyA, bodyB), _ in clearance_checker.external_collision_pairs:
+            curr_distance = clearance_checker.get_min_body_distance(
+                bodyA, bodyB, min_distance)
+            if curr_distance < min_distance:
+                min_distance = curr_distance
+        return min_distance
+
     # Initialize the path planner.
     path_planner_1 = pi.PbiPlannerSimpleSetup(
         robot=robot,
         object_mover=object_mover,
         collision_check_function=collision_check,
         planner_type=bitstar,
+        clearance_function=get_clearance
         # constraint_functions=constraint_functions,
         # objective=objectives,
     )
@@ -226,6 +232,7 @@ if __name__ == "__main__":
         object_mover=gripper_mover,
         collision_check_function=collision_check,
         planner_type=bitstar,
+        clearance_function=get_clearance
         # constraint_functions=constraint_functions,
         #objective=objectives,
     )
@@ -235,6 +242,7 @@ if __name__ == "__main__":
         robot=robot,
         collision_check_function=collision_check,
         planner_type=bitstar,
+        clearance_function=get_clearance
         # constraint_functions=constraint_functions,
         #objective=objectives,
     )

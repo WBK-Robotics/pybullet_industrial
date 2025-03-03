@@ -177,6 +177,12 @@ if __name__ == "__main__":
     def clearance_objective(si):
         return pi.PbiPathClearanceObjective(si)
 
+    def max_min_clearance_objective(si):
+        return ob.MaximizeMinClearanceObjective(si)
+
+    def state_cost_integral_objective(si):
+        return ob.StateCostIntegralObjective(si)
+
     def path_length_objective(si):
         return ob.PathLengthOptimizationObjective(si)
 
@@ -207,7 +213,7 @@ if __name__ == "__main__":
         return og.AITstar(si)
 
     def get_clearance():
-        min_distance = 1
+        min_distance = 0.3
         for (bodyA, bodyB), _ in clearance_checker.external_collision_pairs:
             curr_distance = clearance_checker.get_min_body_distance(
                 bodyA, bodyB, min_distance)
@@ -234,7 +240,7 @@ if __name__ == "__main__":
         planner_type=bitstar,
         clearance_function=get_clearance
         # constraint_functions=constraint_functions,
-        #objective=objectives,
+        # objective=objectives,
     )
     path_planner_2.name = "Robot+ Gripper"
 
@@ -244,7 +250,7 @@ if __name__ == "__main__":
         planner_type=bitstar,
         clearance_function=get_clearance
         # constraint_functions=constraint_functions,
-        #objective=objectives,
+        # objective=objectives,
     )
     path_planner_3.name = "Solely Robot"
     path_planner = [path_planner_1, path_planner_2, path_planner_3]
@@ -252,7 +258,10 @@ if __name__ == "__main__":
     # Create the GUI for motion planning.
     root = tk.Tk()
     planner_list = [bitstar, rrt, rrtsharp, abitstar, aitstar]
-    objective_list = [None, clearance_objective, path_length_objective, multi_objective]
+    objective_list = [None, clearance_objective,
+                      max_min_clearance_objective,
+                      state_cost_integral_objective,
+                      path_length_objective, multi_objective]
     constraint_list = [None, constraint_function]
     gui = PathPlannerGUI(root, path_planner, obstacle, planner_list, objective_list, constraint_list)
 

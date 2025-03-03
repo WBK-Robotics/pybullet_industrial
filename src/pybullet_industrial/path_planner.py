@@ -291,7 +291,7 @@ class PbiMultiOptimizationObjective(ob.MultiOptimizationObjective):
         self.lock()
 
 
-class PbiPathClearanceObjective(ob.StateCostIntegralObjective):
+class PbiPathClearanceObjective(ob.MaximizeMinClearanceObjective):
     """
     A cost objective that rewards paths with higher clearance from obstacles.
 
@@ -307,7 +307,7 @@ class PbiPathClearanceObjective(ob.StateCostIntegralObjective):
             collision_checker (CollisionChecker): The collision checker.
             clearance_distance (float): The base clearance distance.
         """
-        super().__init__(si, True)
+        super().__init__(si)
         self.si: PbiSpaceInformation = si
 
     def stateCost(self, state: ob.State) -> ob.Cost:
@@ -321,8 +321,7 @@ class PbiPathClearanceObjective(ob.StateCostIntegralObjective):
             ob.Cost: The computed cost, where lower clearance yields a
                 higher cost.
         """
-        return ob.Cost(1 / (self.si_.getStateValidityChecker().clearance(state) +
-                            sys.float_info.min))
+        return self.si.getStateValidityChecker().clearance(state)
 
 
 class PbiPlannerSimpleSetup(og.SimpleSetup):

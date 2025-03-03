@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 from ompl import base as ob
 from ompl import geometric as og
@@ -314,7 +315,7 @@ class PbiPathClearanceObjective(ob.StateCostIntegralObjective):
                 curr_distance = 0
             if curr_distance < min_distance:
                 min_distance = curr_distance
-        return ob.Cost(self.clearance_distance - min_distance)
+        return ob.Cost(self.clearance_distance / (min_distance + sys.float_info.min))
 
 
 class PbiPlannerSimpleSetup(og.SimpleSetup):

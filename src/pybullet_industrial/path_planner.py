@@ -67,7 +67,7 @@ class PbiObjectMover:
                                               new_base_ori)
 
 
-class PbiRobotStateSpace(ob.RealVectorStateSpace):
+class PbiStateSpace(ob.RealVectorStateSpace):
     """
     An OMPL state space representing the robot's joint configuration.
 
@@ -149,7 +149,7 @@ class PbiRobotStateSpace(ob.RealVectorStateSpace):
         super().setBounds(bounds)
 
 
-class PbiRobotSpaceInformation(ob.SpaceInformation):
+class PbiSpaceInformation(ob.SpaceInformation):
     """
     Extends OMPL's SpaceInformation with robot-specific functionality.
 
@@ -157,25 +157,25 @@ class PbiRobotSpaceInformation(ob.SpaceInformation):
 
     Attributes:
         robot (RobotBase): The robot instance.
-        state_space (PbiRobotStateSpace): The custom state space.
+        state_space (PbiStateSpace): The custom state space.
         object_mover (PbiObjectMover): Optional object mover for updates.
     """
 
-    def __init__(self, state_space: PbiRobotStateSpace,
+    def __init__(self, state_space: PbiStateSpace,
                  object_mover: PbiObjectMover,
                  validity_resolution: float = 0.0001) -> None:
         """
         Initializes the space information with the state space and resolution.
 
         Args:
-            state_space (PbiRobotStateSpace): The robot's state space.
+            state_space (PbiStateSpace): The robot's state space.
             object_mover (PbiObjectMover): The object mover instance.
             validity_resolution (float): Resolution for validity checking.
         """
         super().__init__(state_space)
         self.setStateValidityCheckingResolution(validity_resolution)
         self.robot: RobotBase = state_space.robot
-        self.state_space: PbiRobotStateSpace = state_space
+        self.state_space: PbiStateSpace = state_space
         self.object_mover = object_mover
 
     def set_state(self, state: ob.State) -> None:
@@ -197,30 +197,30 @@ class PbiRobotSpaceInformation(ob.SpaceInformation):
             self.object_mover.match_moving_objects(position, orientation)
 
 
-class PbiRobotValidityChecker(ob.StateValidityChecker):
+class PbiValidityChecker(ob.StateValidityChecker):
     """
     Validates a state by updating the robot's configuration and running
     collision and constraint tests.
 
     Attributes:
-        space_information (PbiRobotSpaceInformation): The robot's space info.
+        space_information (PbiSpaceInformation): The robot's space info.
         collision_check_functions (list): Functions for collision checks.
         constraint_functions (list): Functions for additional constraints.
     """
 
-    def __init__(self, space_information: PbiRobotSpaceInformation,
+    def __init__(self, space_information: PbiSpaceInformation,
                  collision_check_functions: list,
                  constraint_functions: list = None) -> None:
         """
         Initializes the validity checker.
 
         Args:
-            space_information (PbiRobotSpaceInformation): The space info.
+            space_information (PbiSpaceInformation): The space info.
             collision_check_functions (list): Functions for collision checks.
             constraint_functions (list, optional): Functions for constraints.
         """
         super().__init__(space_information)
-        self.space_information: PbiRobotSpaceInformation = space_information
+        self.space_information: PbiSpaceInformation = space_information
         self.collision_check_functions: list = collision_check_functions
         self.constraint_functions: list = constraint_functions
 
@@ -246,51 +246,51 @@ class PbiRobotValidityChecker(ob.StateValidityChecker):
         return True
 
 
-class PbiRobotMultiOptimizationObjective(ob.MultiOptimizationObjective):
+class PbiMultiOptimizationObjective(ob.MultiOptimizationObjective):
     """
     Combines multiple robot-specific optimization objectives.
 
     Attributes:
-        si (PbiRobotSpaceInformation): The robot's space information.
+        si (PbiSpaceInformation): The robot's space information.
     """
 
-    def __init__(self, si: PbiRobotSpaceInformation,
+    def __init__(self, si: PbiSpaceInformation,
                  weighted_objective_list: list) -> None:
         """
         Initializes the multi-objective with weighted objectives.
 
         Args:
-            si (PbiRobotSpaceInformation): The robot's space info.
+            si (PbiSpaceInformation): The robot's space info.
             weighted_objective_list (list): List of (objective, weight) pairs.
         """
         super().__init__(si)
-        self.si: PbiRobotSpaceInformation = si
+        self.si: PbiSpaceInformation = si
 
         for objective, weight in weighted_objective_list:
             self.addObjective(objective(self.si), weight)
         self.lock()
 
 
-class PbiRobotPathClearanceObjective(ob.StateCostIntegralObjective):
+class PbiPathClearanceObjective(ob.StateCostIntegralObjective):
     """
     A cost objective that rewards paths with higher clearance from obstacles.
 
     The cost increases when the robot is too close to obstacles.
     """
 
-    def __init__(self, si: PbiRobotSpaceInformation,
+    def __init__(self, si: PbiSpaceInformation,
                  collision_checker: CollisionChecker,
                  clearance_distance: float = 0.0) -> None:
         """
         Initializes the clearance objective.
 
         Args:
-            si (PbiRobotSpaceInformation): The robot's space info.
+            si (PbiSpaceInformation): The robot's space info.
             collision_checker (CollisionChecker): The collision checker.
             clearance_distance (float): The base clearance distance.
         """
         super().__init__(si, True)
-        self.si: PbiRobotSpaceInformation = si
+        self.si: PbiSpaceInformation = si
         self.collision_checker: CollisionChecker = collision_checker
         self.clearance_distance: float = clearance_distance
 
@@ -317,7 +317,7 @@ class PbiRobotPathClearanceObjective(ob.StateCostIntegralObjective):
         return ob.Cost(self.clearance_distance - min_distance)
 
 
-class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
+class PbiPlannerSimpleSetup(og.SimpleSetup):
     """
     Integrates all components to define and solve a robot planning
     problem.
@@ -350,15 +350,15 @@ class PbiRobotPlannerSimpleSetup(og.SimpleSetup):
         if name is not None:
             self.name = name
         else:
-            self.name = "PbiRobotPlannerSimpleSetup"
+            self.name = "PbiPlannerSimpleSetup"
 
         self.set_interpolation_precision(interpolation_precision)
 
         self.robot = robot
-        self.state_space = PbiRobotStateSpace(robot)
-        self.space_information = PbiRobotSpaceInformation(
+        self.state_space = PbiStateSpace(robot)
+        self.space_information = PbiSpaceInformation(
             self.state_space, object_mover)
-        self.validity_checker = PbiRobotValidityChecker(
+        self.validity_checker = PbiValidityChecker(
             self.space_information, collision_check_functions)
 
         self.planner_type = planner_type

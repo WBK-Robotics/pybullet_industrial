@@ -32,7 +32,8 @@ class PathPlannerGUI:
 
         # Planner types mapping.
         self.planner_type_mapping = {ptype.__name__: ptype for ptype in planner_list}
-        default_ptype = "bitstar" if "bitstar" in self.planner_type_mapping else list(self.planner_type_mapping.keys())[0]
+        # Use the first element from the planner_list as default.
+        default_ptype = list(self.planner_type_mapping.keys())[0]
         self.selected_planner_type_var = tk.StringVar(value=default_ptype)
         self.planner_setup.setPlanner(self.planner_type_mapping[self.selected_planner_type_var.get()])
 
@@ -41,8 +42,9 @@ class PathPlannerGUI:
         for obj in objective_list:
             key = "None" if obj is None else (obj.__name__ if hasattr(obj, "__name__") else str(obj))
             self.objective_mapping[key] = obj
-        default_obj = "None" if "None" in self.objective_mapping else list(self.objective_mapping.keys())[0]
-        self.selected_objective_var = tk.StringVar(value=default_obj)
+        # Set default to the first element in objective_list.
+        default_obj_key = "None" if objective_list[0] is None else (objective_list[0].__name__ if hasattr(objective_list[0], "__name__") else str(objective_list[0]))
+        self.selected_objective_var = tk.StringVar(value=default_obj_key)
         self.planner_setup.setOptimizationObjective(self.objective_mapping[self.selected_objective_var.get()])
 
         # Constraint functions mapping.
@@ -50,8 +52,9 @@ class PathPlannerGUI:
         for cf in constraint_list:
             key = "None" if cf is None else (cf.__name__ if hasattr(cf, "__name__") else str(cf))
             self.constraint_mapping[key] = cf
-        default_constraint = "None" if "None" in self.constraint_mapping else list(self.constraint_mapping.keys())[0]
-        self.selected_constraint_var = tk.StringVar(value=default_constraint)
+        # Set default to the first element in constraint_list.
+        default_constraint_key = "None" if constraint_list[0] is None else (constraint_list[0].__name__ if hasattr(constraint_list[0], "__name__") else str(constraint_list[0]))
+        self.selected_constraint_var = tk.StringVar(value=default_constraint_key)
         self.planner_setup.update_constraints(self.constraint_mapping[self.selected_constraint_var.get()])
 
         # Planning time slider variable.

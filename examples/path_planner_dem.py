@@ -168,9 +168,12 @@ if __name__ == "__main__":
     collision_check: list = [lambda: collision_checker.check_collision()]
     constraint_functions: list = [lambda: check_endeffector_upright(robot)]
 
+    # Maximize distanc between gripping object and obstacle
+    clearance_collision_checker = pi.CollisionChecker([obstacle, cube_small])
+
     # Define objectives (uncomment as needed).
     def clearance_objective(si):
-        return pi.PbiPathClearanceObjective(si, collision_checker, 0.5)
+        return pi.PbiPathClearanceObjective(si, clearance_collision_checker, 2)
 
     def path_length_objective(si):
         return ob.PathLengthOptimizationObjective(si)
@@ -234,9 +237,9 @@ if __name__ == "__main__":
 
     # Create the GUI for motion planning.
     root = tk.Tk()
-    planner_list = [rrt, rrtsharp, bitstar, abitstar, aitstar]
-    objective_list = [clearance_objective, path_length_objective, multi_objective, None]
-    constraint_list = [constraint_functions, None]
+    planner_list = [bitstar, rrt, rrtsharp, abitstar, aitstar]
+    objective_list = [None, clearance_objective, path_length_objective, multi_objective]
+    constraint_list = [None, constraint_functions]
     gui = PathPlannerGUI(root, path_planner, obstacle, planner_list, objective_list, constraint_list)
 
     root.mainloop()

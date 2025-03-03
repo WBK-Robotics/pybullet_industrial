@@ -20,29 +20,28 @@ class CollisionChecker:
       - 'collision_pairs': Link pairs (tuples) for internal collision checks.
     """
 
-    def __init__(self, ignored_urdf_ids: list = [],
+    def __init__(self, urdf_ids: list = None,
                  ignored_internal_collisions: list = [],
                  ignored_external_collisions: list = [],
                  max_distance_external: float = 0.0,
                  enable_internal_collision: bool = True,
                  enable_external_collision: bool = True):
         """
-        Initializes CollisionChecker by collecting collision data from all
-        bodies in the simulation (except those in ignored_urdf_ids) and
-        building lists for internal and external collision pairs.
+        Initializes CollisionChecker by collecting collision data from selected
+        bodies in the simulation (only those in urdf_ids if provided) and building
+        lists for internal and external collision pairs.
 
         Args:
-            ignored_urdf_ids (list): List of urdf_ids to ignore.
-            ignored_internal_collisions (list): Internal collision pairs to
-                ignore.
-            ignored_external_collisions (list): External collision pair specs
-                to ignore.
+            urdf_ids (list): List of URDF IDs to consider. If None, all bodies
+                will be considered.
+            ignored_internal_collisions (list): Internal collision pairs to ignore.
+            ignored_external_collisions (list): External collision pair specs to ignore.
             max_distance_external (float): Max distance for external collisions.
         """
         self.max_distance_external = max_distance_external
-        self.ignored_urdf_ids = ignored_urdf_ids
+        self.urdf_ids = urdf_ids  # now these are the only bodies considered
         self.bodies_information = []
-        self.build_bodies_information(ignored_urdf_ids)
+        self.build_bodies_information(urdf_ids)
         self.ignored_internal_collisions = ignored_internal_collisions
         self.ignored_external_collisions = ignored_external_collisions
         self.internal_collision_pairs = []
@@ -52,11 +51,11 @@ class CollisionChecker:
         self.update_internal_collision_pairs()
         self.update_external_collision_pairs()
 
-    def build_bodies_information(self, ignored_urdf_ids: list):
+    def build_bodies_information(self, urdf_ids: list):
         """
         Iterates through all bodies in the simulation and collects collision
-        geometry information. Only bodies with collision geometry are included,
-        and those in ignored_urdf_ids are skipped.
+        geometry information. If a list of URDF IDs is provided, only those bodies
+        are processed.
 
         Determines whether a body is a 'robot' (if it has at least one movable
         joint) or a 'static_body'. Also precomputes internal collision pairs for
@@ -66,7 +65,7 @@ class CollisionChecker:
         """
         num_bodies = p.getNumBodies()
         for urdf_id in range(num_bodies):
-            if urdf_id in ignored_urdf_ids:
+            if urdf_ids is not None and urdf_id not in urdf_ids:
                 continue
 
             # Retrieve body info. p.getBodyInfo returns a tuple (bodyName, additionalInfo).

@@ -213,13 +213,7 @@ if __name__ == "__main__":
         return og.AITstar(si)
 
     def get_clearance():
-        min_distance = 0.3
-        for (bodyA, bodyB), _ in clearance_checker.external_collision_pairs:
-            curr_distance = clearance_checker.get_min_body_distance(
-                bodyA, bodyB, min_distance)
-            if curr_distance < min_distance:
-                min_distance = curr_distance
-        return min_distance
+        return clearance_checker.get_global_distance(0.3)
 
     # Initialize the path planner.
     path_planner_1 = pi.PbiPlannerSimpleSetup(
@@ -259,7 +253,6 @@ if __name__ == "__main__":
     root = tk.Tk()
     planner_list = [bitstar, rrt, rrtsharp, abitstar, aitstar]
     objective_list = [None, clearance_objective,
-                      max_min_clearance_objective,
                       state_cost_integral_objective,
                       path_length_objective, multi_objective]
     constraint_list = [None, constraint_function]

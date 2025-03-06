@@ -115,7 +115,8 @@ class GCodeProcessor:
 
         return g_code
 
-    def joint_path_to_g_code(self, joint_path: JointPath):
+    @staticmethod
+    def joint_path_to_g_code(joint_path: JointPath):
         """Converts a joint path to a G-code string.
 
         Args:
@@ -125,11 +126,11 @@ class GCodeProcessor:
             str: G-code string
         """
         g_code = []
-        for joint_positions in joint_path:
+        for joint_positions,_ in joint_path:
             g_code_line = {}
             g_code_line['G'] = 1
-            for i, _ in enumerate(self.joint_order):
-                g_code_line[JOINT_KEY + str(i + 1)] = joint_positions[i]
+            for i, joint_value in enumerate(joint_path.joint_order):
+                g_code_line[JOINT_KEY + str(i + 1)] = joint_positions[joint_value]
             g_code.append(g_code_line)
         return g_code
 

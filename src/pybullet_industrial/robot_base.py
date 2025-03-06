@@ -291,16 +291,16 @@ class RobotBase:
                                                        lowerLimits=self._lower_joint_limit,
                                                        upperLimits=self._upper_joint_limit)
 
-        # for index, joint_position in enumerate(joint_poses):
-        #     joint_number = self._kinematic_solver_map[index]
-        #     p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
-        #                             force=self.max_joint_force[joint_number],
-        #                             targetPosition=joint_position)
-        for joint_index, joint_value in zip(self.get_moveable_joints()[1], joint_poses):
-            p.resetJointState(
-                 self.urdf,
-                 joint_index,
-                 targetValue=joint_value)
+        for index, joint_position in enumerate(joint_poses):
+            joint_number = self._kinematic_solver_map[index]
+            p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
+                                    force=self.max_joint_force[joint_number],
+                                    targetPosition=joint_position)
+        # for joint_index, joint_value in zip(self.get_moveable_joints()[1], joint_poses):
+        #     p.resetJointState(
+        #          self.urdf,
+        #          joint_index,
+        #          targetValue=joint_value)
 
     def reset_robot(self, start_position: np.array, start_orientation: np.array,
                     joint_values: list = None):

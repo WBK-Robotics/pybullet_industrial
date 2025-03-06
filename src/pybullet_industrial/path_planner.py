@@ -337,7 +337,7 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
     def __init__(self, robot: RobotBase,
                  collision_check_function: bool,
                  planner_type,
-                 interpolation_precision: float = 0.001,
+                 interpolation_precision: float = 0.01,
                  constraint_function: bool = None,
                  clearance_function: float = None,
                  objective=None,

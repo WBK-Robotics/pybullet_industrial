@@ -262,8 +262,8 @@ class EndeffectorTool:
             self._coupled_robot.set_endeffector_pose(
                 adj_target_position, adj_target_orientation, endeffector_name=self._coupling_link)
             # Added couplin like behavior
-            p.resetBasePositionAndOrientation(
-                self.urdf, adj_target_position, adj_target_orientation)
+            # p.resetBasePositionAndOrientation(
+            #     self.urdf, adj_target_position, adj_target_orientation)
         else:
             if target_orientation is None:
                 _, adj_target_orientation = p.getBasePositionAndOrientation(

@@ -104,6 +104,22 @@ class JointPath:
         self.tool_activations = np.append(joint_path.tool_activations,
                                           self.tool_activations)
 
+    def get_joint_configuration(self, index):
+        """Returns the joint configuration at a specific index in the path.
+
+        Args:
+            index (int): The index of the joint configuration to retrieve.
+
+        Returns:
+            dict: A dictionary with joint names as keys and joint values as
+                  values.
+        """
+        joint_configuration = {
+            joint_name: self.joint_values[j, index]
+            for j, joint_name in enumerate(self.joint_order)
+        }
+        return joint_configuration
+
     def __len__(self):
         """Returns the number of poses in the joint path."""
         return self.joint_values.shape[1]
@@ -118,10 +134,7 @@ class JointPath:
         if self.current_index < len(self):
             i = self.current_index
             self.current_index += 1
-            joint_configuration = {
-                joint_name: self.joint_values[j, i]
-                for j, joint_name in enumerate(self.joint_order)
-            }
+            joint_configuration = self.get_joint_configuration(i)
             return joint_configuration, self.tool_activations[i]
         else:
             raise StopIteration

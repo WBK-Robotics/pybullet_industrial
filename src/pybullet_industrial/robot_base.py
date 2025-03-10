@@ -302,6 +302,47 @@ class RobotBase:
         #          joint_index,
         #          targetValue=joint_value)
 
+    def reset_endeffector_pose(self, target_position: np.array, target_orientation: np.array = None,
+                             endeffector_name: str = None):
+        """Sets the pose of a robots endeffector
+
+        Args:
+            target_position (np.array): The desired 3D position
+            target_orientation (np.array, optional): The desired orientation as a quaternion.
+                                                     Defaults to None.
+            endeffector_name (str, optional): The name of a different endeffector.
+                                              Defaults to None.
+        """
+        if endeffector_name is None:
+            endeffector_id = self._default_endeffector_id
+        else:
+            endeffector_id = self._convert_endeffector(endeffector_name)
+
+        if target_orientation is None:
+            joint_poses = p.calculateInverseKinematics(self.urdf,
+                                                       endeffector_id,
+                                                       target_position,
+                                                       lowerLimits=self._lower_joint_limit,
+                                                       upperLimits=self._upper_joint_limit)
+        else:
+            joint_poses = p.calculateInverseKinematics(self.urdf,
+                                                       endeffector_id,
+                                                       target_position,
+                                                       targetOrientation=target_orientation,
+                                                       lowerLimits=self._lower_joint_limit,
+                                                       upperLimits=self._upper_joint_limit)
+
+        for index, joint_position in enumerate(joint_poses):
+            joint_number = self._kinematic_solver_map[index]
+            p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
+                                    force=self.max_joint_force[joint_number],
+                                    targetPosition=joint_position)
+        for joint_index, joint_value in zip(self.get_moveable_joints()[1], joint_poses):
+            p.resetJointState(
+                 self.urdf,
+                 joint_index,
+                 targetValue=joint_value)
+
     def reset_robot(self, start_position: np.array, start_orientation: np.array,
                     joint_values: list = None):
         """resets the robots joints to 0 and the base to a specified position and orientation

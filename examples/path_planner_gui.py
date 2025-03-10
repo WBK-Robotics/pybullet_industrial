@@ -7,13 +7,15 @@ import numpy as np
 import sys
 
 JOINT_INCREMENT: float = 0.1
+WORKSPACE_INCREMENT: float = 0.1  # Increment for workspace values
 
 
 class PathPlannerGUI:
     """
     Compact GUI for the Path Planner. Provides controls for robot joints,
-    obstacle parameters, planner selections (setup, type, optimization objective,
-    constraint functions), planning time, and path execution.
+    workspace (end-effector) pose, obstacle parameters, planner selections
+    (setup, type, optimization objective, constraint functions), planning time,
+    and path execution.
     """
 
     def __init__(self, root: tk.Tk, planner_setup, obstacles, planner_list, objective_list, constraint_list) -> None:
@@ -72,11 +74,12 @@ class PathPlannerGUI:
         self.obstacle_names = []
         for obs in self.obstacles:
             info = p.getBodyInfo(obs)
-            # p.getBodyInfo returns a tuple of byte strings; decode them if needed.
             name = info[1].decode("utf-8") if isinstance(info[1], bytes) else info[1]
             self.obstacle_names.append(name)
-        # Selected obstacle dropdown variable; default to the first URDF name.
         self.selected_obstacle_str = tk.StringVar(value=self.obstacle_names[0] if self.obstacle_names else "None")
+
+        # Workspace control values for end-effector pose: position (x,y,z) and Euler angles (a,b,c)
+        self.workspace_values = [tk.StringVar(value="0") for _ in range(6)]
 
         self.start = self.robot.get_joint_state()
         self.goal = self.robot.get_joint_state()
@@ -93,6 +96,7 @@ class PathPlannerGUI:
         self.create_widgets()
         self.update_joint_positions()
         self.set_initial_obstacle_values()
+        self.update_workspace_values()  # initialize workspace fields from current end-effector pose
         self.update_status()
 
     def get_current_obstacle(self):
@@ -104,11 +108,12 @@ class PathPlannerGUI:
         return None, -1
 
     def create_widgets(self) -> None:
-        # Top frame: Joint and obstacle controls.
+        # Top frame: Contains three panels: Joint Space, Workspace Control, and Obstacle.
         top_frame = tk.Frame(self.root)
         top_frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
 
-        joints_frame = tk.LabelFrame(top_frame, text="Joints", padx=3, pady=3)
+        # --- Joint Space Control ---
+        joints_frame = tk.LabelFrame(top_frame, text="Joint Space", padx=3, pady=3)
         joints_frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
         for i, joint_name in enumerate(self.joint_order):
             tk.Label(joints_frame, text=joint_name).grid(row=i, column=0, sticky="w", padx=2, pady=1)
@@ -119,15 +124,27 @@ class PathPlannerGUI:
             tk.Entry(joints_frame, textvariable=self.joint_values[i], width=6)\
                 .grid(row=i, column=3, padx=2, pady=1)
 
-        # Obstacle frame with dropdown and parameter controls.
-        obstacle_frame = tk.LabelFrame(top_frame, text="Obstacle", padx=3, pady=3)
-        obstacle_frame.grid(row=0, column=1, padx=3, pady=3, sticky="nsew")
+        # --- Workspace Control Panel ---
+        workspace_frame = tk.LabelFrame(top_frame, text="Workspace Control", padx=3, pady=3)
+        workspace_frame.grid(row=0, column=1, padx=3, pady=3, sticky="nsew")
+        # For each workspace coordinate, display a label, a "-" button, an entry, and a "+" button.
+        ws_labels = ["X", "Y", "Z", "A", "B", "C"]
+        for i, label in enumerate(ws_labels):
+            tk.Label(workspace_frame, text=label).grid(row=i, column=0, sticky="w", padx=2, pady=1)
+            tk.Button(workspace_frame, text="-", command=lambda i=i: self.decrement_workspace(i), width=2)\
+                .grid(row=i, column=1, padx=2, pady=1)
+            tk.Entry(workspace_frame, textvariable=self.workspace_values[i], width=6)\
+                .grid(row=i, column=3, padx=2, pady=1)
+            tk.Button(workspace_frame, text="+", command=lambda i=i: self.increment_workspace(i), width=2)\
+                .grid(row=i, column=2, padx=2, pady=1)
 
-        # Dropdown for obstacle selection (using URDF names).
+        # --- Obstacle Control Panel ---
+        obstacle_frame = tk.LabelFrame(top_frame, text="Obstacle", padx=3, pady=3)
+        obstacle_frame.grid(row=0, column=2, padx=3, pady=3, sticky="nsew")
         tk.Label(obstacle_frame, text="Select").grid(row=0, column=0, sticky="w", padx=2, pady=1)
         tk.OptionMenu(obstacle_frame, self.selected_obstacle_str, *self.obstacle_names,
-                      command=lambda _: self.set_initial_obstacle_values()).grid(row=0, column=1, padx=2, pady=1)
-
+                      command=lambda _: self.set_initial_obstacle_values())\
+            .grid(row=0, column=1, padx=2, pady=1)
         obs_labels = ["X", "Y", "Z", "A", "B", "C"]
         for i, label in enumerate(obs_labels):
             tk.Label(obstacle_frame, text=label).grid(row=i+1, column=0, sticky="w", padx=2, pady=1)
@@ -138,29 +155,34 @@ class PathPlannerGUI:
             tk.Entry(obstacle_frame, textvariable=self.obstacle_values[i], width=6)\
                 .grid(row=i+1, column=3, padx=2, pady=1)
 
-        # Middle frame: Planner and status controls.
+        # --- Planner and Status Controls ---
         mid_frame = tk.Frame(self.root)
         mid_frame.grid(row=1, column=0, padx=3, pady=3, sticky="ew")
         planner_frame = tk.Frame(mid_frame)
         planner_frame.grid(row=0, column=0, padx=3, pady=3, sticky="w")
         tk.Label(planner_frame, text="Setup:").grid(row=0, column=0, sticky="w")
         tk.OptionMenu(planner_frame, self.selected_planner_var, *self.planner_mappings.keys(),
-                      command=self.update_selected_planner).grid(row=0, column=1, padx=2)
+                      command=self.update_selected_planner)\
+            .grid(row=0, column=1, padx=2)
         tk.Label(planner_frame, text="Type:").grid(row=0, column=2, sticky="w")
         tk.OptionMenu(planner_frame, self.selected_planner_type_var, *self.planner_type_mapping.keys(),
-                      command=self.update_planner_type).grid(row=0, column=3, padx=2)
+                      command=self.update_planner_type)\
+            .grid(row=0, column=3, padx=2)
         tk.Label(planner_frame, text="Objective:").grid(row=0, column=4, sticky="w")
         tk.OptionMenu(planner_frame, self.selected_objective_var, *self.objective_mapping.keys(),
-                      command=self.update_objective).grid(row=0, column=5, padx=2)
+                      command=self.update_objective)\
+            .grid(row=0, column=5, padx=2)
         tk.Label(planner_frame, text="Constraints:").grid(row=0, column=6, sticky="w")
         tk.OptionMenu(planner_frame, self.selected_constraint_var, *self.constraint_mapping.keys(),
-                      command=self.update_constraints).grid(row=0, column=7, padx=2)
+                      command=self.update_constraints)\
+            .grid(row=0, column=7, padx=2)
 
         status_frame = tk.Frame(mid_frame)
         status_frame.grid(row=0, column=1, padx=3, pady=3, sticky="e")
         tk.Label(status_frame, text="Time (s):").grid(row=0, column=0, sticky="w")
         tk.Scale(status_frame, variable=self.planning_time_var, from_=1, to=180,
-                 orient=tk.HORIZONTAL, resolution=1, length=120).grid(row=0, column=1)
+                 orient=tk.HORIZONTAL, resolution=1, length=120)\
+            .grid(row=0, column=1)
         tk.Label(status_frame, text="Collision:").grid(row=1, column=0, sticky="w")
         self.collision_light = tk.Label(status_frame, bg=self.collision_status.get(), width=6)
         self.collision_light.grid(row=1, column=1, padx=2)
@@ -171,7 +193,7 @@ class PathPlannerGUI:
         self.clearance_label = tk.Label(status_frame, text="0.00", width=6)
         self.clearance_label.grid(row=3, column=1, padx=2)
 
-        # Bottom frame: Path control buttons.
+        # --- Bottom frame: Path control buttons ---
         bottom_frame = tk.Frame(self.root)
         bottom_frame.grid(row=2, column=0, padx=3, pady=3, sticky="ew")
         tk.Button(bottom_frame, text="Start", command=self.set_as_start, width=8)\
@@ -211,14 +233,32 @@ class PathPlannerGUI:
         print(f"Set constraints: {selection}")
 
     def update_status(self) -> None:
+        # Update joint state text fields using the robot's joint state.
+        joint_state = self.robot.get_joint_state()
+        for i, jn in enumerate(self.joint_order):
+            self.joint_values[i].set(f"{joint_state[jn]['position']:.2f}")
+
+        # Update workspace fields using the robot's end-effector pose.
+        pos, ori_q = self.robot.get_endeffector_pose()
+        euler = p.getEulerFromQuaternion(ori_q)
+        for i in range(3):
+            self.workspace_values[i].set(f"{pos[i]:.2f}")
+        for i in range(3, 6):
+            self.workspace_values[i].set(f"{euler[i-3]:.2f}")
+
+        # Update moving object (if available) using the current end-effector pose.
         if self.object_mover:
-            pos, ori = self.robot.get_endeffector_pose()
-            self.object_mover.match_moving_objects(pos, ori)
+            self.object_mover.match_moving_objects(pos, ori_q)
+
+        # Update collision indicator.
         valid_collision = self.collision_check()
         self.collision_status.set("green" if valid_collision else "red")
         self.collision_light.config(bg=self.collision_status.get())
+
+        # Update constraint and clearance indicators.
         self.update_constraint_status()
         self.update_clearance_status()
+
 
     def update_clearance_status(self) -> None:
         if self.planner_setup.validity_checker.clearance_function:
@@ -240,6 +280,39 @@ class PathPlannerGUI:
             self.obstacle_values[i].set(f"{pos[i]:.2f}")
         for i in range(3, 6):
             self.obstacle_values[i].set(f"{orn_e[i-3]:.2f}")
+
+    def update_workspace_values(self) -> None:
+        """Update the workspace control fields from the current end-effector pose."""
+        pos, ori_q = self.robot.get_endeffector_pose()
+        euler = p.getEulerFromQuaternion(ori_q)
+        for i in range(3):
+            self.workspace_values[i].set(f"{pos[i]:.2f}")
+        for i in range(3, 6):
+            self.workspace_values[i].set(f"{euler[i-3]:.2f}")
+
+    def set_workspace_pose(self) -> None:
+        """Set the end-effector pose based on workspace control values."""
+        try:
+            pos = [float(self.workspace_values[i].get()) for i in range(3)]
+            euler = [float(self.workspace_values[i].get()) for i in range(3, 6)]
+            quat = p.getQuaternionFromEuler(euler)
+            self.robot.reset_endeffector_pose(np.array(pos), np.array(quat))
+            print("Workspace pose set to:", pos, euler)
+        except Exception as e:
+            print("Error setting workspace pose:", e)
+        self.update_status()
+
+    def increment_workspace(self, index: int) -> None:
+        cur = float(self.workspace_values[index].get())
+        new_val = cur + WORKSPACE_INCREMENT
+        self.workspace_values[index].set(f"{new_val:.2f}")
+        self.set_workspace_pose()
+
+    def decrement_workspace(self, index: int) -> None:
+        cur = float(self.workspace_values[index].get())
+        new_val = cur - WORKSPACE_INCREMENT
+        self.workspace_values[index].set(f"{new_val:.2f}")
+        self.set_workspace_pose()
 
     def update_joint_positions(self) -> None:
         joint_state = self.robot.get_joint_state()

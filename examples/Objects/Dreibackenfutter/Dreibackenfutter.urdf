@@ -1,0 +1,117 @@
+<?xml version="1.0" ?>
+<robot name="Dreibackenfutter">
+  <link name="baseLink">
+    <contact>
+      <stiffness value="30000.0"/>
+      <damping value="1000.0"/>
+      <spinning_friction value="0.1"/>
+      <lateral_friction value="3.0"/>
+      <contact_cfm value="0.2"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+       <mass value="1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="2"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+		<mesh filename="Base.stl"/>
+      </geometry>
+       <material name="dark">
+        <color rgba="0.6 0.6 0.6 1"/>
+      </material>
+    </visual>
+  </link>
+  <link name="backe01">
+    <contact>
+      <stiffness value="30000.0"/>
+      <damping value="1000.0"/>
+      <spinning_friction value="0.1"/>
+      <lateral_friction value="3.0"/>
+      <contact_cfm value="0.2"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+       <mass value="1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="2"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+		<mesh filename="part.stl"/>
+      </geometry>
+       <material name="grey">
+        <color rgba="0.7 0.7 0.7 1"/>
+      </material>
+    </visual>
+  </link>
+  <link name="backe02">
+    <contact>
+      <stiffness value="30000.0"/>
+      <damping value="1000.0"/>
+      <spinning_friction value="0.1"/>
+      <lateral_friction value="3.0"/>
+      <contact_cfm value="0.2"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+       <mass value="1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="2"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+		<mesh filename="part.stl"/>
+      </geometry>
+       <material name="grey">
+        <color rgba="0.7 0.7 0.7 1"/>
+      </material>
+    </visual>
+  </link>
+  <link name="backe03">
+    <contact>
+      <stiffness value="30000.0"/>
+      <damping value="1000.0"/>
+      <spinning_friction value="0.1"/>
+      <lateral_friction value="3.0"/>
+      <contact_cfm value="0.2"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/>
+       <mass value="1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="2"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+		<mesh filename="part.stl"/>
+      </geometry>
+       <material name="grey">
+        <color rgba="0.7 0.7 0.7 1"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="finger_joint1" type="prismatic">
+    <parent link="baseLink"/>
+    <child link="backe01"/>
+    <origin rpy="0 0 0" xyz="0.0 0 0.0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="20000" lower="-80" upper="10" velocity="200"/>
+  </joint>
+  <joint name="finger_joint2" type="prismatic">
+    <parent link="baseLink"/>
+    <child link="backe02"/>
+    <origin rpy="0 0 2.09439510239319" xyz="0.0 0 0.0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="20000" lower="-80" upper="10" velocity="200"/>
+  </joint>
+  <joint name="finger_joint3" type="prismatic">
+    <parent link="baseLink"/>
+    <child link="backe03"/>
+    <origin rpy="0 0 -2.09439510239319" xyz="0.0 0 0.0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="20000" lower="-80" upper="10" velocity="200"/>
+  </joint>
+</robot>
+

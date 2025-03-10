@@ -256,7 +256,7 @@ if __name__ == "__main__":
                       state_cost_integral_objective,
                       path_length_objective, multi_objective]
     constraint_list = [None, constraint_function]
-    gui = PathPlannerGUI(root, path_planner, obstacle, planner_list, objective_list, constraint_list)
+    gui = PathPlannerGUI(root, path_planner, [obstacle], planner_list, objective_list, constraint_list)
 
     root.mainloop()
     print("code here")

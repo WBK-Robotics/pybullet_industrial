@@ -2,6 +2,7 @@ import pybullet as p
 from pybullet_industrial import RobotBase
 
 
+
 class GCodeLogger:
     """
     A class for logging G-code based on changes in robot state.
@@ -38,8 +39,15 @@ class GCodeLogger:
         """
         def format_value(value):
             # Ensure the value is not in scientific notation and remove trailing zeros
-            formatted_value = f'{value:.15f}' if isinstance(
-                value, float) else str(value)
+            # formatted_value = f'{value:.15f}' if isinstance(
+            #     value, float) else str(value)
+            string_value = str(value)
+            if 'e' in string_value.lower():
+                formatted_value = f'{value:.15f}'
+            else:
+                formatted_value = string_value
+
+
             return formatted_value.rstrip('0').rstrip('.') if '.' in formatted_value else formatted_value
 
         with open(textfile, 'w') as file:

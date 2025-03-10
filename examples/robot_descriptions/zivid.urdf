@@ -1,0 +1,33 @@
+<?xml version="1.0" ?>
+<robot name="camera">
+    <link name="baseLink">
+        <contact>
+          <lateral_friction value="1.0"/>
+          <rolling_friction value="0.0"/>
+          <contact_cfm value="0.0"/>
+          <contact_erp value="1.0"/>
+        </contact>
+        <inertial>
+          <origin rpy="-3.1415926535897932 0 0" xyz="0 0 0"/>
+           <mass value="1.0"/>
+           <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+        </inertial>
+        <visual>
+          <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+          <geometry>
+              <mesh filename="tool_mesh/EE_Zivid_ams.stl" scale="0.001 0.001 0.001"/>
+          </geometry>
+           <material name="white">
+            <color rgba="0.2 0.2 0.2 1"/>
+          </material>
+        </visual>
+    </link>
+    <joint name="camera_trafo" type="fixed">
+        <parent link="baseLink"/>
+        <child link="camera_frame"/>
+        <origin xyz="0.05584 0.23981 0.05552" rpy="0 0 0"/>
+    </joint>
+
+    <link name="camera_frame">
+	</link>
+</robot>

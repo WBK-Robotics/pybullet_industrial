@@ -117,8 +117,8 @@ class GCodeLogger:
             g_code_line['G'] = 1
 
             for key, value, changed in zip(new_pose.keys(), new_pose.values(), changed_values):
-                if changed:
-                    g_code_line[key] = value
+                #if changed:
+                g_code_line[key] = value
 
             g_code_list.append(g_code_line)
 

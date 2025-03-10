@@ -55,10 +55,10 @@ def setup_environment() -> tuple:
     """
     working_dir: str = os.path.dirname(__file__)
     urdf_robot: str = os.path.join(working_dir, 'robot_descriptions',
-                                   'comau_nj290_robot.urdf')
+                                   'comau_nj290_robotNC.urdf')
     urdf_fofa: str = os.path.join(working_dir, 'Objects', 'FoFa', 'FoFa.urdf')
     urdf_gripper: str = os.path.join(
-        working_dir, 'robot_descriptions', 'gripper_cad.urdf'
+        working_dir, 'robot_descriptions', 'SRG.urdf'
     )
     urdf_small_cube: str = os.path.join(
         working_dir, 'robot_descriptions', 'cube_small.urdf'
@@ -125,7 +125,7 @@ if __name__ == "__main__":
                               [2.7, -0.5, 1.2],
                               start_orientation)
     position_offset = np.array([0, 0, 0])
-    orientation_offset = p.getQuaternionFromEuler(np.array([-np.pi / 2, 0, 0]))
+    orientation_offset = p.getQuaternionFromEuler(np.array([0, 0, 0]))
     orientation_offset = np.array(orientation_offset)
 
     object_mover.add_object(test_gripper.urdf, position_offset,
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     cube_small = p.loadURDF(urdf_cube_small,
                             start_pos + [0, -2, 0],
                             useFixedBase=False)
-    position_offset = np.array([0, 0.5, 0])
+    position_offset = np.array([0, 0, -0.2])
     object_mover.add_object(cube_small, position_offset)
 
     # Add a box obstacle near the robot.
@@ -259,3 +259,4 @@ if __name__ == "__main__":
     gui = PathPlannerGUI(root, path_planner, obstacle, planner_list, objective_list, constraint_list)
 
     root.mainloop()
+    print("code here")

@@ -1,0 +1,189 @@
+<?xml version="1.0" ?>
+<robot name="example_robot">
+
+	<!-- * * * Link Definitions * * * -->
+
+	<link name="link0_passive">
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray1">
+				<color rgba="0.2 0.2 0.2 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/base_m.stl"/>
+            </geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray1">
+				<color rgba="0.2 0.2 0.2 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/base_m.stl"/>
+            </geometry>
+		</collision>
+	</link>
+	<link name="link1">
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q1_m.stl"/>
+            </geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q1_m.stl"/>
+            </geometry>
+		</collision>
+	</link>
+	<link name="link2">
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q2_m.stl"/>
+            </geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q2_m.stl"/>
+            </geometry>
+		</collision>
+	</link>
+	<link name="link3">
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q3_m.stl"/>
+            </geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q3_m.stl"/>
+            </geometry>
+		</collision>
+	</link>
+	<link name="link4">
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q4_m.stl"/>
+            </geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q4_m.stl"/>
+            </geometry>
+		</collision>
+	</link>
+	<link name="link5">
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q5_m.stl"/>
+            </geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray2">
+				<color rgba="0.4 0.4 0.4 1"/>
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q5_m.stl"/>
+            </geometry>
+		</collision>
+	</link>
+	<link name="link6">
+		  <visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray1">
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q6_m.stl"/>
+            </geometry>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="gray1">
+			</material>
+            <geometry>
+                <mesh filename="comau_meshesNC/q6_m.stl"/>
+            </geometry>
+		</collision>
+	</link>
+
+
+	<joint name="q1" type="revolute">
+		<parent link="link0_passive"/>
+		<child link="link1"/>
+		<origin xyz="0 0 0" rpy="-3.1415926535897932 0 0"/>
+		<axis xyz="0 0 1"/>
+		<limit effort="204" lower="-3.14159265358" upper="3.14159265358" velocity="1.91986217719"/>
+	</joint>
+	<joint name="q2" type="revolute">
+		<parent link="link1"/>
+		<child link="link2"/>
+		<origin xyz="0.46 0 -1.14" rpy="1.5707963267948966 0 0"/>
+		<axis xyz="0 0 1"/>
+		<limit effort="204" lower="-1.308996938991" upper="1.308996938991" velocity="1.91986217719"/>
+	</joint>
+	<joint name="q3" type="revolute">
+		<parent link="link2"/>
+		<child link="link3"/>
+		<origin xyz="0 -1.05 0" rpy="-3.1415926535897932 0 0"/>
+		<axis xyz="0 0 1"/>
+		<limit effort="204" lower="-3.83972435" upper="0" velocity="1.91986217719"/>
+	</joint>
+
+		<joint name="q4" type="revolute">
+		<parent link="link3"/>
+		<child link="link4"/>
+		<origin xyz="-0.25 1.51 0" rpy="1.5707963267948966 0 0"/>
+		<axis xyz="0 0 1"/>
+		<limit effort="204" lower="-31.4159265358" upper="31.4159265358" velocity="1.91986217719"/>
+	</joint>
+	<joint name="q5" type="revolute">
+		<parent link="link4"/>
+		<child link="link5"/>
+		<origin xyz="0 0 0" rpy="1.5707963267948966 0 0"/>
+		<axis xyz="0 0 1"/>
+		<limit effort="204" lower="-21.816615645" upper="21.816615645" velocity="1.91986217719"/>
+	</joint>
+	<joint name="q6" type="revolute">
+		<parent link="link5"/>
+		<child link="link6"/>
+		<origin xyz="0 -0.282 0" rpy="-1.5707963267948966 0 0"/>
+		<axis xyz="0 0 1"/>
+		<limit effort="204" lower="-62.8318530716" upper="62.8318530716" velocity="1.91986217719"/>
+	</joint>
+</robot>

@@ -356,9 +356,10 @@ class PathPlannerGUI:
         working_dir = os.path.dirname(__file__)
         g_code_path = os.path.join(working_dir, 'g_codes',
                                    'joint_path_planner.txt')
-        pi.GCodeLogger.write_g_code(self.g_code, g_code_path)
+        # pi.GCodeLogger.write_g_code(self.g_code, g_code_path)
         # Override the g_code attribute with the generated list.
         gcode_processor = pi.GCodeProcessor(robot=self.robot)
+        g_code_logger = pi.GCodeLogger(self.robot)
         gcode_processor.g_code = self.g_code
 
         print("Simulating G-code:")
@@ -367,4 +368,22 @@ class PathPlannerGUI:
         for _ in gcode_iter:
             for _ in range(200):
                 p.stepSimulation()
+            g_code_logger.update_g_code_robot_view()
+        g_code_logger.write_g_code(
+            g_code_logger.g_code_robot_view, g_code_path)
+
+        gcode_processor_2 = pi.GCodeProcessor(robot=self.robot)
+        #g_code_logger = pi.GCodeLogger(self.robot)
+        gcode_processor_2.g_code = g_code_logger.g_code_robot_view
+
+        print("Simulating G-code:")
+        # Create an iterator from the processor.
+
+        self.robot.reset_joint_position(self.start, True)
+        gcode_iter = iter(gcode_processor_2)
+        time.sleep(3)
+        for _ in gcode_iter:
+            for _ in range(200):
+                p.stepSimulation()
+
         self.update_status()

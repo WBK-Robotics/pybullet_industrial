@@ -9,6 +9,17 @@ import sys
 JOINT_INCREMENT: float = 0.1
 WORKSPACE_INCREMENT: float = 0.1  # Increment for workspace values
 
+class ConsoleRedirector:
+    def __init__(self, text_widget: tk.Text):
+        self.text_widget = text_widget
+
+    def write(self, s):
+        # Insert text and automatically scroll to the end
+        self.text_widget.insert(tk.END, s)
+        self.text_widget.see(tk.END)
+
+    def flush(self):
+        pass  # Needed for file-like object compatibility
 
 class PathPlannerGUI:
     """
@@ -20,6 +31,19 @@ class PathPlannerGUI:
 
     def __init__(self, root: tk.Tk, planner_setup, obstacles, planner_list, objective_list, constraint_list) -> None:
         self.root: tk.Tk = root
+
+        # Console output frame in the top right corner
+        console_frame = tk.Frame(self.root)
+        console_frame.grid(row=0, column=1, padx=3, pady=3, sticky="nsew")
+        tk.Label(console_frame, text="Console Output").pack(side=tk.TOP, anchor="w")
+        self.console_text = tk.Text(console_frame, height=14, width=40)
+        self.console_text.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        # Redirect stdout to the text widget
+        sys.stdout = ConsoleRedirector(self.console_text)
+
+        # Adjust grid configuration so the console box stays in the top right
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(1, weight=0)
 
         # Support multiple planner setups.
         if isinstance(planner_setup, list):
@@ -108,12 +132,12 @@ class PathPlannerGUI:
         return None, -1
 
     def create_widgets(self) -> None:
-        # Top frame: Contains three panels: Joint Space, Workspace Control, and Obstacle.
-        top_frame = tk.Frame(self.root)
-        top_frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
+        # Top left frame: Contains three panels: Joint Space, Workspace Control, and Obstacle.
+        top_left_frame = tk.Frame(self.root)
+        top_left_frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
 
         # --- Joint Space Control ---
-        joints_frame = tk.LabelFrame(top_frame, text="Joint Space", padx=3, pady=3)
+        joints_frame = tk.LabelFrame(top_left_frame, text="Joint Space", padx=3, pady=3)
         joints_frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
         for i, joint_name in enumerate(self.joint_order):
             tk.Label(joints_frame, text=joint_name).grid(row=i, column=0, sticky="w", padx=2, pady=1)
@@ -125,9 +149,8 @@ class PathPlannerGUI:
                 .grid(row=i, column=3, padx=2, pady=1)
 
         # --- Workspace Control Panel ---
-        workspace_frame = tk.LabelFrame(top_frame, text="Workspace Control", padx=3, pady=3)
+        workspace_frame = tk.LabelFrame(top_left_frame, text="Workspace Control", padx=3, pady=3)
         workspace_frame.grid(row=0, column=1, padx=3, pady=3, sticky="nsew")
-        # For each workspace coordinate, display a label, a "-" button, an entry, and a "+" button.
         ws_labels = ["X", "Y", "Z", "A", "B", "C"]
         for i, label in enumerate(ws_labels):
             tk.Label(workspace_frame, text=label).grid(row=i, column=0, sticky="w", padx=2, pady=1)
@@ -139,7 +162,7 @@ class PathPlannerGUI:
                 .grid(row=i, column=2, padx=2, pady=1)
 
         # --- Obstacle Control Panel ---
-        obstacle_frame = tk.LabelFrame(top_frame, text="Obstacle", padx=3, pady=3)
+        obstacle_frame = tk.LabelFrame(top_left_frame, text="Obstacle", padx=3, pady=3)
         obstacle_frame.grid(row=0, column=2, padx=3, pady=3, sticky="nsew")
         tk.Label(obstacle_frame, text="Select").grid(row=0, column=0, sticky="w", padx=2, pady=1)
         tk.OptionMenu(obstacle_frame, self.selected_obstacle_str, *self.obstacle_names,
@@ -157,7 +180,7 @@ class PathPlannerGUI:
 
         # --- Planner and Status Controls ---
         mid_frame = tk.Frame(self.root)
-        mid_frame.grid(row=1, column=0, padx=3, pady=3, sticky="ew")
+        mid_frame.grid(row=1, column=0, columnspan=2, padx=3, pady=3, sticky="ew")
         planner_frame = tk.Frame(mid_frame)
         planner_frame.grid(row=0, column=0, padx=3, pady=3, sticky="w")
         tk.Label(planner_frame, text="Setup:").grid(row=0, column=0, sticky="w")
@@ -195,7 +218,7 @@ class PathPlannerGUI:
 
         # --- Bottom frame: Path control buttons ---
         bottom_frame = tk.Frame(self.root)
-        bottom_frame.grid(row=2, column=0, padx=3, pady=3, sticky="ew")
+        bottom_frame.grid(row=2, column=0, columnspan=2, padx=3, pady=3, sticky="ew")
         tk.Button(bottom_frame, text="Start", command=self.set_as_start, width=8)\
             .grid(row=0, column=0, padx=3, pady=3)
         tk.Button(bottom_frame, text="Goal", command=self.set_as_goal, width=8)\
@@ -258,7 +281,6 @@ class PathPlannerGUI:
         # Update constraint and clearance indicators.
         self.update_constraint_status()
         self.update_clearance_status()
-
 
     def update_clearance_status(self) -> None:
         if self.planner_setup.validity_checker.clearance_function:
@@ -376,12 +398,12 @@ class PathPlannerGUI:
         if res:
             self.g_code = pi.GCodeProcessor.joint_path_to_g_code(joint_path)
             for joint_conf, _ in joint_path:
-                self.robot.reset_joint_position(joint_conf, True)
+                self.robot.reset_joint_position(joint_conf)
                 if self.object_mover:
                     pos, ori = self.robot.get_endeffector_pose()
                     self.object_mover.match_moving_objects(pos, ori)
-                time.sleep(0.005)
-            self.robot.reset_joint_position(self.start, True)
+                time.sleep(0.01)
+            self.robot.reset_joint_position(self.start)
             self.update_joint_positions()
             print("Execution completed.")
         else:
@@ -404,10 +426,10 @@ class PathPlannerGUI:
         g_code_logger.write_g_code(g_code_logger.g_code_robot_view, g_code_path)
 
         gcode_processor_2 = pi.GCodeProcessor(robot=self.robot)
-        gcode_processor_2.g_code = gcode_logger.g_code_robot_view
+        gcode_processor_2.g_code = g_code_logger.g_code_robot_view
 
         print("Simulating G-code:")
-        self.robot.reset_joint_position(self.start, True)
+        self.robot.reset_joint_position(self.start)
         gcode_iter = iter(gcode_processor_2)
         time.sleep(3)
         for _ in gcode_iter:

@@ -158,6 +158,7 @@
 		<limit effort="204" lower="-1.308996938991" upper="1.308996938991" velocity="1.91986217719"/>
 	</joint>
 	<joint name="q3" type="revolute">
+
 		<parent link="link2"/>
 		<child link="link3"/>
 		<origin xyz="0 -1.05 0" rpy="-3.1415926535897932 0 0"/>
@@ -170,20 +171,20 @@
 		<child link="link4"/>
 		<origin xyz="-0.25 1.51 0" rpy="1.5707963267948966 0 0"/>
 		<axis xyz="0 0 1"/>
-		<limit effort="204" lower="-31.4159265358" upper="31.4159265358" velocity="1.91986217719"/>
+		<limit effort="204" lower="-3.14159265358" upper="3.14159265358" velocity="1.91986217719"/>
 	</joint>
 	<joint name="q5" type="revolute">
 		<parent link="link4"/>
 		<child link="link5"/>
 		<origin xyz="0 0 0" rpy="1.5707963267948966 0 0"/>
 		<axis xyz="0 0 1"/>
-		<limit effort="204" lower="-21.816615645" upper="21.816615645" velocity="1.91986217719"/>
+		<limit effort="204" lower="-2.1816615645" upper="2.1816615645" velocity="1.91986217719"/>
 	</joint>
 	<joint name="q6" type="revolute">
 		<parent link="link5"/>
 		<child link="link6"/>
 		<origin xyz="0 -0.282 0" rpy="-1.5707963267948966 0 0"/>
 		<axis xyz="0 0 1"/>
-		<limit effort="204" lower="-62.8318530716" upper="62.8318530716" velocity="1.91986217719"/>
+		<limit effort="204" lower="-3.14159265358" upper="3.14159265358" velocity="1.91986217719"/>
 	</joint>
 </robot>

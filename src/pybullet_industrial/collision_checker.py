@@ -63,6 +63,19 @@ class CollisionChecker:
         self.update_internal_collision_pairs()
         self.update_external_collision_pairs()
 
+    def make_robot_static(self, urdf_id: int):
+        """
+        Converts a robot body to a static body by updating its entry in
+        bodies_information and updating the internal and external collision
+        pairs.
+        """
+        for body in self.bodies_information:
+            if body['urdf_id'] == urdf_id:
+                body['body_typ'] = 'static_body'
+                self.update_internal_collision_pairs()
+                self.update_external_collision_pairs()
+                break
+
     def build_bodies_information(self, urdf_ids: list):
         """
         Iterates through all bodies in the sim and collects collision

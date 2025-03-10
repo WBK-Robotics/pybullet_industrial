@@ -155,8 +155,21 @@ if __name__ == "__main__":
         urdf_table,
         np.array([-1, -0.685, 0.0]),
         useFixedBase=True,
-        globalScaling=0.001
+        globalScaling=0.001)
+
+    wall_pos = posBox + [0, 0, 0.3]
+    wall_size = [0.5, 0.5, 0.05]
+    col_box_id = p.createCollisionShape(
+        p.GEOM_BOX, halfExtents=wall_size
     )
+    wall_id = p.createMultiBody(
+        baseMass=0,
+        baseCollisionShapeIndex=col_box_id,
+        basePosition=wall_pos,
+        baseOrientation=p.getQuaternionFromEuler([-np.pi / 2, 0, 0])
+    )
+    # Set the wall color to dark grey transparent glass
+    p.changeVisualShape(wall_id, -1, rgbaColor=[0.3, 0.3, 0.3, 0.8])
 
     # -------------------------------
     # Path Planner Setup
@@ -195,6 +208,7 @@ if __name__ == "__main__":
 
     # Configure collision checking.
     collision_checker = pi.CollisionChecker()
+    collision_checker.make_robot_static(robot_D.urdf)
     position, orientation = robot_C.get_endeffector_pose()
     object_mover.match_moving_objects(position, orientation)
     collision_checker.set_safe_state()
@@ -243,6 +257,8 @@ if __name__ == "__main__":
     def abitstar(si):
         return og.ABITstar(si)
 
+    def informed_rrtstar(si):
+        return og.InformedRRTstar(si)
     def aitstar(si):
         return og.AITstar(si)
 
@@ -282,7 +298,7 @@ if __name__ == "__main__":
     # Prepare lists for planner setups, planner types, objectives, and
     # constraints.
     path_planner_list = [path_planner_1, path_planner_2, path_planner_3]
-    planner_list = [bitstar, rrt, rrtsharp, abitstar, aitstar]
+    planner_list = [bitstar, informed_rrtstar, rrt, rrtsharp, abitstar, aitstar]
     objective_list = [
         None, clearance_objective, state_cost_integral_objective,
         path_length_objective, multi_objective
@@ -292,7 +308,7 @@ if __name__ == "__main__":
     # Create and run the GUI.
     root = tk.Tk()
     gui = PathPlannerGUI(
-        root, path_planner_list, [box, cube_small],
+        root, path_planner_list, [box, cube_small, wall_id],
         planner_list, objective_list, constraint_list
     )
     root.mainloop()

@@ -10,6 +10,7 @@ from scipy.spatial.transform import Rotation as R
 import pybullet_industrial as pi
 from path_planner_gui import PathPlannerGUI
 
+
 def transform_eulers_in_gcode(g_code: list):
     """
     Transform Euler angles from one convention to another in a G-code list.
@@ -31,7 +32,7 @@ def transform_eulers_in_gcode(g_code: list):
     return return_code
 
 
-def grip_oject(gripper:pi.Gripper, object: int) -> None:
+def grip_oject(gripper: pi.Gripper, object: int) -> None:
     """
     Grip an object with a gripper.
 
@@ -41,25 +42,25 @@ def grip_oject(gripper:pi.Gripper, object: int) -> None:
     """
     link_name_to_index = {}
     for joint_number in range(p.getNumJoints(gripper.urdf)):
-        link_name = p.getJointInfo(gripper.urdf, joint_number)[12].decode("utf-8")
+        link_name = p.getJointInfo(gripper.urdf, joint_number)[
+            12].decode("utf-8")
     link_name_to_index[link_name] = joint_number
 
     last_link = max(link_name_to_index)
     tcp_id = link_name_to_index[last_link]
 
-
     position_g, orientation_g = gripper.get_tool_pose()
     inv_pos, inv_orn = p.invertTransform(position_g, orientation_g)
     position_o, orientation_o = p.getBasePositionAndOrientation(object)
     restraint_pos, restraint_orn = p.multiplyTransforms(
-    inv_pos, inv_orn, position_o, orientation_o)
+        inv_pos, inv_orn, position_o, orientation_o)
     constraint = p.createConstraint(gripper.urdf, tcp_id,
-                                object, -1,
-                                p.JOINT_FIXED, [0, 0, 0],
-                                parentFramePosition=restraint_pos,
-                                childFramePosition=[0, 0, 0],
-                                parentFrameOrientation=restraint_orn,
-                                childFrameOrientation=None)
+                                    object, -1,
+                                    p.JOINT_FIXED, [0, 0, 0],
+                                    parentFramePosition=restraint_pos,
+                                    childFramePosition=[0, 0, 0],
+                                    parentFrameOrientation=restraint_orn,
+                                    childFrameOrientation=None)
     return constraint
 
 
@@ -81,20 +82,15 @@ def check_endeffector_upright(robot: pi.RobotBase) -> bool:
     return np.all(np.abs(orientation - target) <= tol)
 
 
-if __name__ == "__main__":
-    # -------------------------------
-    # Environment Setup
-    # -------------------------------
-    working_dir: str = os.path.dirname(__file__)
+def setup_envirnoment(working_dir: str):
+
 
     # Define URDF file paths for objects and robots.
     urdf_fofa = os.path.join(working_dir, 'Objects', 'FoFa', 'FoFa.urdf')
     urdf_comau = os.path.join(
         working_dir, 'robot_descriptions', 'comau_nj290_robotNC.urdf'
     )
-    urdf_store_box = os.path.join(
-        working_dir, 'Objects', 'Box', 'stor_box.urdf'
-    )
+
     urdf_table = os.path.join(working_dir, 'Objects', "Spannplatte.urdf")
     urdf_SRG = os.path.join(
         working_dir, 'robot_descriptions', 'SRG.urdf'
@@ -111,7 +107,7 @@ if __name__ == "__main__":
     )
 
     # Connect to PyBullet with GUI and configure visual parameters.
-    physics_client = p.connect(p.GUI)
+
     p.resetDebugVisualizerCamera(
         cameraDistance=2.75,
         cameraYaw=35.0,
@@ -187,14 +183,14 @@ if __name__ == "__main__":
     col_box_id = p.createCollisionShape(
         p.GEOM_BOX, halfExtents=wall_size
     )
-    wall_id = p.createMultiBody(
+    wall = p.createMultiBody(
         baseMass=0,
         baseCollisionShapeIndex=col_box_id,
         basePosition=wall_pos,
         baseOrientation=p.getQuaternionFromEuler([-np.pi / 2, 0, 0])
     )
     # Set the wall color to dark grey transparent glass
-    p.changeVisualShape(wall_id, -1, rgbaColor=[0.3, 0.3, 0.3, 0.8])
+    p.changeVisualShape(wall, -1, rgbaColor=[0.3, 0.3, 0.3, 0.8])
 
     # -------------------------------
     # Path Planner Setup
@@ -220,6 +216,14 @@ if __name__ == "__main__":
     robot_C.reset_joint_position(initial_state_C)
     robot_D.reset_joint_position(initial_state_D)
 
+    gripper = [srg_gripper]
+    robots = [robot_C, robot_D]
+    objects = [cube_small, box, fixture, wall, table]
+
+    return robots, gripper, objects
+
+
+def setup_planner_gui(robots, gripper, objects):
     # Create object movers for the planner.
     object_mover = pi.PbiObjectMover()
     gripper_mover = pi.PbiObjectMover()
@@ -230,20 +234,20 @@ if __name__ == "__main__":
         p.getQuaternionFromEuler([0, 0, 0])
     )
     object_mover.add_object(
-        srg_gripper.urdf, position_offset, orientation_offset
+        gripper[0].urdf, position_offset, orientation_offset
     )
     gripper_mover.add_object(
-        srg_gripper.urdf, position_offset, orientation_offset
+        gripper[0].urdf, position_offset, orientation_offset
     )
 
     # Add cube_small with an offset.
     position_offset = np.array([0, 0, -0.2])
-    object_mover.add_object(cube_small, position_offset)
+    object_mover.add_object(objects[0], position_offset)
 
     # Configure collision checking.
     collision_checker = pi.CollisionChecker()
-    collision_checker.make_robot_static(robot_D.urdf)
-    position, orientation = robot_C.get_endeffector_pose()
+    collision_checker.make_robot_static(robots[1].urdf)
+    position, orientation = robots[0].get_endeffector_pose()
     object_mover.match_moving_objects(position, orientation)
     collision_checker.set_safe_state()
 
@@ -253,7 +257,7 @@ if __name__ == "__main__":
 
     def constraint_function():
         """Return True if the end-effector is upright."""
-        return all([check_endeffector_upright(robot_C)])
+        return all([check_endeffector_upright(robots[0])])
 
     # Define objective functions.
     def clearance_objective(si):
@@ -302,7 +306,7 @@ if __name__ == "__main__":
 
     # Initialize multiple planner setups.
     path_planner_1 = pi.PbiPlannerSimpleSetup(
-        robot=robot_C,
+        robot=robots[0],
         object_mover=object_mover,
         collision_check_function=collision_check,
         planner_type=bitstar,
@@ -311,7 +315,7 @@ if __name__ == "__main__":
     path_planner_1.name = "Robot+ Gripper+ Object"
 
     path_planner_2 = pi.PbiPlannerSimpleSetup(
-        robot=robot_C,
+        robot=robots[0],
         object_mover=gripper_mover,
         collision_check_function=collision_check,
         planner_type=bitstar,
@@ -320,7 +324,7 @@ if __name__ == "__main__":
     path_planner_2.name = "Robot+ Gripper"
 
     path_planner_3 = pi.PbiPlannerSimpleSetup(
-        robot=robot_C,
+        robot=robots[0],
         collision_check_function=collision_check,
         planner_type=bitstar,
         clearance_function=get_clearance
@@ -344,40 +348,35 @@ if __name__ == "__main__":
     # Create and run the GUI.
     root = tk.Tk()
     gui = PathPlannerGUI(
-        root, path_planner_list, [box, cube_small, wall_id],
+        root, path_planner_list, objects,
         planner_list, objective_list, constraint_list
     )
     root.mainloop()
+    joint_path = copy.deepcopy(gui.joint_path)
+    return joint_path
 
-    # -------------------------------
-    # Simulation and Export
-    # -------------------------------
-    # def simulate_g_code(self) -> None:
-    g_code_processor = pi.GCodeProcessor(robot=robot_C)
-    g_code_logger = pi.GCodeLogger(robot_C)
+
+def simulate_joint_path(joint_path, robots, gripper, objects):
+    g_code_processor = pi.GCodeProcessor(robot=robots[0])
+    g_code_logger = pi.GCodeLogger(robots[0])
     gcode_iter = iter(g_code_processor)
 
-    joint_path: pi.JointPath = gui.joint_path
+    joint_path: pi.JointPath = joint_path
     start_state = joint_path.get_joint_configuration(0)
 
-    robot_C.reset_joint_position(start_state)
+    robots[0].reset_joint_position(start_state)
+    grip_oject(gripper[0], objects[0])
+    p.stepSimulation()
+    gripper[0].couple(robots[0])
+    p.stepSimulation()
+    robots[0].reset_joint_position(start_state)
+    p.stepSimulation()
 
-
-    grip_oject(srg_gripper, cube_small)
-    for _ in range(100):
-        p.stepSimulation()
-    robot_C.set_joint_position(start_state)
-    for _ in range(100):
-        p.stepSimulation()
-    srg_gripper.couple(robot_C)
+    robots[0].set_joint_position(start_state)
     for _ in range(200):
         p.stepSimulation()
 
-    robot_C.reset_joint_position(start_state)
-    robot_C.set_joint_position(start_state)
-    for _ in range(100):
-        p.stepSimulation()
-    joint_g_code = g_code_processor.joint_path_to_g_code(gui.joint_path)
+    joint_g_code = g_code_processor.joint_path_to_g_code(joint_path)
     g_code_processor.g_code = joint_g_code
     for _ in gcode_iter:
         for _ in range(20):
@@ -386,36 +385,48 @@ if __name__ == "__main__":
 
     cartesian_g_code = g_code_logger.g_code_robot_view
 
-    # -------------------------------
-    # G-Code Processing and Export
-    # -------------------------------
-    # Create a G-code processor for robot_C.
-    processor = pi.GCodeProcessor(robot=robot_C)
-    gcode_input = cartesian_g_code
-    processor.g_code = gcode_input
+    return cartesian_g_code
 
+
+def transform_g_code(g_code):
     # Process the G-code with several transformations.
-    processor.g_code = transform_eulers_in_gcode(processor.g_code)
-    processor.g_code = pi.GCodeSimplifier.add_offset_to_g_code(
-        processor.g_code, {'X': -1, 'Y': 6.5, 'Z': 0.0}
+    g_code = transform_eulers_in_gcode(g_code)
+    g_code = pi.GCodeSimplifier.add_offset_to_g_code(
+        g_code, {'X': -1, 'Y': 6.5, 'Z': 0.0}
     )
-    processor.g_code = pi.GCodeSimplifier.scale_g_code(
-        processor.g_code, 1000.0, ['X', 'Y', 'Z']
+    g_code = pi.GCodeSimplifier.scale_g_code(
+        g_code, 1000.0, ['X', 'Y', 'Z']
     )
-    processor.g_code = pi.GCodeSimplifier.convert_to_degrees(
-        processor.g_code
+    g_code = pi.GCodeSimplifier.convert_to_degrees(
+        g_code
     )
-    processor.g_code = pi.GCodeSimplifier.round_cartesian(
-        processor.g_code, 4, 4
+    g_code = pi.GCodeSimplifier.round_cartesian(
+        g_code, 4, 4
     )
-    processor.g_code = pi.GCodeSimplifier.apply_feedrate(
-        processor.g_code, 5000
+    g_code = pi.GCodeSimplifier.apply_feedrate(
+        g_code, 5000
     )
+    return g_code
+
+
+if __name__ == "__main__":
+    p.connect(p.GUI)
+    working_dir: str = os.path.dirname(__file__)
+
+    robots, gripper, objects = setup_envirnoment(working_dir)
+
+    joint_path = setup_planner_gui(robots, gripper, objects)
+
+
+    cartesian_g_code = simulate_joint_path(joint_path, robots,
+                                           gripper, objects)
+
+    transformed_g_code = transform_g_code(cartesian_g_code)
 
     # Export the transformed G-code to a file.
     exportfile = os.path.join(
         working_dir, 'g_codes', 'transformed.mpf'
     )
     pi.GCodeLogger.write_g_code(
-        processor.g_code, exportfile, {}, postfix="M30\n"
+        transformed_g_code, exportfile, {}, postfix="M30\n"
     )

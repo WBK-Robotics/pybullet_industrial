@@ -43,7 +43,7 @@ class GCodeLogger:
             #     value, float) else str(value)
             string_value = str(value)
             if 'e' in string_value.lower():
-                formatted_value = f'{value:.15f}'
+                formatted_value = f'{value:.10f}'
             else:
                 formatted_value = string_value
 

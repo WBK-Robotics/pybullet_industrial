@@ -116,7 +116,7 @@ def setup_envirnoment(working_dir: str):
         cameraTargetPosition=np.array([0, 0, 0.5])
     )
     p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-    p.setPhysicsEngineParameter(numSolverIterations=5000)
+    p.setPhysicsEngineParameter(numSolverIterations=2000)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
     # Load background object (FoFa) and set gravity.
@@ -372,15 +372,21 @@ def simulate_joint_path(joint_path, robots, gripper, objects):
     #     p.stepSimulation()
 
     grip_oject(gripper[0], objects[0])
+    for _ in range(100):
+        p.stepSimulation()
     gripper[0].couple(robots[0])
+    for _ in range(100):
+        p.stepSimulation()
     robots[0].reset_joint_position(start_state)
     robots[0].set_joint_position(start_state)
-    for _ in range(500):
+    for _ in range(200):
         p.stepSimulation()
+        time.sleep(0.001)
 
     for _ in gcode_iter:
-        for _ in range(50):
+        for _ in range(20):
             p.stepSimulation()
+            time.sleep(0.001)
         g_code_logger.update_g_code_robot_view()
 
     se3_g_code = g_code_logger.g_code_robot_view
@@ -398,12 +404,14 @@ def simulate_se3_g_code(se3_g_code, joint_path):
 
     robots[0].reset_joint_position(start_state)
     robots[0].set_joint_position(start_state)
-    for _ in range(500):
+    for _ in range(200):
         p.stepSimulation()
+        time.sleep(0.001)
 
     for _ in gcode_iter:
-        for _ in range(50):
+        for _ in range(20):
             p.stepSimulation()
+            time.sleep(0.001)
 
 
 def transform_g_code(g_code):

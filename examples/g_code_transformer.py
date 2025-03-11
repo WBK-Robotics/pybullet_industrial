@@ -10,10 +10,6 @@ from scipy.spatial.transform import Rotation as R
 import pybullet_industrial as pi
 from path_planner_gui import PathPlannerGUI
 
-
-# =============================================================================
-# Helper Functions
-# =============================================================================
 def transform_eulers_in_gcode(g_code: list):
     """
     Transform Euler angles from one convention to another in a G-code list.
@@ -35,6 +31,38 @@ def transform_eulers_in_gcode(g_code: list):
     return return_code
 
 
+def grip_oject(gripper:pi.Gripper, object: int) -> None:
+    """
+    Grip an object with a gripper.
+
+    Args:
+        gripper: The gripper instance.
+        object: The object ID.
+    """
+    link_name_to_index = {}
+    for joint_number in range(p.getNumJoints(gripper.urdf)):
+        link_name = p.getJointInfo(gripper.urdf, joint_number)[12].decode("utf-8")
+    link_name_to_index[link_name] = joint_number
+
+    last_link = max(link_name_to_index)
+    tcp_id = link_name_to_index[last_link]
+
+
+    position_g, orientation_g = gripper.get_tool_pose()
+    inv_pos, inv_orn = p.invertTransform(position_g, orientation_g)
+    position_o, orientation_o = p.getBasePositionAndOrientation(object)
+    restraint_pos, restraint_orn = p.multiplyTransforms(
+    inv_pos, inv_orn, position_o, orientation_o)
+    constraint = p.createConstraint(gripper.urdf, tcp_id,
+                                object, -1,
+                                p.JOINT_FIXED, [0, 0, 0],
+                                parentFramePosition=restraint_pos,
+                                childFramePosition=[0, 0, 0],
+                                parentFrameOrientation=restraint_orn,
+                                childFrameOrientation=None)
+    return constraint
+
+
 def check_endeffector_upright(robot: pi.RobotBase) -> bool:
     """
     Check if the robot's end-effector is upright within tolerance.
@@ -53,9 +81,6 @@ def check_endeffector_upright(robot: pi.RobotBase) -> bool:
     return np.all(np.abs(orientation - target) <= tol)
 
 
-# =============================================================================
-# Main Script
-# =============================================================================
 if __name__ == "__main__":
     # -------------------------------
     # Environment Setup
@@ -175,7 +200,15 @@ if __name__ == "__main__":
     # Path Planner Setup
     # -------------------------------
     # Reset initial joint states.
-    initial_state = {
+    initial_state_C = {
+        'q1': 0.16,
+        'q2': 0.14,
+        'q3': -1.69,
+        'q4': 0,
+        'q5': 1.3,
+        'q6': -0.3
+    }
+    initial_state_D = {
         'q1': -0.5,
         'q2': 0,
         'q3': -(np.pi / 2),
@@ -183,8 +216,9 @@ if __name__ == "__main__":
         'q5': np.pi / 2,
         'q6': 0
     }
-    robot_C.reset_joint_position(initial_state)
-    robot_D.reset_joint_position(initial_state)
+
+    robot_C.reset_joint_position(initial_state_C)
+    robot_D.reset_joint_position(initial_state_D)
 
     # Create object movers for the planner.
     object_mover = pi.PbiObjectMover()
@@ -259,6 +293,7 @@ if __name__ == "__main__":
 
     def informed_rrtstar(si):
         return og.InformedRRTstar(si)
+
     def aitstar(si):
         return og.AITstar(si)
 
@@ -298,7 +333,8 @@ if __name__ == "__main__":
     # Prepare lists for planner setups, planner types, objectives, and
     # constraints.
     path_planner_list = [path_planner_1, path_planner_2, path_planner_3]
-    planner_list = [bitstar, informed_rrtstar, rrt, rrtsharp, abitstar, aitstar]
+    planner_list = [bitstar, informed_rrtstar,
+                    rrt, rrtsharp, abitstar, aitstar]
     objective_list = [
         None, clearance_objective, state_cost_integral_objective,
         path_length_objective, multi_objective
@@ -314,18 +350,49 @@ if __name__ == "__main__":
     root.mainloop()
 
     # -------------------------------
+    # Simulation and Export
+    # -------------------------------
+    # def simulate_g_code(self) -> None:
+    g_code_processor = pi.GCodeProcessor(robot=robot_C)
+    g_code_logger = pi.GCodeLogger(robot_C)
+    gcode_iter = iter(g_code_processor)
+
+    joint_path: pi.JointPath = gui.joint_path
+    start_state = joint_path.get_joint_configuration(0)
+
+    robot_C.reset_joint_position(start_state)
+
+
+    grip_oject(srg_gripper, cube_small)
+    for _ in range(100):
+        p.stepSimulation()
+    robot_C.set_joint_position(start_state)
+    for _ in range(100):
+        p.stepSimulation()
+    srg_gripper.couple(robot_C)
+    for _ in range(200):
+        p.stepSimulation()
+
+    robot_C.reset_joint_position(start_state)
+    robot_C.set_joint_position(start_state)
+    for _ in range(100):
+        p.stepSimulation()
+    joint_g_code = g_code_processor.joint_path_to_g_code(gui.joint_path)
+    g_code_processor.g_code = joint_g_code
+    for _ in gcode_iter:
+        for _ in range(20):
+            p.stepSimulation()
+        g_code_logger.update_g_code_robot_view()
+
+    cartesian_g_code = g_code_logger.g_code_robot_view
+
+    # -------------------------------
     # G-Code Processing and Export
     # -------------------------------
     # Create a G-code processor for robot_C.
     processor = pi.GCodeProcessor(robot=robot_C)
-
-    # Read in G-code from file.
-    textfile = os.path.join(
-        working_dir, 'g_codes', 'joint_path_planner.txt'
-    )
-    with open(textfile, encoding='utf-8') as f:
-        gcode_input = f.read()
-    processor.g_code = processor.read_g_code(gcode_input)
+    gcode_input = cartesian_g_code
+    processor.g_code = gcode_input
 
     # Process the G-code with several transformations.
     processor.g_code = transform_eulers_in_gcode(processor.g_code)

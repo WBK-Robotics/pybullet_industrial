@@ -111,6 +111,8 @@ class PathPlannerGUI:
         self.joint_limits = self.robot.get_joint_limits()
         self.root.title("PyBullet Path Planning")
 
+        self.joint_path = None
+
         self.joint_values = [tk.StringVar(value="0") for _ in self.joint_order]
         self.obstacle_values = [tk.StringVar(value="0") for _ in range(6)]
         self.collision_status = tk.StringVar(value="green")
@@ -223,9 +225,9 @@ class PathPlannerGUI:
             .grid(row=0, column=0, padx=3, pady=3)
         tk.Button(bottom_frame, text="Goal", command=self.set_as_goal, width=8)\
             .grid(row=0, column=1, padx=3, pady=3)
-        tk.Button(bottom_frame, text="Plan/Execute", command=self.plan_and_execute, width=12)\
+        tk.Button(bottom_frame, text="Plan", command=self.plan, width=8)\
             .grid(row=0, column=2, padx=3, pady=3)
-        tk.Button(bottom_frame, text="Simulate G-Code", command=self.simulate_g_code, width=14)\
+        tk.Button(bottom_frame, text="Run", command=self.run, width=8)\
             .grid(row=0, column=3, padx=3, pady=3)
         tk.Button(bottom_frame, text="Exit", command=self.root.quit, width=8)\
             .grid(row=0, column=4, padx=3, pady=3)
@@ -319,7 +321,6 @@ class PathPlannerGUI:
             euler = [float(self.workspace_values[i].get()) for i in range(3, 6)]
             quat = p.getQuaternionFromEuler(euler)
             self.robot.reset_endeffector_pose(np.array(pos), np.array(quat))
-            print("Workspace pose set to:", pos, euler)
         except Exception as e:
             print("Error setting workspace pose:", e)
         self.update_status()
@@ -391,48 +392,23 @@ class PathPlannerGUI:
         self.goal = {jn: float(self.joint_values[i].get()) for i, jn in enumerate(self.joint_order)}
         print("Goal set:", self.goal)
 
-    def plan_and_execute(self) -> None:
+    def plan(self) -> None:
         planning_time = self.planning_time_var.get()
         print(f"Planning (allowed time = {planning_time}s)...")
-        res, joint_path = self.planner_setup.plan_start_goal(self.start, self.goal, allowed_time=planning_time)
-        if res:
-            self.g_code = pi.GCodeProcessor.joint_path_to_g_code(joint_path)
-            for joint_conf, _ in joint_path:
+        self.res, self.joint_path = self.planner_setup.plan_start_goal(self.start, self.goal, allowed_time=planning_time)
+
+    def run(self) -> None:
+        if self.res:
+            #self.g_code = pi.GCodeProcessor.joint_path_to_g_code(joint_path)
+            for joint_conf, _ in self.joint_path:
                 self.robot.reset_joint_position(joint_conf)
                 if self.object_mover:
                     pos, ori = self.robot.get_endeffector_pose()
                     self.object_mover.match_moving_objects(pos, ori)
-                time.sleep(0.01)
-            self.robot.reset_joint_position(self.start)
+                time.sleep(0.03)
+            # self.robot.reset_joint_position(self.start)
             self.update_joint_positions()
             print("Execution completed.")
         else:
             print("No solution found.")
-        self.update_status()
-
-    def simulate_g_code(self) -> None:
-        working_dir = os.path.dirname(__file__)
-        g_code_path = os.path.join(working_dir, 'g_codes', 'joint_path_planner.txt')
-        gcode_processor = pi.GCodeProcessor(robot=self.robot)
-        g_code_logger = pi.GCodeLogger(self.robot)
-        gcode_processor.g_code = self.g_code
-
-        print("Simulating G-code:")
-        gcode_iter = iter(gcode_processor)
-        for _ in gcode_iter:
-            for _ in range(200):
-                p.stepSimulation()
-            g_code_logger.update_g_code_robot_view()
-        g_code_logger.write_g_code(g_code_logger.g_code_robot_view, g_code_path)
-
-        gcode_processor_2 = pi.GCodeProcessor(robot=self.robot)
-        gcode_processor_2.g_code = g_code_logger.g_code_robot_view
-
-        print("Simulating G-code:")
-        self.robot.reset_joint_position(self.start)
-        gcode_iter = iter(gcode_processor_2)
-        time.sleep(3)
-        for _ in gcode_iter:
-            for _ in range(200):
-                p.stepSimulation()
         self.update_status()

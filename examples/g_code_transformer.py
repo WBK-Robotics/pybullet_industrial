@@ -166,13 +166,13 @@ def setup_envirnoment(working_dir: str):
         np.array([-0.00756672225243951, 0.011473507510403333,
                   1.3312571405821847])
     )
-    fixture = p.loadURDF(
-        urdf_fixture,
-        spawn_point_fixture,
-        spawn_orient_fixture,
-        useFixedBase=True,
-        globalScaling=0.001
-    )
+    # fixture = p.loadURDF(
+    #     urdf_fixture,
+    #     spawn_point_fixture,
+    #     spawn_orient_fixture,
+    #     useFixedBase=True,
+    #     globalScaling=0.001
+    # )
     table = p.loadURDF(
         urdf_table,
         np.array([-1, -0.685, 0.0]),
@@ -219,7 +219,8 @@ def setup_envirnoment(working_dir: str):
 
     gripper = [srg_gripper]
     robots = [robot_C, robot_D]
-    objects = [cube_small, box, fixture, wall, table]
+    objects = [cube_small, box, #fixture,
+               wall, table]
 
     return robots, gripper, objects
 
@@ -366,27 +367,11 @@ def simulate_joint_path(joint_path, robots, gripper, objects):
     g_code_processor.g_code = joint_g_code
 
     start_state = joint_path.get_joint_configuration(0)
-
-    # robots[0].reset_joint_position(start_state)
-    # for _ in range(100):
-    #     p.stepSimulation()
-
-    grip_oject(gripper[0], objects[0])
-    for _ in range(100):
-        p.stepSimulation()
-    gripper[0].couple(robots[0])
-    for _ in range(100):
-        p.stepSimulation()
     robots[0].reset_joint_position(start_state)
-    robots[0].set_joint_position(start_state)
-    for _ in range(200):
-        p.stepSimulation()
-        time.sleep(0.001)
 
+    time.sleep(1)
     for _ in gcode_iter:
-        for _ in range(20):
-            p.stepSimulation()
-            time.sleep(0.001)
+        time.sleep(0.01)
         g_code_logger.update_g_code_robot_view()
 
     se3_g_code = g_code_logger.g_code_robot_view
@@ -397,21 +382,12 @@ def simulate_joint_path(joint_path, robots, gripper, objects):
 def simulate_se3_g_code(se3_g_code, joint_path):
     g_code_processor = pi.GCodeProcessor(robot=robots[0])
     gcode_iter = iter(g_code_processor)
-
-    g_code_processor.g_code = se3_g_code
-
     start_state = joint_path.get_joint_configuration(0)
-
     robots[0].reset_joint_position(start_state)
-    robots[0].set_joint_position(start_state)
-    for _ in range(200):
-        p.stepSimulation()
-        time.sleep(0.001)
-
+    g_code_processor.g_code = se3_g_code
+    time.sleep(1)
     for _ in gcode_iter:
-        for _ in range(20):
-            p.stepSimulation()
-            time.sleep(0.001)
+        time.sleep(0.01)
 
 
 def transform_g_code(g_code):

@@ -382,7 +382,7 @@ class GCodeProcessor:
             if self.active_endeffector == -1:
                 elementary_operations.append(
                     lambda i=position, j=orientation:
-                    self.robot.set_endeffector_pose(i, j))
+                    self.robot.reset_endeffector_pose(i, j))
 
             else:
                 elementary_operations.append(
@@ -442,7 +442,7 @@ class GCodeProcessor:
                 joint_positions[joint_name] = value
 
         elementary_operations = [
-            lambda: self.robot.set_joint_position(joint_positions)]
+            lambda: self.robot.reset_joint_position(joint_positions)]
 
         return elementary_operations
 

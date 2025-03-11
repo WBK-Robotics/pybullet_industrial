@@ -1,5 +1,6 @@
 import copy
 import os
+import time
 import tkinter as tk
 import numpy as np
 import pybullet as p
@@ -361,39 +362,56 @@ def simulate_joint_path(joint_path, robots, gripper, objects):
     g_code_logger = pi.GCodeLogger(robots[0])
     gcode_iter = iter(g_code_processor)
 
-    joint_path: pi.JointPath = joint_path
-    start_state = joint_path.get_joint_configuration(0)
-
-    robots[0].reset_joint_position(start_state)
-    grip_oject(gripper[0], objects[0])
-    p.stepSimulation()
-    gripper[0].couple(robots[0])
-    p.stepSimulation()
-    robots[0].reset_joint_position(start_state)
-    p.stepSimulation()
-
-    robots[0].set_joint_position(start_state)
-    for _ in range(200):
-        p.stepSimulation()
-
     joint_g_code = g_code_processor.joint_path_to_g_code(joint_path)
     g_code_processor.g_code = joint_g_code
+
+    start_state = joint_path.get_joint_configuration(0)
+
+    # robots[0].reset_joint_position(start_state)
+    # for _ in range(100):
+    #     p.stepSimulation()
+
+    grip_oject(gripper[0], objects[0])
+    gripper[0].couple(robots[0])
+    robots[0].reset_joint_position(start_state)
+    robots[0].set_joint_position(start_state)
+    for _ in range(500):
+        p.stepSimulation()
+
     for _ in gcode_iter:
-        for _ in range(20):
+        for _ in range(50):
             p.stepSimulation()
         g_code_logger.update_g_code_robot_view()
 
-    cartesian_g_code = g_code_logger.g_code_robot_view
+    se3_g_code = g_code_logger.g_code_robot_view
 
-    return cartesian_g_code
+    return se3_g_code
+
+
+def simulate_se3_g_code(se3_g_code, joint_path):
+    g_code_processor = pi.GCodeProcessor(robot=robots[0])
+    gcode_iter = iter(g_code_processor)
+
+    g_code_processor.g_code = se3_g_code
+
+    start_state = joint_path.get_joint_configuration(0)
+
+    robots[0].reset_joint_position(start_state)
+    robots[0].set_joint_position(start_state)
+    for _ in range(500):
+        p.stepSimulation()
+
+    for _ in gcode_iter:
+        for _ in range(50):
+            p.stepSimulation()
 
 
 def transform_g_code(g_code):
     # Process the G-code with several transformations.
     g_code = transform_eulers_in_gcode(g_code)
-    g_code = pi.GCodeSimplifier.add_offset_to_g_code(
-        g_code, {'X': -1, 'Y': 6.5, 'Z': 0.0}
-    )
+    # g_code = pi.GCodeSimplifier.add_offset_to_g_code(
+    #     g_code, {'X': -1, 'Y': 6.5, 'Z': 0.0}
+    # )
     g_code = pi.GCodeSimplifier.scale_g_code(
         g_code, 1000.0, ['X', 'Y', 'Z']
     )
@@ -417,11 +435,12 @@ if __name__ == "__main__":
 
     joint_path = setup_planner_gui(robots, gripper, objects)
 
-
-    cartesian_g_code = simulate_joint_path(joint_path, robots,
+    se3_g_code = simulate_joint_path(joint_path, robots,
                                            gripper, objects)
 
-    transformed_g_code = transform_g_code(cartesian_g_code)
+    simulate_se3_g_code(se3_g_code, joint_path)
+
+    transformed_g_code = transform_g_code(se3_g_code)
 
     # Export the transformed G-code to a file.
     exportfile = os.path.join(

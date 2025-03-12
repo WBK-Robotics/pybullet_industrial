@@ -46,7 +46,7 @@ def check_endeffector_upright(robot: pi.RobotBase) -> bool:
     orientation = p.getEulerFromQuaternion(
         robot.get_endeffector_pose()[1]
     )
-    target = np.array([-np.pi / 2, 0, 0])
+    target = np.array([0, 0, 0])
     tol = np.array([0.3, 0.3, 2 * np.pi])
     return np.all(np.abs(orientation - target) <= tol)
 
@@ -217,6 +217,7 @@ def setup_planner_gui(robots, gripper, objects):
 
     # Configure collision checking.
     collision_checker = pi.CollisionChecker()
+    motor_clearance = pi.CollisionChecker([objects[0], objects[2]])
     collision_checker.make_robot_static(robots[1].urdf)
     position, orientation = robots[0].get_endeffector_pose()
     object_mover.match_moving_objects(position, orientation)
@@ -233,9 +234,6 @@ def setup_planner_gui(robots, gripper, objects):
     # Define objective functions.
     def clearance_objective(si):
         return pi.PbiPathClearanceObjective(si)
-
-    def max_min_clearance_objective(si):
-        return ob.MaximizeMinClearanceObjective(si)
 
     def state_cost_integral_objective(si):
         return ob.StateCostIntegralObjective(si)
@@ -282,7 +280,7 @@ def setup_planner_gui(robots, gripper, objects):
         return og.BFMT(si)
 
     def get_clearance():
-        return collision_checker.get_global_distance(0.3)
+        return motor_clearance.get_global_distance(0.2)
 
     # Initialize multiple planner setups.
     path_planner_1 = pi.PbiPlannerSimpleSetup(

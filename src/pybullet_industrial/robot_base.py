@@ -190,6 +190,22 @@ class RobotBase:
                                     force=self.max_joint_force[joint_number],
                                     targetPosition=joint_position)
 
+    def get_joint_position(self) -> Dict[str, float]:
+        """
+        Retrieves the current positions of all moveable joints.
+
+        Returns:
+            Dict[str, float]: A dictionary mapping joint names to their positions.
+        """
+        # Use the existing get_joint_state method which returns a dictionary with each joint's state.
+        joint_states = self.get_joint_state()
+        # Retrieve only the moveable joint names from get_moveable_joints.
+        moveable_joint_names, _ = self.get_moveable_joints()
+
+        # Construct a dictionary mapping each joint name to its 'position' value.
+        joint_positions = {joint_name: joint_states[joint_name]['position'] for joint_name in moveable_joint_names}
+        return joint_positions
+
     def reset_joint_position(self, target: Dict[str, float], ignore_limits=False):
         """Resets the robot's joints to specified positions.
 

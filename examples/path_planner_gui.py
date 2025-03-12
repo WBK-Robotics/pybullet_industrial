@@ -100,8 +100,8 @@ class PathPlannerGUI:
 
         # --- Workspace and joint control values ---
         self.workspace_values = [tk.StringVar(value="0") for _ in range(6)]
-        self.start = self.robot.get_joint_state()
-        self.goal = self.robot.get_joint_state()
+        self.start = None
+        self.goal = None
         self.joint_order = self.robot.get_moveable_joints()[0]
         self.joint_limits = self.robot.get_joint_limits()
         self.root.title("PyBullet Path Planning")
@@ -266,20 +266,16 @@ class PathPlannerGUI:
             name = info[1].decode("utf-8") if isinstance(info[1], bytes) else info[1]
             obstacles_state[name] = {"pos": pos, "orn_e": orn_e}
 
-        # robot_infomformation = []
-        # robot_urdf = [self.robot.urdf]
-        # for planner_setup in self.planner_setups:
-        #     #check if urdf is already in the list
-        #     if planner_setup.robot.urdf not in robot_urdf:
-        #         robot_urdf.append(planner_setup.robot.urdf)
-        #         joint_state = planner_setup.robot.get_joint_state()
-        #         robot_infomformation.append(planner_setup.robot.urdf, joint_state)
-
+        robot_information = []
+        robot_urdf = []
+        for index, planner_setup in enumerate(self.planner_setups):
+            #check if urdf is already in the list
+            if planner_setup.robot.urdf not in robot_urdf:
+                robot_urdf.append(planner_setup.robot.urdf)
+                joint_state = planner_setup.robot.get_joint_position()
+                robot_information.append((index, joint_state))
 
         state = {
-            "joint_values": {jn: self.joint_values[i].get() for i, jn in enumerate(self.joint_order)},
-            "workspace_values": [var.get() for var in self.workspace_values],
-            "obstacle_values": [var.get() for var in self.obstacle_values],
             "selected_obstacle": self.selected_obstacle_str.get(),
             "planner_setup": self.selected_planner_var.get(),
             "planner_type": self.selected_planner_type_var.get(),
@@ -289,7 +285,8 @@ class PathPlannerGUI:
             "joint_path_values": joint_path_values,
             "start": self.start,
             "goal": self.goal,
-            "obstacles_state": obstacles_state
+            "obstacles_state": obstacles_state,
+            "robot_information": robot_information
         }
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         filename = f"state_{timestamp}.json"
@@ -304,11 +301,13 @@ class PathPlannerGUI:
         with open(full_path, "r") as f:
             state = json.load(f)
         # Update joint values
-        for i, jn in enumerate(self.joint_order):
-            self.joint_values[i].set(state["joint_values"].get(jn, "0"))
+        # for i, jn in enumerate(self.joint_order):
+        #     self.joint_values[i].set(state["joint_values"].get(jn, "0"))
 
-        for i in range(6):
-            self.obstacle_values[i].set(state["obstacle_values"][i])
+        # load robot information
+        for index, joint_state in state["robot_information"]:
+            self.planner_setups[index].robot.reset_joint_position(joint_state)
+
         self.selected_obstacle_str.set(state["selected_obstacle"])
         self.selected_planner_var.set(state["planner_setup"])
         self.selected_planner_type_var.set(state["planner_type"])
@@ -334,11 +333,13 @@ class PathPlannerGUI:
                     orn_q = p.getQuaternionFromEuler(orn_e)
                     p.resetBasePositionAndOrientation(obs, pos, orn_q)
 
-        self.set_joint_position()
+        self.update_joint_positions()
+        self.update_workspace_values()
         self.update_constraints(state["constraint"])
         self.update_selected_planner(state["planner_setup"])
         self.update_planner_type(state["planner_type"])
         self.update_objective(state["objective"])
+        self.set_initial_obstacle_values()
         self.get_current_obstacle()
         self.update_obstacle()
         self.update_status()
@@ -350,6 +351,8 @@ class PathPlannerGUI:
         self.collision_check = self.planner_setup.validity_checker.collision_check_function
         self.constraint_function = self.planner_setup.validity_checker.constraint_function or []
         self.object_mover = self.planner_setup.space_information.object_mover
+        self.update_workspace_values()
+        self.update_joint_positions()
         print(f"Selected setup: {selection}")
 
     def update_planner_type(self, selection: str) -> None:

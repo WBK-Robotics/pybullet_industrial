@@ -208,7 +208,8 @@ class PathPlannerGUI:
                   else str(constraint_list[0]))
         )
         self.selected_constraint_var = tk.StringVar(
-            value=default_constraint_key)
+            value=default_constraint_key
+        )
         self.planner_setup.update_constraints(
             self.constraint_mapping[self.selected_constraint_var.get()]
         )
@@ -250,7 +251,8 @@ class PathPlannerGUI:
 
     def _create_joints_frame(self, parent: tk.Frame) -> None:
         """
-        Creates the joint space control panel.
+        Creates the joint space control panel with an Update button to set the
+        robot's joint state from the GUI values.
 
         Args:
             parent (tk.Frame): Parent frame to contain the widget.
@@ -258,28 +260,40 @@ class PathPlannerGUI:
         joints_frame = tk.LabelFrame(parent, text="Joint Space",
                                      padx=3, pady=3)
         joints_frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
+        # Update button to apply manual joint value changes.
+        tk.Button(
+            joints_frame,
+            text="Update",
+            command=self.set_joint_position,
+            width=8
+        ).grid(row=0, column=0, columnspan=4, padx=2, pady=2)
         for i, joint_name in enumerate(self.joint_order):
+            row = i + 1  # Shift rows down by one for the update button.
             tk.Label(joints_frame, text=joint_name).grid(
-                row=i, column=0, sticky="w", padx=2, pady=1
+                row=row, column=0, sticky="w", padx=2, pady=1
             )
             tk.Button(
                 joints_frame,
                 text="+",
                 command=lambda i=i: self.increment_joint(i),
                 width=2
-            ).grid(row=i, column=1, padx=2, pady=1)
+            ).grid(row=row, column=1, padx=2, pady=1)
             tk.Button(
                 joints_frame,
                 text="-",
                 command=lambda i=i: self.decrement_joint(i),
                 width=2
-            ).grid(row=i, column=2, padx=2, pady=1)
-            tk.Entry(joints_frame, textvariable=self.joint_values[i],
-                     width=6).grid(row=i, column=3, padx=2, pady=1)
+            ).grid(row=row, column=2, padx=2, pady=1)
+            tk.Entry(
+                joints_frame,
+                textvariable=self.joint_values[i],
+                width=6
+            ).grid(row=row, column=3, padx=2, pady=1)
 
     def _create_workspace_frame(self, parent: tk.Frame) -> None:
         """
-        Creates the workspace control panel.
+        Creates the workspace control panel with an Update button to set the
+        robot's end-effector pose from the GUI values.
 
         Args:
             parent (tk.Frame): Parent frame to contain the widget.
@@ -287,25 +301,36 @@ class PathPlannerGUI:
         workspace_frame = tk.LabelFrame(parent, text="Workspace Control",
                                         padx=3, pady=3)
         workspace_frame.grid(row=0, column=1, padx=3, pady=3, sticky="nsew")
+        # Update button to apply manual workspace pose changes.
+        tk.Button(
+            workspace_frame,
+            text="Update",
+            command=self.set_workspace_pose,
+            width=8
+        ).grid(row=0, column=0, columnspan=4, padx=2, pady=2)
         ws_labels = ["X", "Y", "Z", "A", "B", "C"]
         for i, label in enumerate(ws_labels):
+            row = i + 1  # Shift rows down by one for the update button.
             tk.Label(workspace_frame, text=label).grid(
-                row=i, column=0, sticky="w", padx=2, pady=1
+                row=row, column=0, sticky="w", padx=2, pady=1
             )
             tk.Button(
                 workspace_frame,
                 text="-",
                 command=lambda i=i: self.decrement_workspace(i),
                 width=2
-            ).grid(row=i, column=1, padx=2, pady=1)
-            tk.Entry(workspace_frame, textvariable=self.workspace_values[i],
-                     width=6).grid(row=i, column=3, padx=2, pady=1)
+            ).grid(row=row, column=1, padx=2, pady=1)
+            tk.Entry(
+                workspace_frame,
+                textvariable=self.workspace_values[i],
+                width=6
+            ).grid(row=row, column=3, padx=2, pady=1)
             tk.Button(
                 workspace_frame,
                 text="+",
                 command=lambda i=i: self.increment_workspace(i),
                 width=2
-            ).grid(row=i, column=2, padx=2, pady=1)
+            ).grid(row=row, column=2, padx=2, pady=1)
 
     def _create_obstacle_frame(self, parent: tk.Frame) -> None:
         """
@@ -343,8 +368,11 @@ class PathPlannerGUI:
                 command=lambda i=i: self.decrement_obstacle(i),
                 width=2
             ).grid(row=i+1, column=2, padx=2, pady=1)
-            tk.Entry(obstacle_frame, textvariable=self.obstacle_values[i],
-                     width=6).grid(row=i+1, column=3, padx=2, pady=1)
+            tk.Entry(
+                obstacle_frame,
+                textvariable=self.obstacle_values[i],
+                width=6
+            ).grid(row=i+1, column=3, padx=2, pady=1)
 
     def _create_mid_frame(self) -> None:
         """
@@ -760,6 +788,7 @@ class PathPlannerGUI:
                                               np.array(quat))
         except Exception as e:
             print("Error setting workspace pose:", e)
+        self.update_workspace_values()
         self.update_joint_positions()
         self.update_status()
 
@@ -830,17 +859,33 @@ class PathPlannerGUI:
     def set_joint_position(self) -> None:
         """
         Sets the robot joint positions from the GUI input values.
+        Validates joint values and clamps them to allowed limits.
 
         Returns:
             None
         """
-        joint_positions = {
-            self.joint_order[i]: float(self.joint_values[i].get())
-            for i in range(len(self.joint_order))
-        }
+        joint_positions = {}
+        for i, joint_name in enumerate(self.joint_order):
+            try:
+                val = float(self.joint_values[i].get())
+            except ValueError:
+                # If invalid input, default to lower limit.
+                val = self.joint_limits[0][joint_name]
+            lower = self.joint_limits[0][joint_name]
+            upper = self.joint_limits[1][joint_name]
+            # Clamp the value to the range [lower, upper]
+            if val < lower:
+                val = lower
+            elif val > upper:
+                val = upper
+            # Update the GUI entry with the clamped value.
+            self.joint_values[i].set(f"{val:.2f}")
+            joint_positions[joint_name] = val
+
         self.robot.reset_joint_position(joint_positions)
         self.update_workspace_values()
         self.update_status()
+
 
     # ------------------- Obstacle Methods -------------------
     def set_initial_obstacle_values(self) -> None:

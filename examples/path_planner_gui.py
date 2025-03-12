@@ -101,6 +101,7 @@ class PathPlannerGUI:
         self.joint_limits = self.robot.get_joint_limits()
         self.root.title("PyBullet Path Planning")
         self.joint_path = None
+        self.g_code_logger = None
         self.joint_values = [
             tk.StringVar(value="0") for _ in self.joint_order
         ]
@@ -979,10 +980,7 @@ class PathPlannerGUI:
         Returns:
             None
         """
-        self.start = {
-            jn: float(self.joint_values[i].get())
-            for i, jn in enumerate(self.joint_order)
-        }
+        self.start = self.robot.get_joint_position()
         print("Start set:", self.start)
 
     def set_as_goal(self) -> None:
@@ -992,10 +990,7 @@ class PathPlannerGUI:
         Returns:
             None
         """
-        self.goal = {
-            jn: float(self.joint_values[i].get())
-            for i, jn in enumerate(self.joint_order)
-        }
+        self.goal = self.robot.get_joint_position()
         print("Goal set:", self.goal)
 
     def plan(self) -> None:
@@ -1032,13 +1027,18 @@ class PathPlannerGUI:
         Returns:
             None
         """
+        self.g_code_logger = pi.GCodeLogger(self.robot)
         if self.joint_path:
+            start_state = self.joint_path.get_joint_configuration(0)
+            self.robot.reset_joint_position(start_state)
+            self.g_code_logger = pi.GCodeLogger(self.robot)
             for joint_conf, _ in self.joint_path:
                 self.robot.reset_joint_position(joint_conf)
                 if self.object_mover:
                     pos, ori = self.robot.get_endeffector_pose()
                     self.object_mover.match_moving_objects(pos, ori)
                 time.sleep(0.03)
+                self.g_code_logger.update_g_code()
             print("Execution completed.")
         else:
             print("No execution path available.")

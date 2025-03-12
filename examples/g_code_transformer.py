@@ -33,38 +33,6 @@ def transform_eulers_in_gcode(g_code: list):
     return return_code
 
 
-def grip_oject(gripper: pi.Gripper, object: int) -> None:
-    """
-    Grip an object with a gripper.
-
-    Args:
-        gripper: The gripper instance.
-        object: The object ID.
-    """
-    link_name_to_index = {}
-    for joint_number in range(p.getNumJoints(gripper.urdf)):
-        link_name = p.getJointInfo(gripper.urdf, joint_number)[
-            12].decode("utf-8")
-    link_name_to_index[link_name] = joint_number
-
-    last_link = max(link_name_to_index)
-    tcp_id = link_name_to_index[last_link]
-
-    position_g, orientation_g = gripper.get_tool_pose()
-    inv_pos, inv_orn = p.invertTransform(position_g, orientation_g)
-    position_o, orientation_o = p.getBasePositionAndOrientation(object)
-    restraint_pos, restraint_orn = p.multiplyTransforms(
-        inv_pos, inv_orn, position_o, orientation_o)
-    constraint = p.createConstraint(gripper.urdf, tcp_id,
-                                    object, -1,
-                                    p.JOINT_FIXED, [0, 0, 0],
-                                    parentFramePosition=restraint_pos,
-                                    childFramePosition=[0, 0, 0],
-                                    parentFrameOrientation=restraint_orn,
-                                    childFrameOrientation=None)
-    return constraint
-
-
 def check_endeffector_upright(robot: pi.RobotBase) -> bool:
     """
     Check if the robot's end-effector is upright within tolerance.
@@ -363,39 +331,8 @@ def setup_planner_gui(robots, gripper, objects):
     )
     root.mainloop()
     joint_path = copy.deepcopy(gui.joint_path)
-    return joint_path
-
-
-def simulate_joint_path(joint_path, robots, gripper, objects):
-    g_code_processor = pi.GCodeProcessor(robot=robots[0])
-    g_code_logger = pi.GCodeLogger(robots[0])
-    gcode_iter = iter(g_code_processor)
-
-    joint_g_code = g_code_processor.joint_path_to_g_code(joint_path)
-    g_code_processor.g_code = joint_g_code
-
-    start_state = joint_path.get_joint_configuration(0)
-    robots[0].reset_joint_position(start_state)
-
-    time.sleep(1)
-    for _ in gcode_iter:
-        time.sleep(0.01)
-        g_code_logger.update_g_code_robot_view()
-
-    se3_g_code = g_code_logger.g_code_robot_view
-
-    return se3_g_code
-
-
-def simulate_se3_g_code(se3_g_code, joint_path):
-    g_code_processor = pi.GCodeProcessor(robot=robots[0])
-    gcode_iter = iter(g_code_processor)
-    start_state = joint_path.get_joint_configuration(0)
-    robots[0].reset_joint_position(start_state)
-    g_code_processor.g_code = se3_g_code
-    time.sleep(1)
-    for _ in gcode_iter:
-        time.sleep(0.01)
+    g_code_logger: pi.GCodeLogger = gui.g_code_logger
+    return joint_path, g_code_logger
 
 
 def transform_g_code(g_code):
@@ -425,12 +362,9 @@ if __name__ == "__main__":
 
     robots, gripper, objects = setup_envirnoment(working_dir)
 
-    joint_path = setup_planner_gui(robots, gripper, objects)
+    _, g_code_logger = setup_planner_gui(robots, gripper, objects)
 
-    se3_g_code = simulate_joint_path(joint_path, robots,
-                                     gripper, objects)
-
-    simulate_se3_g_code(se3_g_code, joint_path)
+    se3_g_code = g_code_logger.g_code_robot_view
 
     transformed_g_code = transform_g_code(se3_g_code)
 

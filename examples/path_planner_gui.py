@@ -791,6 +791,7 @@ class PathPlannerGUI:
             print("Error setting workspace pose:", e)
         self.update_workspace_values()
         self.update_joint_positions()
+        self.set_joint_position()
         self.update_status()
 
     def increment_workspace(self, index: int) -> None:

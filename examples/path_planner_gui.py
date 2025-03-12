@@ -91,6 +91,9 @@ class PathPlannerGUI:
         self.obstacles = obstacles
         self._init_obstacles()
 
+        # Fine tuning toggle for obstacles (default is False).
+        self.fine_tune = tk.BooleanVar(value=False)
+
         # Initialize workspace and joint control values.
         self.workspace_values = [
             tk.StringVar(value="0") for _ in range(6)
@@ -340,8 +343,7 @@ class PathPlannerGUI:
         Args:
             parent (tk.Frame): Parent frame to contain the widget.
         """
-        obstacle_frame = tk.LabelFrame(parent, text="Obstacle",
-                                       padx=3, pady=3)
+        obstacle_frame = tk.LabelFrame(parent, text="Obstacle", padx=3, pady=3)
         obstacle_frame.grid(row=0, column=2, padx=3, pady=3, sticky="nsew")
         tk.Label(obstacle_frame, text="Select").grid(
             row=0, column=0, sticky="w", padx=2, pady=1
@@ -352,6 +354,13 @@ class PathPlannerGUI:
             *self.obstacle_names,
             command=lambda _: self.set_initial_obstacle_values()
         ).grid(row=0, column=1, padx=2, pady=1)
+
+        tk.Checkbutton(
+            obstacle_frame,
+            text="Fine Tune",
+            variable=self.fine_tune
+        ).grid(row=0, column=2, padx=2, pady=1)
+
         obs_labels = ["X", "Y", "Z", "A", "B", "C"]
         for i, label in enumerate(obs_labels):
             tk.Label(obstacle_frame, text=label).grid(
@@ -919,7 +928,8 @@ class PathPlannerGUI:
             None
         """
         cur = float(self.obstacle_values[index].get())
-        new_val = cur + 0.1
+        step = 0.01 if self.fine_tune.get() else 0.1
+        new_val = cur + step
         self.obstacle_values[index].set(f"{new_val:.2f}")
         self.update_obstacle()
 
@@ -934,7 +944,8 @@ class PathPlannerGUI:
             None
         """
         cur = float(self.obstacle_values[index].get())
-        new_val = cur - 0.1
+        step = 0.01 if self.fine_tune.get() else 0.1
+        new_val = cur - step
         self.obstacle_values[index].set(f"{new_val:.2f}")
         self.update_obstacle()
 

@@ -63,8 +63,8 @@ def setup_envirnoment(working_dir: str):
     urdf_SRG = os.path.join(
         working_dir, 'robot_descriptions', 'SRG.urdf'
     )
-    urdf_cube_small = os.path.join(
-        working_dir, 'robot_descriptions', 'cube_small.urdf'
+    urdf_emo_sr = os.path.join(
+        working_dir, 'Objects', 'EMO_SR_full.urdf'
     )
     urdf_box = os.path.join(
         working_dir, 'Objects', 'Box', 'stor_box.urdf'
@@ -118,13 +118,15 @@ def setup_envirnoment(working_dir: str):
     )
 
     # --- Object Loading ---
-    posBox = np.array([0.4, -0.1, 0.261])
+    posBox = np.array([0.4, 0.3, 0.261])
     box = p.loadURDF(
-        urdf_box, posBox, useFixedBase=True
+        urdf_box, posBox, useFixedBase=True,
+        globalScaling=2.5
     )
-    cube_small = p.loadURDF(
-        urdf_cube_small, posBox + [0, -0.2, 0.1],
-        useFixedBase=False
+    emo_sr = p.loadURDF(
+        urdf_emo_sr, posBox + [0.2, -0.4, 0],
+        useFixedBase=True,
+        globalScaling=0.001
     )
 
     spawn_point_fixture = [-0.00954569224268198, 0.014756819233298302,
@@ -146,7 +148,7 @@ def setup_envirnoment(working_dir: str):
         useFixedBase=True,
         globalScaling=0.001)
 
-    wall_pos = posBox + [0, 0, 0.3]
+    wall_pos = [0.4, 0, 0.3]
     wall_size = [0.5, 0.5, 0.05]
     col_box_id = p.createCollisionShape(
         p.GEOM_BOX, halfExtents=wall_size
@@ -158,7 +160,7 @@ def setup_envirnoment(working_dir: str):
         baseOrientation=p.getQuaternionFromEuler([-np.pi / 2, 0, 0])
     )
     # Set the wall color to dark grey transparent glass
-    p.changeVisualShape(wall, -1, rgbaColor=[0.3, 0.3, 0.3, 0.8])
+    p.changeVisualShape(wall, -1, rgbaColor=[0.8, 0.9, 1, 0.8])
 
     # -------------------------------
     # Path Planner Setup
@@ -186,7 +188,7 @@ def setup_envirnoment(working_dir: str):
 
     gripper = [srg_gripper]
     robots = [robot_C, robot_D]
-    objects = [cube_small, box,  # fixture,
+    objects = [emo_sr, box,  # fixture,
                wall, table]
 
     return robots, gripper, objects
@@ -209,8 +211,8 @@ def setup_planner_gui(robots, gripper, objects):
         gripper[0].urdf, position_offset, orientation_offset
     )
 
-    # Add cube_small with an offset.
-    position_offset = np.array([0, 0, -0.2])
+    # Add emo_sr with an offset.
+    position_offset = np.array([0, 0, -0.3])
     object_mover.add_object(objects[0], position_offset)
 
     # Configure collision checking.
@@ -270,6 +272,15 @@ def setup_planner_gui(robots, gripper, objects):
     def aitstar(si):
         return og.AITstar(si)
 
+    def rrtconnect(si):
+        return og.RRTConnect(si)
+
+    def sbl(si):
+        return og.SBL(si)
+
+    def bfmt(si):
+        return og.BFMT(si)
+
     def get_clearance():
         return collision_checker.get_global_distance(0.3)
 
@@ -316,7 +327,8 @@ def setup_planner_gui(robots, gripper, objects):
     path_planner_list = [path_planner_1, path_planner_2, path_planner_3,
                          path_planner_4]
     planner_list = [bitstar, informed_rrtstar,
-                    rrt, rrtsharp, abitstar, aitstar]
+                    rrt, rrtsharp, abitstar, aitstar,
+                    rrtconnect, sbl, bfmt]
     objective_list = [
         None, clearance_objective, state_cost_integral_objective,
         path_length_objective, multi_objective

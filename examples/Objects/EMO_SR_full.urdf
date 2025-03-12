@@ -10,16 +10,16 @@
     </contact>
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 0"/>
-       <mass value="1.0"/>
-       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+      <mass value="1.0"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
     </inertial>
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
         <mesh filename="EMO_SR_full.stl" scale="1 1 1"/>
       </geometry>
-       <material name="white">
-        <color rgba="1 1 1 1"/>
+      <material name="dark_metallic">
+        <color rgba="0.3 0.3 0.3 1"/>
       </material>
     </visual>
     <collision>
@@ -27,10 +27,9 @@
       <geometry>
         <mesh filename="EMO_SR_full.stl" scale="1 1 1"/>
       </geometry>
-       <material name="white">
-        <color rgba="1 1 1 1"/>
+      <material name="dark_metallic">
+        <color rgba="0.3 0.3 0.3 1"/>
       </material>
     </collision>
   </link>
 </robot>
-

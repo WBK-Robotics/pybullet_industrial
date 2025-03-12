@@ -1,6 +1,6 @@
 {
     "selected_obstacle": "box",
-    "planner_setup": "Solely Robot",
+    "planner_setup": "Robot+ Gripper+ Object",
     "planner_type": "bitstar",
     "objective": "None",
     "constraint": "None",
@@ -9,35 +9,35 @@
     "start": null,
     "goal": null,
     "obstacles_state": {
-        "cube": {
+        "EMO_SR_full": {
             "pos": [
-                0.17,
-                -0.24,
-                1.55
+                -0.025391744449734688,
+                -0.34044742584228516,
+                1.4523849487304688
             ],
             "orn_e": [
-                0.0,
-                0.01,
-                2.68
+                -0.0034260035898050056,
+                0.011074863733601649,
+                2.681573670700403
             ]
         },
         "box": {
             "pos": [
-                0.4,
-                1.4,
-                0.26
+                -0.02,
+                -0.27,
+                0.27
             ],
             "orn_e": [
-                0.0,
+                1.5199999999999998,
                 -0.0,
                 0.0
             ]
         },
         "": {
             "pos": [
-                -1.1,
-                -0.1,
-                0.56
+                0.2,
+                0.0,
+                0.3
             ],
             "orn_e": [
                 -1.57,

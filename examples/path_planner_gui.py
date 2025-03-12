@@ -251,10 +251,31 @@ class PathPlannerGUI:
             self.saved_state_var.set("")
 
     def save_gui_state(self):
-        # Gather current state
+        # Save joint path values as before
         joint_path_values = []
         if self.joint_path is not None:
             joint_path_values = self.joint_path.joint_values.tolist()
+
+        # Save each obstacle's position and orientation (in Euler angles)
+        obstacles_state = {}
+        for obs in self.obstacles:
+            pos, orn_q = p.getBasePositionAndOrientation(obs)
+            orn_e = p.getEulerFromQuaternion(orn_q)
+            # Get the obstacle's name (as used in the GUI)
+            info = p.getBodyInfo(obs)
+            name = info[1].decode("utf-8") if isinstance(info[1], bytes) else info[1]
+            obstacles_state[name] = {"pos": pos, "orn_e": orn_e}
+
+        # robot_infomformation = []
+        # robot_urdf = [self.robot.urdf]
+        # for planner_setup in self.planner_setups:
+        #     #check if urdf is already in the list
+        #     if planner_setup.robot.urdf not in robot_urdf:
+        #         robot_urdf.append(planner_setup.robot.urdf)
+        #         joint_state = planner_setup.robot.get_joint_state()
+        #         robot_infomformation.append(planner_setup.robot.urdf, joint_state)
+
+
         state = {
             "joint_values": {jn: self.joint_values[i].get() for i, jn in enumerate(self.joint_order)},
             "workspace_values": [var.get() for var in self.workspace_values],
@@ -267,7 +288,8 @@ class PathPlannerGUI:
             "planning_time": self.planning_time_var.get(),
             "joint_path_values": joint_path_values,
             "start": self.start,
-            "goal": self.goal
+            "goal": self.goal,
+            "obstacles_state": obstacles_state
         }
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         filename = f"state_{timestamp}.json"
@@ -279,7 +301,6 @@ class PathPlannerGUI:
 
     def load_gui_state(self, filename):
         full_path = os.path.join(self.gui_states_folder, filename)
-        # try:
         with open(full_path, "r") as f:
             state = json.load(f)
         # Update joint values
@@ -294,20 +315,33 @@ class PathPlannerGUI:
         self.selected_objective_var.set(state["objective"])
         self.selected_constraint_var.set(state["constraint"])
         self.planning_time_var.set(state["planning_time"])
-        self.joint_path = pi.JointPath(np.array(state["joint_path_values"]), self.joint_order)
-        self.start = state["start"]
-        self.goal = state["goal"]
+
+        # Reload joint path, start, and goal configurations
+        if state["joint_path_values"]:
+            self.joint_path = pi.JointPath(np.array(state["joint_path_values"]), self.joint_order)
+            self.start = state["start"]
+            self.goal = state["goal"]
         print(f"Loaded GUI state from {filename}")
+
+        # Reset each obstacle's position and orientation if saved
+        if "obstacles_state" in state:
+            obstacles_state = state["obstacles_state"]
+            for obs, name in zip(self.obstacles, self.obstacle_names):
+                if name in obstacles_state:
+                    obs_state = obstacles_state[name]
+                    pos = obs_state["pos"]
+                    orn_e = obs_state["orn_e"]
+                    orn_q = p.getQuaternionFromEuler(orn_e)
+                    p.resetBasePositionAndOrientation(obs, pos, orn_q)
 
         self.set_joint_position()
         self.update_constraints(state["constraint"])
         self.update_selected_planner(state["planner_setup"])
         self.update_planner_type(state["planner_type"])
         self.update_objective(state["objective"])
-
+        self.get_current_obstacle()
+        self.update_obstacle()
         self.update_status()
-        # except Exception as e:
-        #     print("Error loading GUI state:", e)
 
     # --------------------- Other methods remain unchanged ---------------------
     def update_selected_planner(self, selection: str) -> None:

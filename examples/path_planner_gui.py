@@ -1,6 +1,7 @@
 import tkinter as tk
 import os
 import time
+import json
 import pybullet_industrial as pi
 import pybullet as p
 import numpy as np
@@ -24,28 +25,26 @@ class ConsoleRedirector:
 class PathPlannerGUI:
     """
     Compact GUI for the Path Planner. Provides controls for robot joints,
-    workspace (end-effector) pose, obstacle parameters, planner selections
-    (setup, type, optimization objective, constraint functions), planning time,
-    and path execution.
+    workspace (end-effector) pose, obstacle parameters, planner selections,
+    and now saving/loading the current GUI state.
     """
 
-    def __init__(self, root: tk.Tk, planner_setup, obstacles, planner_list, objective_list, constraint_list) -> None:
+    def __init__(self, root: tk.Tk, planner_setup, obstacles, planner_list, objective_list, constraint_list, working_dir=os.getcwd()) -> None:
         self.root: tk.Tk = root
 
-        # Console output frame in the top right corner
+        # --- Console Output ---
         console_frame = tk.Frame(self.root)
         console_frame.grid(row=0, column=1, padx=3, pady=3, sticky="nsew")
         tk.Label(console_frame, text="Console Output").pack(side=tk.TOP, anchor="w")
         self.console_text = tk.Text(console_frame, height=14, width=40)
         self.console_text.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        # Redirect stdout to the text widget
         sys.stdout = ConsoleRedirector(self.console_text)
 
-        # Adjust grid configuration so the console box stays in the top right
+        # --- Grid configuration ---
         self.root.grid_columnconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=0)
 
-        # Support multiple planner setups.
+        # --- Planner Setup ---
         if isinstance(planner_setup, list):
             self.planner_setups = planner_setup
             self.planner_mappings = {p_obj.name: p_obj for p_obj in self.planner_setups}
@@ -57,13 +56,13 @@ class PathPlannerGUI:
             self.selected_planner_var = tk.StringVar(value=planner_setup.name)
             self.planner_setup = planner_setup
 
-        # Planner types mapping.
+        # --- Planner type ---
         self.planner_type_mapping = {ptype.__name__: ptype for ptype in planner_list}
         default_ptype = list(self.planner_type_mapping.keys())[0]
         self.selected_planner_type_var = tk.StringVar(value=default_ptype)
         self.planner_setup.setPlanner(self.planner_type_mapping[self.selected_planner_type_var.get()])
 
-        # Optimization objective mapping.
+        # --- Optimization objective ---
         self.objective_mapping = {}
         for obj in objective_list:
             key = "None" if obj is None else (obj.__name__ if hasattr(obj, "__name__") else str(obj))
@@ -73,7 +72,7 @@ class PathPlannerGUI:
         self.selected_objective_var = tk.StringVar(value=default_obj_key)
         self.planner_setup.setOptimizationObjective(self.objective_mapping[self.selected_objective_var.get()])
 
-        # Constraint functions mapping.
+        # --- Constraint functions ---
         self.constraint_mapping = {}
         for cf in constraint_list:
             key = "None" if cf is None else (cf.__name__ if hasattr(cf, "__name__") else str(cf))
@@ -83,18 +82,15 @@ class PathPlannerGUI:
         self.selected_constraint_var = tk.StringVar(value=default_constraint_key)
         self.planner_setup.update_constraints(self.constraint_mapping[self.selected_constraint_var.get()])
 
-        # Planning time slider variable.
+        # --- Planning time ---
         self.planning_time_var = tk.IntVar(value=5)
 
-        # Retrieve robot and related objects.
+        # --- Robot and obstacles ---
         self.robot = self.planner_setup.robot
         self.collision_check = self.planner_setup.validity_checker.collision_check_function
         self.constraint_function = self.planner_setup.validity_checker.constraint_function
         self.object_mover = self.planner_setup.space_information.object_mover
-
-        # Obstacles provided as a list.
         self.obstacles = obstacles
-        # Extract URDF names from obstacles via p.getBodyInfo()
         self.obstacle_names = []
         for obs in self.obstacles:
             info = p.getBodyInfo(obs)
@@ -102,43 +98,39 @@ class PathPlannerGUI:
             self.obstacle_names.append(name)
         self.selected_obstacle_str = tk.StringVar(value=self.obstacle_names[0] if self.obstacle_names else "None")
 
-        # Workspace control values for end-effector pose: position (x,y,z) and Euler angles (a,b,c)
+        # --- Workspace and joint control values ---
         self.workspace_values = [tk.StringVar(value="0") for _ in range(6)]
-
         self.start = self.robot.get_joint_state()
         self.goal = self.robot.get_joint_state()
         self.joint_order = self.robot.get_moveable_joints()[0]
         self.joint_limits = self.robot.get_joint_limits()
         self.root.title("PyBullet Path Planning")
-
         self.joint_path = None
-
         self.joint_values = [tk.StringVar(value="0") for _ in self.joint_order]
         self.obstacle_values = [tk.StringVar(value="0") for _ in range(6)]
         self.collision_status = tk.StringVar(value="green")
         self.constraint_status = tk.StringVar(value="green")
         self.current_box_size = [0.5, 0.5, 0.05]
 
+        # --- GUI State folder & variables ---
+        self.gui_states_folder = os.path.join(working_dir, 'gui_states')
+        os.makedirs(self.gui_states_folder, exist_ok=True)
+        self.saved_state_var = tk.StringVar(value="")  # holds the selected state file name
+        self.gui_state_options = []
+
         self.create_widgets()
-        self.update_joint_positions()
+        self.refresh_state_dropdown()  # load existing saved states
         self.set_initial_obstacle_values()
-        self.update_workspace_values()  # initialize workspace fields from current end-effector pose
+        self.update_workspace_values()
+        self.update_joint_positions()  # initialize workspace fields from current end-effector pose
         self.update_status()
 
-    def get_current_obstacle(self):
-        """Helper function to get the currently selected obstacle based on its URDF name."""
-        selected_name = self.selected_obstacle_str.get()
-        if selected_name in self.obstacle_names:
-            idx = self.obstacle_names.index(selected_name)
-            return self.obstacles[idx], idx
-        return None, -1
-
     def create_widgets(self) -> None:
-        # Top left frame: Contains three panels: Joint Space, Workspace Control, and Obstacle.
+        # --- Top Left Frame: Joint, Workspace and Obstacle Controls ---
         top_left_frame = tk.Frame(self.root)
         top_left_frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
 
-        # --- Joint Space Control ---
+        # Joint Space Control
         joints_frame = tk.LabelFrame(top_left_frame, text="Joint Space", padx=3, pady=3)
         joints_frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
         for i, joint_name in enumerate(self.joint_order):
@@ -150,7 +142,7 @@ class PathPlannerGUI:
             tk.Entry(joints_frame, textvariable=self.joint_values[i], width=6)\
                 .grid(row=i, column=3, padx=2, pady=1)
 
-        # --- Workspace Control Panel ---
+        # Workspace Control Panel
         workspace_frame = tk.LabelFrame(top_left_frame, text="Workspace Control", padx=3, pady=3)
         workspace_frame.grid(row=0, column=1, padx=3, pady=3, sticky="nsew")
         ws_labels = ["X", "Y", "Z", "A", "B", "C"]
@@ -163,7 +155,7 @@ class PathPlannerGUI:
             tk.Button(workspace_frame, text="+", command=lambda i=i: self.increment_workspace(i), width=2)\
                 .grid(row=i, column=2, padx=2, pady=1)
 
-        # --- Obstacle Control Panel ---
+        # Obstacle Control Panel
         obstacle_frame = tk.LabelFrame(top_left_frame, text="Obstacle", padx=3, pady=3)
         obstacle_frame.grid(row=0, column=2, padx=3, pady=3, sticky="nsew")
         tk.Label(obstacle_frame, text="Select").grid(row=0, column=0, sticky="w", padx=2, pady=1)
@@ -232,6 +224,92 @@ class PathPlannerGUI:
         tk.Button(bottom_frame, text="Exit", command=self.root.quit, width=8)\
             .grid(row=0, column=4, padx=3, pady=3)
 
+        # --- GUI State Controls ---
+        state_frame = tk.Frame(self.root)
+        state_frame.grid(row=3, column=0, columnspan=2, padx=3, pady=3, sticky="ew")
+        tk.Label(state_frame, text="Saved GUI States:").grid(row=0, column=0, sticky="w", padx=2)
+        # Dropdown for loading saved state files
+        self.state_dropdown = tk.OptionMenu(state_frame, self.saved_state_var, ())
+        self.state_dropdown.grid(row=0, column=1, padx=2, pady=2)
+        # Save button to write current state
+        tk.Button(state_frame, text="Save State", command=self.save_gui_state, width=10)\
+            .grid(row=0, column=2, padx=2, pady=2)
+
+    def refresh_state_dropdown(self):
+        # List all JSON state files in the folder
+        files = [f for f in os.listdir(self.gui_states_folder) if f.endswith('.json')]
+        files.sort()
+        self.gui_state_options = files
+        menu = self.state_dropdown["menu"]
+        menu.delete(0, "end")
+        for file in files:
+            menu.add_command(label=file, command=lambda file=file: self.load_gui_state(file))
+        if files:
+            # Set default value if any file exists.
+            self.saved_state_var.set(files[0])
+        else:
+            self.saved_state_var.set("")
+
+    def save_gui_state(self):
+        # Gather current state
+        joint_path_values = []
+        if self.joint_path is not None:
+            joint_path_values = self.joint_path.joint_values.tolist()
+        state = {
+            "joint_values": {jn: self.joint_values[i].get() for i, jn in enumerate(self.joint_order)},
+            "workspace_values": [var.get() for var in self.workspace_values],
+            "obstacle_values": [var.get() for var in self.obstacle_values],
+            "selected_obstacle": self.selected_obstacle_str.get(),
+            "planner_setup": self.selected_planner_var.get(),
+            "planner_type": self.selected_planner_type_var.get(),
+            "objective": self.selected_objective_var.get(),
+            "constraint": self.selected_constraint_var.get(),
+            "planning_time": self.planning_time_var.get(),
+            "joint_path_values": joint_path_values,
+            "start": self.start,
+            "goal": self.goal
+        }
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = f"state_{timestamp}.json"
+        full_path = os.path.join(self.gui_states_folder, filename)
+        with open(full_path, "w") as f:
+            json.dump(state, f, indent=4)
+        print(f"Saved GUI state to {filename}")
+        self.refresh_state_dropdown()
+
+    def load_gui_state(self, filename):
+        full_path = os.path.join(self.gui_states_folder, filename)
+        # try:
+        with open(full_path, "r") as f:
+            state = json.load(f)
+        # Update joint values
+        for i, jn in enumerate(self.joint_order):
+            self.joint_values[i].set(state["joint_values"].get(jn, "0"))
+
+        for i in range(6):
+            self.obstacle_values[i].set(state["obstacle_values"][i])
+        self.selected_obstacle_str.set(state["selected_obstacle"])
+        self.selected_planner_var.set(state["planner_setup"])
+        self.selected_planner_type_var.set(state["planner_type"])
+        self.selected_objective_var.set(state["objective"])
+        self.selected_constraint_var.set(state["constraint"])
+        self.planning_time_var.set(state["planning_time"])
+        self.joint_path = pi.JointPath(np.array(state["joint_path_values"]), self.joint_order)
+        self.start = state["start"]
+        self.goal = state["goal"]
+        print(f"Loaded GUI state from {filename}")
+
+        self.set_joint_position()
+        self.update_constraints(state["constraint"])
+        self.update_selected_planner(state["planner_setup"])
+        self.update_planner_type(state["planner_type"])
+        self.update_objective(state["objective"])
+
+        self.update_status()
+        # except Exception as e:
+        #     print("Error loading GUI state:", e)
+
+    # --------------------- Other methods remain unchanged ---------------------
     def update_selected_planner(self, selection: str) -> None:
         self.planner_setup = self.planner_mappings[selection]
         self.robot = self.planner_setup.robot
@@ -258,29 +336,14 @@ class PathPlannerGUI:
         print(f"Set constraints: {selection}")
 
     def update_status(self) -> None:
-        # Update joint state text fields using the robot's joint state.
-        joint_state = self.robot.get_joint_state()
-        for i, jn in enumerate(self.joint_order):
-            self.joint_values[i].set(f"{joint_state[jn]['position']:.2f}")
-
-        # Update workspace fields using the robot's end-effector pose.
-        pos, ori_q = self.robot.get_endeffector_pose()
-        euler = p.getEulerFromQuaternion(ori_q)
-        for i in range(3):
-            self.workspace_values[i].set(f"{pos[i]:.2f}")
-        for i in range(3, 6):
-            self.workspace_values[i].set(f"{euler[i-3]:.2f}")
-
-        # Update moving object (if available) using the current end-effector pose.
         if self.object_mover:
+            pos, ori_q = self.robot.get_endeffector_pose()
             self.object_mover.match_moving_objects(pos, ori_q)
-
         # Update collision indicator.
         valid_collision = self.collision_check()
         self.collision_status.set("green" if valid_collision else "red")
         self.collision_light.config(bg=self.collision_status.get())
-
-        # Update constraint and clearance indicators.
+        # Update constraints and clearance.
         self.update_constraint_status()
         self.update_clearance_status()
 
@@ -306,7 +369,6 @@ class PathPlannerGUI:
             self.obstacle_values[i].set(f"{orn_e[i-3]:.2f}")
 
     def update_workspace_values(self) -> None:
-        """Update the workspace control fields from the current end-effector pose."""
         pos, ori_q = self.robot.get_endeffector_pose()
         euler = p.getEulerFromQuaternion(ori_q)
         for i in range(3):
@@ -315,7 +377,6 @@ class PathPlannerGUI:
             self.workspace_values[i].set(f"{euler[i-3]:.2f}")
 
     def set_workspace_pose(self) -> None:
-        """Set the end-effector pose based on workspace control values."""
         try:
             pos = [float(self.workspace_values[i].get()) for i in range(3)]
             euler = [float(self.workspace_values[i].get()) for i in range(3, 6)]
@@ -323,6 +384,7 @@ class PathPlannerGUI:
             self.robot.reset_endeffector_pose(np.array(pos), np.array(quat))
         except Exception as e:
             print("Error setting workspace pose:", e)
+        self.update_joint_positions()
         self.update_status()
 
     def increment_workspace(self, index: int) -> None:
@@ -341,7 +403,6 @@ class PathPlannerGUI:
         joint_state = self.robot.get_joint_state()
         for i, jn in enumerate(self.joint_order):
             self.joint_values[i].set(f"{joint_state[jn]['position']:.2f}")
-        self.update_status()
 
     def increment_joint(self, index: int) -> None:
         cur = float(self.joint_values[index].get())
@@ -349,7 +410,7 @@ class PathPlannerGUI:
         joint_name = self.joint_order[index]
         if new_val <= self.joint_limits[1][joint_name]:
             self.joint_values[index].set(f"{new_val:.2f}")
-            self.apply_joint_position(index, new_val)
+            self.set_joint_position()
 
     def decrement_joint(self, index: int) -> None:
         cur = float(self.joint_values[index].get())
@@ -357,7 +418,7 @@ class PathPlannerGUI:
         joint_name = self.joint_order[index]
         if new_val >= self.joint_limits[0][joint_name]:
             self.joint_values[index].set(f"{new_val:.2f}")
-            self.apply_joint_position(index, new_val)
+            self.set_joint_position()
 
     def increment_obstacle(self, index: int) -> None:
         cur = float(self.obstacle_values[index].get())
@@ -379,9 +440,10 @@ class PathPlannerGUI:
         p.resetBasePositionAndOrientation(obstacle_id, pos, orn_q)
         self.update_status()
 
-    def apply_joint_position(self, index: int, position: float) -> None:
-        joint_name = self.joint_order[index]
-        self.robot.reset_joint_position({joint_name: position})
+    def set_joint_position(self) -> None:
+        joint_positions = {self.joint_order[i]: float(self.joint_values[i].get()) for i in range(len(self.joint_order))}
+        self.robot.reset_joint_position(joint_positions)
+        self.update_workspace_values()
         self.update_status()
 
     def set_as_start(self) -> None:
@@ -395,20 +457,24 @@ class PathPlannerGUI:
     def plan(self) -> None:
         planning_time = self.planning_time_var.get()
         print(f"Planning (allowed time = {planning_time}s)...")
-        self.res, self.joint_path = self.planner_setup.plan_start_goal(self.start, self.goal, allowed_time=planning_time)
+        _ , self.joint_path = self.planner_setup.plan_start_goal(self.start, self.goal, allowed_time=planning_time)
 
     def run(self) -> None:
-        if self.res:
-            #self.g_code = pi.GCodeProcessor.joint_path_to_g_code(joint_path)
+        if self.joint_path:
             for joint_conf, _ in self.joint_path:
                 self.robot.reset_joint_position(joint_conf)
                 if self.object_mover:
                     pos, ori = self.robot.get_endeffector_pose()
                     self.object_mover.match_moving_objects(pos, ori)
                 time.sleep(0.03)
-            # self.robot.reset_joint_position(self.start)
-            self.update_joint_positions()
             print("Execution completed.")
         else:
-            print("No solution found.")
+            print("No excution path available.")
         self.update_status()
+
+    def get_current_obstacle(self):
+        selected_name = self.selected_obstacle_str.get()
+        if selected_name in self.obstacle_names:
+            idx = self.obstacle_names.index(selected_name)
+            return self.obstacles[idx], idx
+        return None, -1

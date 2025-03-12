@@ -85,7 +85,6 @@ def check_endeffector_upright(robot: pi.RobotBase) -> bool:
 
 def setup_envirnoment(working_dir: str):
 
-
     # Define URDF file paths for objects and robots.
     urdf_fofa = os.path.join(working_dir, 'Objects', 'FoFa', 'FoFa.urdf')
     urdf_comau = os.path.join(
@@ -219,7 +218,7 @@ def setup_envirnoment(working_dir: str):
 
     gripper = [srg_gripper]
     robots = [robot_C, robot_D]
-    objects = [cube_small, box, #fixture,
+    objects = [cube_small, box,  # fixture,
                wall, table]
 
     return robots, gripper, objects
@@ -333,12 +332,21 @@ def setup_planner_gui(robots, gripper, objects):
     )
     path_planner_3.name = "Solely Robot"
 
+    path_planner_4 = pi.PbiPlannerSimpleSetup(
+        robot=robots[1],
+        collision_check_function=collision_check,
+        planner_type=bitstar,
+        clearance_function=get_clearance
+    )
+    path_planner_4.name = "2nd Robot"
+
     # -------------------------------
     # GUI Setup
     # -------------------------------
     # Prepare lists for planner setups, planner types, objectives, and
     # constraints.
-    path_planner_list = [path_planner_1, path_planner_2, path_planner_3]
+    path_planner_list = [path_planner_1, path_planner_2, path_planner_3,
+                         path_planner_4]
     planner_list = [bitstar, informed_rrtstar,
                     rrt, rrtsharp, abitstar, aitstar]
     objective_list = [
@@ -420,7 +428,7 @@ if __name__ == "__main__":
     joint_path = setup_planner_gui(robots, gripper, objects)
 
     se3_g_code = simulate_joint_path(joint_path, robots,
-                                           gripper, objects)
+                                     gripper, objects)
 
     simulate_se3_g_code(se3_g_code, joint_path)
 

@@ -164,7 +164,7 @@ class PbiSpaceInformation(ob.SpaceInformation):
 
     def __init__(self, state_space: PbiStateSpace,
                  object_mover: PbiObjectMover,
-                 validity_resolution: float = 0.0001) -> None:
+                 validity_resolution: float = 0.005) -> None:
         """
         Initializes the space information with the state space and resolution.
 

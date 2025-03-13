@@ -47,7 +47,7 @@ def check_endeffector_upright(robot: pi.RobotBase) -> bool:
         robot.get_endeffector_pose()[1]
     )
     target = np.array([0, 0, 0])
-    tol = np.array([0.3, 0.3, 2 * np.pi])
+    tol = np.array([0.05, 0.05, 2 * np.pi])
     return np.all(np.abs(orientation - target) <= tol)
 
 
@@ -99,14 +99,14 @@ def setup_envirnoment(working_dir: str):
     # Robots and Objects Loading
     # -------------------------------
     # --- Robot Loading ---
-    start_pos_robot_C = np.array([-2.135, 0, 0])
-    start_orientation_robot_C = p.getQuaternionFromEuler([0, 0, 0])
+    start_pos_robot_C= np.array([2.135, 0, 0])
+    start_orientation_robot_C = p.getQuaternionFromEuler([0, 0, np.pi])
     robot_C = pi.RobotBase(
         urdf_comau, start_pos_robot_C, start_orientation_robot_C
     )
 
-    start_pos_robot_D = np.array([2.135, 0, 0])
-    start_orientation_robot_D = p.getQuaternionFromEuler([0, 0, np.pi])
+    start_pos_robot_D= np.array([-2.135, 0, 0])
+    start_orientation_robot_D = p.getQuaternionFromEuler([0, 0, 0])
     robot_D = pi.RobotBase(
         urdf_comau, start_pos_robot_D, start_orientation_robot_D
     )
@@ -135,13 +135,13 @@ def setup_envirnoment(working_dir: str):
         np.array([-0.00756672225243951, 0.011473507510403333,
                   1.3312571405821847])
     )
-    # fixture = p.loadURDF(
-    #     urdf_fixture,
-    #     spawn_point_fixture,
-    #     spawn_orient_fixture,
-    #     useFixedBase=True,
-    #     globalScaling=0.001
-    # )
+    fixture = p.loadURDF(
+        urdf_fixture,
+        spawn_point_fixture,
+        spawn_orient_fixture,
+        useFixedBase=True,
+        globalScaling=0.001
+    )
     table = p.loadURDF(
         urdf_table,
         np.array([-1, -0.685, 0.0]),
@@ -189,7 +189,7 @@ def setup_envirnoment(working_dir: str):
     gripper = [srg_gripper]
     robots = [robot_C, robot_D]
     objects = [emo_sr, box,  # fixture,
-               wall, table]
+               wall, table, fixture]
 
     return robots, gripper, objects
 
@@ -212,7 +212,7 @@ def setup_planner_gui(robots, gripper, objects):
     )
 
     # Add emo_sr with an offset.
-    position_offset = np.array([0, 0, -0.3])
+    position_offset = np.array([0, 0, -0.35])
     object_mover.add_object(objects[0], position_offset)
 
     # Configure collision checking.
@@ -278,6 +278,9 @@ def setup_planner_gui(robots, gripper, objects):
 
     def bfmt(si):
         return og.BFMT(si)
+
+    def strrtstar(si):
+        return og.STRRTstar(si)
 
     def get_clearance():
         return motor_clearance.get_global_distance(0.2)

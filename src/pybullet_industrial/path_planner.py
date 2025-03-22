@@ -87,8 +87,7 @@ class PbiStateSpace(ob.RealVectorStateSpace):
         self.robot: RobotBase = robot
         # Get the list of movable joints (first element returned).
         self.joint_order: list = robot.get_moveable_joints()[0]
-        lower_limit, upper_limit = robot.get_joint_limits(
-            set(self.joint_order))
+        lower_limit, upper_limit = robot.get_joint_limits()
         num_dims: int = len(self.joint_order)
         # Initialize the underlying RealVectorStateSpace.
         super().__init__(num_dims)

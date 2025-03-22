@@ -25,7 +25,7 @@ class ToolPath:
     """
 
     def __init__(self, positions: np.array, orientations: np.array = None,
-                 tool_acivations: np.array = None):
+                tool_activations: np.array = None):
 
         self.positions = positions
         if orientations is None:
@@ -37,13 +37,13 @@ class ToolPath:
                     "The position and orientation paths need to have the same length")
             self.orientations = orientations
 
-        if tool_acivations is None:
-            self.tool_activations = np.zeros(len(self.positions[0]))
+        if tool_activations is None:
+            self.tool_activations = np.zeros(len(self.positions[0]), dtype=bool)
         else:
-            if len(tool_acivations[0]) != len(positions[0]):
+            if len(tool_activations) != len(positions[0]):
                 raise ValueError(
                     "The position and tool activation paths need to have the same length")
-            self.tool_activations = tool_acivations
+            self.tool_activations = tool_activations
 
     def translate(self, vector: np.array):
         """Translates the whole path by a given vector

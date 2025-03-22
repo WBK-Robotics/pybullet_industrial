@@ -9,8 +9,8 @@ class JointPath:
         joint_values (np.array): A 2D array where each row represents joint
                                  values for a specific joint and each column
                                  represents a pose along the path.
-        joint_order (tuple): A tuple defining the order of the joints
-                             corresponding to the rows in `joint_values`.
+        joint_order (list): A list defining the order of the joints
+                            corresponding to the rows in `joint_values`.
         tool_activations (np.array, optional): A 1D array with boolean values
                                                indicating whether a tool is
                                                active at a given path pose.
@@ -24,7 +24,7 @@ class JointPath:
                     the length of `joint_order`.
     """
 
-    def __init__(self, joint_values: np.array, joint_order: tuple,
+    def __init__(self, joint_values: np.array, joint_order: list,
                  tool_activations: np.array = None):
         # Validate that joint values match the joint order length
         if joint_values.shape[0] != len(joint_order):
@@ -36,7 +36,7 @@ class JointPath:
 
         # Initialize joint values and order
         self.joint_values = joint_values
-        self.joint_order = joint_order
+        self.joint_order = list(joint_order)  # ensure it's always a list
 
         # Initialize tool activations or set default values
         if tool_activations is None:

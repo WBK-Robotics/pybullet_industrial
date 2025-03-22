@@ -225,7 +225,7 @@ def setup_planner_gui(robots, gripper, objects):
 
     def collision_check():
         """Return True if no collisions are detected."""
-        return all([collision_checker.check_collision()])
+        return all([collision_checker.is_collision_free()])
 
     def constraint_function():
         """Return True if the end-effector is upright."""

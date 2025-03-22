@@ -165,7 +165,7 @@ if __name__ == "__main__":
     collision_checker.set_safe_state()
 
     def collision_check():
-        return all([collision_checker.check_collision()])
+        return all([collision_checker.is_collision_free()])
 
     def constraint_function():
         return all([check_endeffector_upright(robot)])

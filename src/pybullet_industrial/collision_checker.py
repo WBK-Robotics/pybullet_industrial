@@ -10,16 +10,21 @@ class CollisionChecker:
     Manages collision geometry for bodies in a PyBullet sim and
     categorizes them based on joint mobility.
 
-    For each body with collision geometry, an entry is added to
-    `bodies_information` (a list of dicts) containing:
-      - 'urdf_id': Unique identifier of the body.
-      - 'urdf_name': Name of the URDF (decoded from bytes).
-      - 'body_typ': 'robot' if the body has movable joints, otherwise
-        'static_body'.
-      - 'collision_links': Sorted list of link indices with collision
-        geometry, including the base.
-      - 'collision_pairs': Link pairs (tuples) for internal collision
-        checks.
+    Args:
+        urdf_ids (list): List of URDF IDs to consider. If None, all
+            bodies are processed.
+        ignored_internal_collisions (list): List of internal collision
+            pairs to ignore. Each element is a tuple
+            (urdf_id, [list of link pairs]).
+        ignored_external_collisions (list): List of external collision
+            specs to ignore. Each element is a tuple
+            ((bodyA, bodyB), [ignored link pairs]).
+        max_distance_external (float): Maximum distance threshold for
+            external collision detection.
+        enable_internal_collision (bool): Flag to enable internal
+            collision checking.
+        enable_external_collision (bool): Flag to enable external
+            collision checking.
     """
 
     def __init__(self, urdf_ids: list = None,
@@ -28,28 +33,7 @@ class CollisionChecker:
                  max_distance_external: float = 0.0,
                  enable_internal_collision: bool = True,
                  enable_external_collision: bool = True):
-        """
-        Initializes CollisionChecker by collecting collision data from
-        selected bodies in the simulation (if urdf_ids is provided, only
-        those bodies are processed) and by building lists for both internal
-        and external collision pairs.
 
-        Args:
-            urdf_ids (list): List of URDF IDs to consider. If None, all
-                bodies are processed.
-            ignored_internal_collisions (list): List of internal collision
-                pairs to ignore. Each element is a tuple
-                (urdf_id, [list of link pairs]).
-            ignored_external_collisions (list): List of external collision
-                specs to ignore. Each element is a tuple
-                ((bodyA, bodyB), [ignored link pairs]).
-            max_distance_external (float): Maximum distance threshold for
-                external collision detection.
-            enable_internal_collision (bool): Flag to enable internal
-                collision checking.
-            enable_external_collision (bool): Flag to enable external
-                collision checking.
-        """
         self.max_distance_external = max_distance_external
         self.urdf_ids = urdf_ids  # Only these bodies are considered (if given)
         self.bodies_information = []
@@ -71,7 +55,7 @@ class CollisionChecker:
         """
         for body in self.bodies_information:
             if body['urdf_id'] == urdf_id:
-                body['body_typ'] = 'static_body'
+                body['body_type'] = 'static_body'
                 self.update_internal_collision_pairs()
                 self.update_external_collision_pairs()
                 break
@@ -106,7 +90,7 @@ class CollisionChecker:
                 continue
 
             # Determine if the body has any movable joints.
-            body_typ = (
+            body_type = (
                 'robot'
                 if CollisionChecker.has_moving_joint(urdf_id)
                 else 'static_body'
@@ -114,10 +98,10 @@ class CollisionChecker:
             self.bodies_information.append({
                 'urdf_id': urdf_id,
                 'urdf_name': urdf_name,
-                'body_typ': body_typ,
+                'body_type': body_type,
                 'collision_links': links,
                 'collision_pairs': CollisionChecker.
-                    build_internal_collision_pairs(links)
+                build_internal_collision_pairs(links)
             })
 
     def update_internal_collision_pairs(self, ignore_collision: bool = True):
@@ -134,7 +118,7 @@ class CollisionChecker:
         self.internal_collision_pairs = []
 
         for body in self.bodies_information:
-            if body['body_typ'] == 'robot':
+            if body['body_type'] == 'robot':
                 # Work on a copy to avoid modifying the original list.
                 valid_pairs = body['collision_pairs'].copy()
                 # Remove collision pairs that are to be ignored.
@@ -186,7 +170,7 @@ class CollisionChecker:
                         link_pairs.remove(ignore_pair)
             self.external_collision_pairs.append(((bodyA, bodyB), link_pairs))
 
-    def check_collision(self) -> bool:
+    def is_collision_free(self) -> bool:
         """
         Checks for collisions within individual robot bodies and between
         different bodies.

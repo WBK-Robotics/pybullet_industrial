@@ -29,14 +29,8 @@ class CollisionChecker:
         self.max_distance_external = max_distance_external
         self.urdf_ids = urdf_ids
         self.bodies_information = []
-        # Private ignored collision lists.
-        # __ignored_internal_collisions is a list of tuples:
-        # (urdf_id, [ignored internal link pairs])
         self.__ignored_internal_collisions = []
-        # __ignored_external_collisions is a list of tuples:
-        # ((bodyA, bodyB), ignored link pairs or "ALL")
         self.__ignored_external_collisions = []
-        # Private collision pair lists.
         self.__internal_collision_pairs = []
         self.__external_collision_pairs = []
         self.enable_internal_collision = enable_internal_collision

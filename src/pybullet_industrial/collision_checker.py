@@ -29,10 +29,10 @@ class CollisionChecker:
         self.max_distance_external = max_distance_external
         self.urdf_ids = urdf_ids
         self.bodies_information = []
-        self.__ignored_internal_collisions = []
-        self.__ignored_external_collisions = []
-        self.__internal_collision_pairs = []
-        self.__external_collision_pairs = []
+        self._ignored_internal_collisions = []
+        self._ignored_external_collisions = []
+        self._internal_collision_pairs = []
+        self._external_collision_pairs = []
         self.enable_internal_collision = enable_internal_collision
         self.enable_external_collision = enable_external_collision
 
@@ -95,18 +95,18 @@ class CollisionChecker:
         Returns:
             None
         """
-        self.__internal_collision_pairs = []
+        self._internal_collision_pairs = []
         for body in self.bodies_information:
             if body['body_type'] == 'robot':
                 valid_pairs = body['collision_pairs'].copy()
                 if ignore_collision:
-                    for ignored in self.__ignored_internal_collisions:
+                    for ignored in self._ignored_internal_collisions:
                         if ignored[0] == body['urdf_id']:
                             for pair in ignored[1]:
                                 normalized_pair = tuple(sorted(pair))
                                 if normalized_pair in valid_pairs:
                                     valid_pairs.remove(normalized_pair)
-                self.__internal_collision_pairs.append(
+                self._internal_collision_pairs.append(
                     (body['urdf_id'], valid_pairs)
                 )
 
@@ -114,7 +114,7 @@ class CollisionChecker:
             self, ignore_collision: bool = True) -> None:
         """
         Updates the list of external collision pairs between bodies.
-        Each entry in __external_collision_pairs is a tuple:
+        Each entry in _external_collision_pairs is a tuple:
         ((bodyA, bodyB), [list of link pairs]).
 
         For each body pair, if the pair is in the ignored list, the
@@ -129,11 +129,11 @@ class CollisionChecker:
         """
         body_ids = [body['urdf_id'] for body in self.bodies_information]
         potential_body_pairs = list(combinations(body_ids, 2))
-        self.__external_collision_pairs = []
+        self._external_collision_pairs = []
         for bodyA, bodyB in potential_body_pairs:
             ignored_entry = None
             if ignore_collision:
-                for entry in self.__ignored_external_collisions:
+                for entry in self._ignored_external_collisions:
                     if entry[0] == (bodyA, bodyB):
                         ignored_entry = entry
                         break
@@ -142,11 +142,14 @@ class CollisionChecker:
             link_pairs = CollisionChecker.__build_external_collision_pairs(
                 linksA, linksB)
             if ignored_entry is not None:
-                for ignore_pair in ignored_entry[1]:
-                    if ignore_pair in link_pairs:
-                        link_pairs.remove(ignore_pair)
-            self.__external_collision_pairs.append(((bodyA, bodyB),
-                                                    link_pairs))
+                if ignored_entry[1] == "ALL":
+                    link_pairs = []
+                else:
+                    for ignore_pair in ignored_entry[1]:
+                        if ignore_pair in link_pairs:
+                            link_pairs.remove(ignore_pair)
+            self._external_collision_pairs.append(((bodyA, bodyB),
+                                                   link_pairs))
 
     def make_robot_static(self, urdf_id: int):
         """
@@ -218,13 +221,13 @@ class CollisionChecker:
                 does not matter.
         """
         normalized_pair = tuple(sorted(body_pair))
-        for idx, (bp, _) in enumerate(self.__ignored_external_collisions):
+        for idx, (bp, _) in enumerate(self._ignored_external_collisions):
             if bp == normalized_pair:
-                self.__ignored_external_collisions[idx] = (
+                self._ignored_external_collisions[idx] = (
                     normalized_pair, "ALL")
                 break
         else:
-            self.__ignored_external_collisions.append(
+            self._ignored_external_collisions.append(
                 (normalized_pair, "ALL"))
         self.__update_external_collision_pairs()
 
@@ -241,20 +244,20 @@ class CollisionChecker:
                 be ignored.
         """
         normalized_pair = tuple(sorted(body_pair))
-        for idx, (bp, links) in enumerate(self.__ignored_external_collisions):
+        for idx, (bp, links) in enumerate(self._ignored_external_collisions):
             if bp == normalized_pair:
                 if links == "ALL":
                     return
                 new_links = set(links)
                 for lp in ignored_link_pairs:
                     new_links.add(tuple(sorted(lp)))
-                self.__ignored_external_collisions[idx] = (
+                self._ignored_external_collisions[idx] = (
                     normalized_pair, list(new_links))
                 break
         else:
             normalized_links = [tuple(sorted(lp))
                                 for lp in ignored_link_pairs]
-            self.__ignored_external_collisions.append(
+            self._ignored_external_collisions.append(
                 (normalized_pair, normalized_links))
         self.__update_external_collision_pairs()
 
@@ -271,16 +274,16 @@ class CollisionChecker:
                 ignored for internal collision.
         """
         ignored_pairs = list(combinations(sorted(ignored_links), 2))
-        for idx, (uid, pairs) in enumerate(self.__ignored_internal_collisions):
+        for idx, (uid, pairs) in enumerate(self._ignored_internal_collisions):
             if uid == urdf_id:
                 new_pairs = set(pairs)
                 for pair in ignored_pairs:
                     new_pairs.add(pair)
-                self.__ignored_internal_collisions[idx] = (
+                self._ignored_internal_collisions[idx] = (
                     urdf_id, list(new_pairs))
                 break
         else:
-            self.__ignored_internal_collisions.append((urdf_id, ignored_pairs))
+            self._ignored_internal_collisions.append((urdf_id, ignored_pairs))
         self.__update_internal_collision_pairs()
 
     def clear_ignored_internal_collision(self) -> None:
@@ -290,7 +293,7 @@ class CollisionChecker:
         Returns:
             None
         """
-        self.__ignored_internal_collisions = []
+        self._ignored_internal_collisions = []
         self.__update_internal_collision_pairs()
 
     def clear_ignored_external_collision(self) -> None:
@@ -300,7 +303,7 @@ class CollisionChecker:
         Returns:
             None
         """
-        self.__ignored_external_collisions = []
+        self._ignored_external_collisions = []
         self.__update_external_collision_pairs()
 
     def is_collision_free(self) -> bool:
@@ -328,7 +331,7 @@ class CollisionChecker:
             False otherwise.
         """
         if self.enable_internal_collision:
-            for urdf_id, pairs in self.__internal_collision_pairs:
+            for urdf_id, pairs in self._internal_collision_pairs:
                 for linkA, linkB in pairs:
                     if CollisionChecker.simple_collision(
                             urdf_id, urdf_id, MAX_DISTANCE_INTERNAL,
@@ -345,7 +348,7 @@ class CollisionChecker:
             False otherwise.
         """
         if self.enable_external_collision:
-            for (bodyA, bodyB), link_pairs in self.__external_collision_pairs:
+            for (bodyA, bodyB), link_pairs in self._external_collision_pairs:
                 for linkA, linkB in link_pairs:
                     if CollisionChecker.simple_collision(
                             bodyA, bodyB, self.max_distance_external,
@@ -366,8 +369,8 @@ class CollisionChecker:
         self.__update_internal_collision_pairs(ignore_collision=False)
         self.__update_external_collision_pairs(ignore_collision=False)
 
-        self.__ignored_internal_collisions = self.get_internal_collisions()
-        self.__ignored_external_collisions = self.get_global_external_collisions()
+        self._ignored_internal_collisions = self.get_internal_collisions()
+        self._ignored_external_collisions = self.get_global_external_collisions()
         self.__update_internal_collision_pairs()
         self.__update_external_collision_pairs()
 
@@ -381,7 +384,7 @@ class CollisionChecker:
             colliding link pairs.
         """
         internal_collisions = []
-        for entry in self.__internal_collision_pairs:
+        for entry in self._internal_collision_pairs:
             link_pair_collisions = []
             for linkA, linkB in entry[1]:
                 if CollisionChecker.simple_collision(
@@ -403,7 +406,7 @@ class CollisionChecker:
             list of colliding link pairs.
         """
         global_external_collisions = []
-        for (bodyA, bodyB), link_pairs in self.__external_collision_pairs:
+        for (bodyA, bodyB), link_pairs in self._external_collision_pairs:
             colliding_links = []
             for linkA, linkB in link_pairs:
                 if CollisionChecker.simple_collision(
@@ -426,7 +429,7 @@ class CollisionChecker:
             float: The smallest distance found among the external pairs.
         """
         min_distance = distance
-        for (bodyA, bodyB), _ in self.__external_collision_pairs:
+        for (bodyA, bodyB), _ in self._external_collision_pairs:
             curr_distance = self.get_local_distance(bodyA, bodyB,
                                                     min_distance)
             if curr_distance < min_distance:
@@ -450,7 +453,7 @@ class CollisionChecker:
             contact is detected, returns the provided threshold.
         """
         pair_key = tuple(sorted([bodyA, bodyB]))
-        for (bodies, link_pairs) in self.__external_collision_pairs:
+        for (bodies, link_pairs) in self._external_collision_pairs:
             if bodies == pair_key:
                 min_distance = distance
                 for linkA, linkB in link_pairs:

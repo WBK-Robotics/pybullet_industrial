@@ -16,7 +16,7 @@ jobs:
   deploy:
 
     runs-on: ubuntu-latest
-    
+
     env:
       working-directory: src/
 

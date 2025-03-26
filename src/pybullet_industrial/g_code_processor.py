@@ -338,7 +338,7 @@ class GCodeProcessor:
                     previous_postion = position
 
                 interpolation_steps = total_distance/self.interpolation_precision
-                interpolation_steps = int(np.ceil(interpolation_steps))
+                interpolation_steps = int(np.ceil(interpolation_steps)) + 1
 
         return path
 

@@ -3,8 +3,12 @@ from pybullet_industrial import RobotBase
 from pybullet_industrial import linear_interpolation
 from pybullet_industrial import circular_interpolation
 from pybullet_industrial import ToolPath
+from pybullet_industrial import JointPath
 import numpy as np
 import re
+
+
+JOINT_KEY = ('RA')
 
 
 class GCodeProcessor:
@@ -65,12 +69,13 @@ class GCodeProcessor:
 
         if robot is not None:
             self.__calibrate_tool()
+            self.joint_order = robot.get_moveable_joints()[0]
 
     @staticmethod
     def read_g_code(g_code_input: str):
         """Reads G-code row by row and saves the processed data in
-        a list. Comments that start with % are ignored and all the other data is
-        stored as it gets read in.
+        a list. Comments that start with % are ignored and all
+        the other data is stored as it gets read in.
 
         Args:
             g_code_input (str): Source of G-code as a string
@@ -109,6 +114,58 @@ class GCodeProcessor:
 
             g_code.append(new_line)
 
+        return g_code
+
+    @staticmethod
+    def tool_path_to_g_code(tool_path: ToolPath):
+        """Converts a ToolPath object into a G-code representation.
+
+        Each path point is converted by mapping its position and orientation.
+        The orientation is transformed from a quaternion to Euler angles.
+
+        Args:
+            tool_path (ToolPath): ToolPath object to be converted.
+
+        Returns:
+            list: A list of dictionaries representing the G-code.
+        """
+        g_code = []
+        for position, orientation, _ in tool_path:
+            euler = p.getEulerFromQuaternion(orientation)
+            g_line = {
+                'G': 1,
+                'X': position[0],
+                'Y': position[1],
+                'Z': position[2],
+                'A': euler[0],
+                'B': euler[1],
+                'C': euler[2]
+            }
+            g_code.append(g_line)
+        return g_code
+
+    @staticmethod
+    def joint_path_to_g_code(joint_path: JointPath):
+        """Converts a JointPath object into a G-code representation.
+
+        Joint positions are mapped to G-code commands. Each joint value is
+        associated with a key derived from a predefined
+        joint key and its index.
+
+        Args:
+            joint_path (JointPath): JointPath object to be converted.
+
+        Returns:
+            list: A list of dictionaries representing the G-code.
+        """
+        g_code = []
+        for joint_positions, _ in joint_path:
+            g_code_line = {}
+            g_code_line['G'] = 1
+            for i, joint_name in enumerate(joint_path.joint_order):
+                g_code_line[JOINT_KEY + str(i + 1)] = joint_positions[
+                    joint_name]
+            g_code.append(g_code_line)
         return g_code
 
     def __iter__(self):
@@ -167,15 +224,14 @@ class GCodeProcessor:
             cmd_int(int): Current G-command integer
         """
 
-        interpolation_movement = ['X', 'Y', 'Z', 'A', 'B', 'C', 'R']
-        joint_movement = ['RA1', 'RA2', 'RA3', 'RA4', 'RA5', 'RA6']
+        interpolation_keys = {'X', 'Y', 'Z', 'A', 'B', 'C', 'R'}
 
         if 'G' in g_code_line:
-            if any(key in g_code_line for key in interpolation_movement):
+            if any(key in g_code_line for key in interpolation_keys):
                 path = self.__build_path()
                 self.elementary_operations = \
                     self.__create_movement_operations(path)
-            elif any(key in g_code_line for key in joint_movement):
+            elif any(key.startswith(JOINT_KEY) for key in g_code_line):
                 self.elementary_operations = \
                     self.__create_joint_movement_operations(g_code_line)
             elif g_code_line.get('G') > 3:
@@ -413,9 +469,12 @@ class GCodeProcessor:
         Returns:
             elementary_operations(list)
         """
+        joint_positions = {}
+        for key, value in g_code_line.items():
+            if key.startswith(JOINT_KEY):
+                joint_name = self.joint_order[int(key[len(JOINT_KEY):])-1]
+                joint_positions[joint_name] = value
 
-        joint_positions = {'q' + key[2:]: value for key,
-                           value in g_code_line.items() if key.startswith('R')}
         elementary_operations = [
             lambda: self.robot.set_joint_position(joint_positions)]
 

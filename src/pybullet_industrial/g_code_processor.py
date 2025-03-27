@@ -7,7 +7,6 @@ from pybullet_industrial import JointPath
 import numpy as np
 import re
 
-
 JOINT_KEY = ('RA')
 
 

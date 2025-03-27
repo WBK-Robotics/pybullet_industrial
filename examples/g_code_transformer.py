@@ -283,7 +283,7 @@ def setup_planner_gui(robots, gripper, objects):
         return og.STRRTstar(si)
 
     def get_clearance():
-        return motor_clearance.get_global_distance(0.2)
+        return motor_clearance.get_external_distance(0.2)
 
     # Initialize multiple planner setups.
     path_planner_1 = pi.PbiPlannerSimpleSetup(

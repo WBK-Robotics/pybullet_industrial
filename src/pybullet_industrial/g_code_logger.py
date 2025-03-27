@@ -87,28 +87,30 @@ class GCodeLogger:
             if postfix is not None:
                 file.write(postfix + '\n')
 
-    def update_g_code(self):
+    def update_g_code(self, only_changed_values=True):
         """
         Update both G-codes based on changes in robot state.
         """
-        self.update_g_code_robot_view()
-        self.update_g_code_joint_position()
+        self.update_g_code_robot_view(only_changed_values)
+        self.update_g_code_joint_position(only_changed_values)
 
-    def update_g_code_robot_view(self):
+    def update_g_code_robot_view(self, only_changed_values=True):
         """
         Update G-code for robot workspace coordinates.
         """
         self._update_g_code(self._get_robot_pose(),
                             self.current_robot_pose,
-                            self.g_code_robot_view)
+                            self.g_code_robot_view,
+                            only_changed_values)
 
-    def update_g_code_joint_position(self):
+    def update_g_code_joint_position(self, only_changed_values=True):
         """
         Update G-code for joint positions.
         """
         self._update_g_code(self._get_joint_position(),
                             self.current_joint_position,
-                            self.g_code_joint_position)
+                            self.g_code_joint_position,
+                            only_changed_values)
 
     def _update_g_code(self, new_pose, current_pose, g_code_list,
                        only_changed_values=True):

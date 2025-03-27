@@ -15,4 +15,4 @@ from pybullet_industrial.g_code_processor import *
 from pybullet_industrial.agv_robots import *
 from pybullet_industrial.g_code_logger import *
 from pybullet_industrial.joint_path import *
-
+from pybullet_industrial.collision_checker import *

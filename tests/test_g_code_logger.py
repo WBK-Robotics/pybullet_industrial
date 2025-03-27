@@ -151,7 +151,7 @@ class Test_GCodeLogger(unittest.TestCase):
         # Run first entry
         g_code_processor.g_code = [input_g_code[0]]
         run_simulation(g_code_iterator)
-        g_code_logger.update_g_code_joint_position()
+        g_code_logger.update_g_code_joint_position(False)
         # Run second entry
         g_code_processor.g_code = [input_g_code[1]]
         run_simulation(g_code_iterator)

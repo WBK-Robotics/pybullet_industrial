@@ -1,5 +1,6 @@
 import pybullet as p
 from itertools import combinations, product
+import warnings
 
 BASE_LINK = -1
 MAX_DISTANCE_INTERNAL = 0.0
@@ -313,14 +314,14 @@ class CollisionChecker:
             bool: True if no collisions are detected; False otherwise.
         """
         if self.enable_internal_collision:
-            if not self.check_internal_collisions():
+            if not self.is_internal_collision_free():
                 return False
         if self.enable_external_collision:
-            if not self.check_external_collisions():
+            if not self.is_external_collision_free():
                 return False
         return True
 
-    def check_internal_collisions(self) -> bool:
+    def is_internal_collision_free(self) -> bool:
         """
         Checks for collisions between internal link pairs within each robot.
 
@@ -337,7 +338,7 @@ class CollisionChecker:
                         return False
         return True
 
-    def check_external_collisions(self) -> bool:
+    def is_external_collision_free(self) -> bool:
         """
         Checks for collisions between link pairs from different bodies.
 
@@ -437,9 +438,10 @@ class CollisionChecker:
     def get_body_distance(self, bodyA: int, bodyB: int,
                           distance: float) -> float:
         """
-        Determines the smallest distance between any collision pair (i.e.
-        link pair) for a given pair of bodies by inspecting external
-        collision pairs.
+        Determines the smallest distance between any collision pair
+        (i.e. link pair) for a given pair of bodies by inspecting
+        external collision pairs. If no collision link pair is found, an
+        error is raised.
 
         Args:
             bodyA (int): Unique identifier of the first body.
@@ -447,8 +449,11 @@ class CollisionChecker:
             distance (float): The initial maximum distance threshold.
 
         Returns:
-            float: The smallest distance found among the pairs; if no
-            contact is detected, returns the provided threshold.
+            float: The smallest distance found among the pairs.
+
+        Raises:
+            ValueError: If no collision link pair is found for the specified
+                        body pair.
         """
         pair_key = tuple(sorted([bodyA, bodyB]))
         for (bodies, link_pairs) in self._external_collision_pairs:
@@ -456,10 +461,14 @@ class CollisionChecker:
                 min_distance = distance
                 for linkA, linkB in link_pairs:
                     curr_dist = CollisionChecker.get_distance(
-                        bodyA, bodyB, distance, linkA, linkB)
+                        bodyA, bodyB, distance, linkA, linkB
+                    )
                     if curr_dist < min_distance:
                         min_distance = curr_dist
                 return min_distance
+        warnings.warn(
+            f"No collision link pair for body pair {bodyA} and {bodyB} found."
+            )
         return distance
 
     @staticmethod

@@ -186,6 +186,8 @@ class TestCollisionChecker(unittest.TestCase):
         # Adding same pair should not change the ignored pairs.
         col_checker.ignore_external_body_collision((robot_a.urdf,
                                                     robot_b.urdf))
+        col_checker.ignore_external_link_collision((robot_a.urdf, robot_b.urdf),
+                                                   [(-1, -1)])
         for bp, link_pairs in col_checker._external_collision_pairs:
             if set(bp) == set((robot_a.urdf, robot_b.urdf)):
                 self.assertEqual(link_pairs, [])
@@ -300,10 +302,13 @@ class TestCollisionChecker(unittest.TestCase):
         distance_after_reset = col_checker.get_body_distance(box1_id, box2_id,
                                                              0.0)
         self.assertFalse(col_checker.is_collision_free())
-        self.assertFalse(col_checker.check_external_collisions())
+        self.assertFalse(col_checker.is_external_collision_free())
         self.assertAlmostEqual(distance_after_reset, -1.0, delta=1e-8)
         col_checker.enable_external_collision = False
-        self.assertTrue(col_checker.check_external_collisions())
+        self.assertTrue(col_checker.is_external_collision_free())
+        visual_box = create_visual_box([0, 0, 0])
+        distance = col_checker.get_body_distance(box1_id, visual_box, 1.0)
+        self.assertEqual(distance, 1.0)
 
 
 if __name__ == '__main__':

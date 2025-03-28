@@ -65,8 +65,13 @@ class GCodeLogger:
             if prefix is not None:
                 file.write(prefix + '\n')
             for command in g_code:
-                order = ['G', 'X', 'Y', 'Z', 'A', 'B', 'C',
-                         'RA1', 'RA2', 'RA3', 'RA4', 'RA5', 'RA6']
+                fixed_order = ['G', 'X', 'Y', 'Z', 'A', 'B', 'C']
+                joint_keys = sorted(
+                    [key for key in command
+                     if key.startswith(JOINT_KEY) and key[len(JOINT_KEY):].isdigit()],
+                    key=lambda k: int(k[len(JOINT_KEY):])
+                )
+                order = fixed_order + joint_keys
                 line_items = []
                 for key in order:
                     if key in command:

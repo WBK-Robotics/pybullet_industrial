@@ -155,10 +155,20 @@ class Test_GCodeLogger(unittest.TestCase):
         # Run second entry
         g_code_processor.g_code = [input_g_code[1]]
         run_simulation(g_code_iterator)
-        g_code_logger.update_g_code_joint_position()
+        g_code_logger.update_g_code()
         # Compare G-Codes
         output_g_code_joint_position = round_float_values(
             g_code_logger.g_code_joint_position, 2)
+        g_code_logger = pi.GCodeLogger(robot)
+        robot.reset_joint_position({'q1': 10, 'q2': -10}, True)
+        g_code_logger.update_g_code_joint_position()
+        self.assertAlmostEqual(
+            g_code_logger.g_code_joint_position[0]['RA1'], 3.14, delta=0.01)
+        self.assertAlmostEqual(
+            g_code_logger.g_code_joint_position[0]['RA2'], -1.31, delta=0.01)
+
+
+
         p.disconnect()
         self.assertEqual(input_g_code, output_g_code_joint_position)
 

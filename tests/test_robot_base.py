@@ -174,7 +174,10 @@ class TestRobotBase(unittest.TestCase):
 
         try:
             target_pose_default = np.array([0.7, 0.0, 0.8])
-            robot.reset_endeffector_pose(target_position=target_pose_default)
+            target_orientation_default = p.getQuaternionFromEuler([0, 0, 0])
+            robot.reset_endeffector_pose(
+                target_position=target_pose_default,
+                target_orientation=target_orientation_default)
         except Exception as e:
             self.fail(
                 "reset_endeffector_pose (default branch) raised an unexpected "

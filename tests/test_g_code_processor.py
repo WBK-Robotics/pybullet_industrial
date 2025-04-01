@@ -87,6 +87,42 @@ class Test_GCodeProcessor(unittest.TestCase):
         self.assertEqual(test_object.g_code[2], {
                          'G': 2, 'X': 3.0, 'Y': 4.0, 'Z': 5.0})
 
+    def test_tool_path_to_g_code(self):
+
+        positions = np.array([[1.0, 2.0],
+                              [1.5, 2.5],
+                              [2.0, 3.0]])
+        orientations = np.array([[0, 0],
+                                [0, 0],
+                                [0, 0],
+                                [1, 1]])
+        tool_activations = np.array([False, True])
+        tool_path = pi.ToolPath(positions, orientations, tool_activations)
+        g_code = pi.GCodeProcessor.tool_path_to_g_code(tool_path)
+        expected = [
+            {'G': 1, 'X': 1.0, 'Y': 1.5, 'Z': 2.0,
+             'A': 0.0, 'B': 0.0, 'C': 0.0},
+            {'G': 1, 'X': 2.0, 'Y': 2.5, 'Z': 3.0,
+             'A': 0.0, 'B': 0.0, 'C': 0.0}
+        ]
+        self.assertEqual(len(g_code), 2)
+        self.assertEqual(g_code, expected)
+
+    def test_joint_path_to_g_code(self):
+
+        joint_order = ["q1", "q2", "q3"]
+        joint_values = np.array([[0.1, 0.2],
+                                [0.3, 0.4],
+                                [0.5, 0.6]])
+        joint_path = pi.JointPath(joint_values, joint_order)
+        g_code = pi.GCodeProcessor.joint_path_to_g_code(joint_path)
+        expected = [
+            {'G': 1, 'RA1': 0.1, 'RA2': 0.3, 'RA3': 0.5},
+            {'G': 1, 'RA1': 0.2, 'RA2': 0.4, 'RA3': 0.6},
+        ]
+        self.assertEqual(len(g_code), 2)
+        self.assertEqual(g_code, expected)
+
     def test_simulation(self):
 
         dirname = os.path.dirname(__file__)

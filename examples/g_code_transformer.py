@@ -216,24 +216,41 @@ def setup_planner_gui(robots, gripper, objects):
     object_mover.add_object(objects[0], position_offset)
 
     # Configure collision checking.
-    collision_checker = pi.CollisionChecker()
+    collision_checker_C = pi.CollisionChecker()
+    collision_checker_D = pi.CollisionChecker()
     motor_clearance = pi.CollisionChecker([objects[0], objects[2]])
-    collision_checker.make_robot_static(robots[1].urdf)
+    collision_checker_C.make_robot_static(robots[1].urdf)
+    collision_checker_D.make_robot_static(robots[0].urdf)
+
+    position, orientation = robots[1].get_endeffector_pose()
+    object_mover.match_moving_objects(position, orientation)
+    collision_checker_D.set_safe_state()
+
     position, orientation = robots[0].get_endeffector_pose()
     object_mover.match_moving_objects(position, orientation)
-    collision_checker.set_safe_state()
+    collision_checker_C.set_safe_state()
 
-    def collision_check():
+    def collision_check_C():
         """Return True if no collisions are detected."""
-        return all([collision_checker.is_collision_free()])
+        return all([collision_checker_C.is_collision_free()])
+
+    def collision_check_D():
+        """Return True if no collisions are detected."""
+        return all([collision_checker_D.is_collision_free()])
 
     def constraint_function():
         """Return True if the end-effector is upright."""
         return all([check_endeffector_upright(robots[0])])
 
     # Define objective functions.
+    def maximize_min_clearance_objective(si):
+        return pi.PbiMaximizeMinClearanceObjective(si)
+
     def clearance_objective(si):
-        return pi.PbiPathClearanceObjective(si)
+        importance = 0.5
+        target_clearance = 0.2
+        max_clearance = 2.0
+        return pi.PbiClearanceObjective(si, importance, target_clearance, max_clearance)
 
     def state_cost_integral_objective(si):
         return ob.StateCostIntegralObjective(si)
@@ -243,7 +260,6 @@ def setup_planner_gui(robots, gripper, objects):
 
     objective_weight: float = 1.0
     objectives = []
-    objectives.append((clearance_objective, objective_weight))
     objectives.append((path_length_objective, objective_weight))
 
     def multi_objective(si):
@@ -283,13 +299,13 @@ def setup_planner_gui(robots, gripper, objects):
         return og.STRRTstar(si)
 
     def get_clearance():
-        return motor_clearance.get_external_distance(0.2)
+        return motor_clearance.get_external_distance(2)
 
     # Initialize multiple planner setups.
     path_planner_1 = pi.PbiPlannerSimpleSetup(
         robot=robots[0],
         object_mover=object_mover,
-        collision_check_function=collision_check,
+        collision_check_function=collision_check_C,
         planner_type=bitstar,
         clearance_function=get_clearance
     )
@@ -298,7 +314,7 @@ def setup_planner_gui(robots, gripper, objects):
     path_planner_2 = pi.PbiPlannerSimpleSetup(
         robot=robots[0],
         object_mover=gripper_mover,
-        collision_check_function=collision_check,
+        collision_check_function=collision_check_C,
         planner_type=bitstar,
         clearance_function=get_clearance
     )
@@ -306,7 +322,7 @@ def setup_planner_gui(robots, gripper, objects):
 
     path_planner_3 = pi.PbiPlannerSimpleSetup(
         robot=robots[0],
-        collision_check_function=collision_check,
+        collision_check_function=collision_check_C,
         planner_type=bitstar,
         clearance_function=get_clearance
     )
@@ -314,11 +330,29 @@ def setup_planner_gui(robots, gripper, objects):
 
     path_planner_4 = pi.PbiPlannerSimpleSetup(
         robot=robots[1],
-        collision_check_function=collision_check,
+        collision_check_function=collision_check_D,
         planner_type=bitstar,
         clearance_function=get_clearance
     )
-    path_planner_4.name = "2nd Robot"
+    path_planner_4.name = "2nd Solely Robot"
+
+    path_planner_5 = pi.PbiPlannerSimpleSetup(
+        robot=robots[1],
+        object_mover=gripper_mover,
+        collision_check_function=collision_check_D,
+        planner_type=bitstar,
+        clearance_function=get_clearance
+    )
+    path_planner_5.name = "2nd Robot+ Gripper"
+
+    path_planner_6 = pi.PbiPlannerSimpleSetup(
+        robot=robots[1],
+        object_mover=object_mover,
+        collision_check_function=collision_check_D,
+        planner_type=bitstar,
+        clearance_function=get_clearance
+    )
+    path_planner_6.name = "2nd Robot+ Gripper+ Object"
 
     # -------------------------------
     # GUI Setup
@@ -326,12 +360,13 @@ def setup_planner_gui(robots, gripper, objects):
     # Prepare lists for planner setups, planner types, objectives, and
     # constraints.
     path_planner_list = [path_planner_1, path_planner_2, path_planner_3,
-                         path_planner_4]
+                         path_planner_4, path_planner_4, path_planner_5,
+                         path_planner_6]
     planner_list = [bitstar, informed_rrtstar,
                     rrt, rrtsharp, abitstar, aitstar,
                     rrtconnect, sbl, bfmt]
     objective_list = [
-        None, clearance_objective, state_cost_integral_objective,
+        None, clearance_objective, maximize_min_clearance_objective, state_cost_integral_objective,
         path_length_objective, multi_objective
     ]
     constraint_list = [None, constraint_function]
@@ -360,7 +395,7 @@ def transform_g_code(g_code):
     g_code = pi.GCodeSimplifier.convert_to_degrees(
         g_code
     )
-    g_code = pi.GCodeSimplifier.round_cartesian(
+    g_code = pi.GCodeSimplifier.round_pose_values(
         g_code, 4, 4
     )
     g_code = pi.GCodeSimplifier.apply_feedrate(

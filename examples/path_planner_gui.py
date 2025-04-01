@@ -80,14 +80,14 @@ class PathPlannerGUI:
         self.planning_time_var = tk.IntVar(value=5)
 
         # Setup robot and obstacles.
-        self.robot = self.planner_setup.robot
+        self.robot = self.planner_setup._robot
         self.collision_check = (
-            self.planner_setup.validity_checker.collision_check_function
+            self.planner_setup._validity_checker.collision_check_function
         )
         self.constraint_function = (
-            self.planner_setup.validity_checker.constraint_function or []
+            self.planner_setup._validity_checker.constraint_function or []
         )
-        self.object_mover = self.planner_setup.space_information.object_mover
+        self.object_mover = self.planner_setup._si.object_mover
         self.obstacles = obstacles
         self._init_obstacles()
 
@@ -214,7 +214,7 @@ class PathPlannerGUI:
         self.selected_constraint_var = tk.StringVar(
             value=default_constraint_key
         )
-        self.planner_setup.update_constraints(
+        self.planner_setup.set_constraint_function(
             self.constraint_mapping[self.selected_constraint_var.get()]
         )
 
@@ -558,9 +558,9 @@ class PathPlannerGUI:
         robot_information = []
         robot_urdf = []
         for index, p_setup in enumerate(self.planner_setups):
-            if p_setup.robot.urdf not in robot_urdf:
-                robot_urdf.append(p_setup.robot.urdf)
-                joint_state = p_setup.robot.get_joint_position()
+            if p_setup._robot.urdf not in robot_urdf:
+                robot_urdf.append(p_setup._robot.urdf)
+                joint_state = p_setup._robot.get_joint_position()
                 robot_information.append((index, joint_state))
 
         state = {
@@ -600,7 +600,7 @@ class PathPlannerGUI:
 
         # Load robot information.
         for index, joint_state in state["robot_information"]:
-            self.planner_setups[index].robot.reset_joint_position(joint_state)
+            self.planner_setups[index]._robot.reset_joint_position(joint_state)
 
         self.selected_obstacle_str.set(state["selected_obstacle"])
         self.selected_planner_var.set(state["planner_setup"])
@@ -652,14 +652,14 @@ class PathPlannerGUI:
             None
         """
         self.planner_setup = self.planner_mappings[selection]
-        self.robot = self.planner_setup.robot
+        self.robot = self.planner_setup._robot
         self.collision_check = (
-            self.planner_setup.validity_checker.collision_check_function
+            self.planner_setup._validity_checker.collision_check_function
         )
         self.constraint_function = (
-            self.planner_setup.validity_checker.constraint_function or []
+            self.planner_setup._validity_checker.constraint_function or []
         )
-        self.object_mover = self.planner_setup.space_information.object_mover
+        self.object_mover = self.planner_setup._si.object_mover
         self.update_workspace_values()
         self.update_joint_positions()
         print(f"Selected setup: {selection}")
@@ -703,12 +703,12 @@ class PathPlannerGUI:
             None
         """
         selected_constraint = self.constraint_mapping[selection]
-        self.planner_setup.update_constraints(selected_constraint)
+        self.planner_setup.set_constraint_function(selected_constraint)
         self.collision_check = (
-            self.planner_setup.validity_checker.collision_check_function
+            self.planner_setup._validity_checker.collision_check_function
         )
         self.constraint_function = (
-            self.planner_setup.validity_checker.constraint_function or []
+            self.planner_setup._validity_checker.constraint_function or []
         )
         print(f"Set constraints: {selection}")
 
@@ -735,9 +735,9 @@ class PathPlannerGUI:
         Returns:
             None
         """
-        if self.planner_setup.validity_checker.clearance_function:
+        if self.planner_setup._validity_checker.clearance_function:
             clearance_val = (
-                self.planner_setup.validity_checker.clearance_function()
+                self.planner_setup._validity_checker.clearance_function()
             )
             self.clearance_label.config(text=f"{clearance_val:.2f}")
         else:

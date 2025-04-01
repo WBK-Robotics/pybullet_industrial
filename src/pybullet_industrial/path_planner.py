@@ -201,7 +201,7 @@ class PbiValidityChecker(ob.StateValidityChecker):
     collision and constraint tests.
 
     Attributes:
-        space_information (PbiSpaceInformation): The robot's space info.
+        si (PbiSpaceInformation): The robot's space info.
         collision_check_function (callable): Function returning True if the
             state is collision free.
         constraint_function (callable): Function returning True if constraints
@@ -209,7 +209,7 @@ class PbiValidityChecker(ob.StateValidityChecker):
         clearance_function (callable): Function returning a clearance value.
     """
 
-    def __init__(self, space_information: PbiSpaceInformation,
+    def __init__(self, si: PbiSpaceInformation,
                  collision_check_function,
                  constraint_function=None,
                  clearance_function=None) -> None:
@@ -217,7 +217,7 @@ class PbiValidityChecker(ob.StateValidityChecker):
         Initializes the validity checker.
 
         Args:
-            space_information (PbiSpaceInformation): The space info.
+            si (PbiSpaceInformation): The space info.
             collision_check_function (callable): Function to perform collision
                 checks.
             constraint_function (callable, optional): Function to check
@@ -225,8 +225,8 @@ class PbiValidityChecker(ob.StateValidityChecker):
             clearance_function (callable, optional): Function that returns
                 the clearance value.
         """
-        super().__init__(space_information)
-        self.space_information: PbiSpaceInformation = space_information
+        super().__init__(si)
+        self.si = si
         self.collision_check_function = collision_check_function
         self.constraint_function = constraint_function
         self.clearance_function = clearance_function
@@ -262,11 +262,11 @@ class PbiValidityChecker(ob.StateValidityChecker):
             ob.Cost: The computed cost, where lower clearance yields
             a higher cost.
         """
-        self.space_information.set_state(state)
+        self.si.set_state(state)
         if self.clearance_function is None:
-            return ob.Cost(0)
+            return None
         else:
-            return ob.Cost(self.clearance_function())
+            return self.clearance_function()
 
 
 class PbiMultiOptimizationObjective(ob.MultiOptimizationObjective):
@@ -294,7 +294,7 @@ class PbiMultiOptimizationObjective(ob.MultiOptimizationObjective):
         self.lock()
 
 
-class PbiPathClearanceObjective(ob.MaximizeMinClearanceObjective):
+class PbiMaximizeMinClearanceObjective(ob.MaximizeMinClearanceObjective):
     """
     A cost objective that rewards paths with higher clearance from
     obstacles.
@@ -326,6 +326,66 @@ class PbiPathClearanceObjective(ob.MaximizeMinClearanceObjective):
         return self.si.getStateValidityChecker().clearance(state)
 
 
+class PbiClearanceObjective(ob.StateCostIntegralObjective):
+    """
+    Computes cost based on state clearance.
+
+    Lower cost is preferable. States with clearance below the target
+    incur higher cost, while states above target incur lower cost until
+    a cap is reached.
+    """
+
+    def __init__(self, si: PbiSpaceInformation,
+                 importance: float = 0.5,
+                 target_clearance: float = 1.0,
+                 max_clearance: float = 2.0) -> None:
+        """
+        Initializes the clearance objective.
+
+        Args:
+            si (PbiSpaceInformation): The robot's space information.
+            importance (float): Scaling factor in [0, 1] used to assign
+                cost when clearance is below target.
+            target_clearance (float): Ideal clearance value with minimal
+                cost.
+            max_clearance (float): Clearance above which cost is capped.
+        """
+        super(PbiClearanceObjective, self).__init__(si, True)
+        self.si: PbiSpaceInformation = si
+        self.importance = importance
+        self.target_clearance = target_clearance
+        self.max_clearance = max_clearance
+
+    def stateCost(self, state: ob.State) -> ob.Cost:
+        """
+        Computes the cost for a state based on its clearance.
+
+        Args:
+            state (ob.State): The state to evaluate.
+
+        Returns:
+            ob.Cost: The computed cost, where lower clearance yields a
+                higher cost.
+        """
+        clearance = self.si.getStateValidityChecker().clearance(state)
+        if clearance < 0:
+            cost = self.importance
+        elif clearance > self.max_clearance:
+            cost = 1 - self.importance
+        elif clearance < self.target_clearance:
+            cost = (-(self.importance / self.target_clearance) * clearance +
+                    self.importance)
+        else:
+            cost = ((1 - self.importance) /
+                    (self.max_clearance - self.target_clearance)) * (
+                        clearance - self.target_clearance)
+        return ob.Cost(float(cost))
+
+# Constants for the planner
+INTERPOLATION_PRECISION = 0.01
+VALIDITY_RESOLUTION = 0.005
+
+
 class PbiPlannerSimpleSetup(og.SimpleSetup):
     """
     Integrates all components to define and solve a robot planning
@@ -338,8 +398,7 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
 
     def __init__(self, robot: RobotBase,
                  collision_check_function,
-                 planner_type,
-                 interpolation_precision: float = 0.01,
+                 planner_type=None,
                  constraint_function=None,
                  clearance_function=None,
                  objective=None,
@@ -363,35 +422,36 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
             name (str, optional): Custom name for the setup.
         """
         self.name = name if name is not None else "PbiPlannerSimpleSetup"
-        self.set_interpolation_precision(interpolation_precision)
-        self.robot = robot
-        self.state_space = PbiStateSpace(robot)
-        self.space_information = PbiSpaceInformation(
-            self.state_space, object_mover)
-        self.validity_checker = PbiValidityChecker(
-            self.space_information, collision_check_function,
+        self._interpolation_precision = self.set_interpolation_precision(
+            INTERPOLATION_PRECISION)
+
+        self._robot = robot
+        self._state_space = PbiStateSpace(robot)
+
+        super().__init__(PbiSpaceInformation(
+            self._state_space, object_mover))
+        self._si = self.getSpaceInformation()
+
+        self._validity_checker = PbiValidityChecker(
+            self._si, collision_check_function,
+            constraint_function=constraint_function,
             clearance_function=clearance_function)
-        self.planner_type = planner_type
-        self.objective = objective
-        self.update_constraints(constraint_function)
+        self.setStateValidityChecker(self._validity_checker)
 
-    def update_constraints(self, constraint_function) -> None:
-        """
-        Activates the constraint function and reinitializes the planner
-        setup.
+        if planner_type is not None:
+            self.setPlanner(planner_type)
 
-        Args:
-            constraint_function (callable): Function to check additional
-                constraints.
-        """
-        self.validity_checker.constraint_function = constraint_function
-        self.space_information.setStateValidityChecker(
-            self.validity_checker)
-        self.space_information.setup()
-        # Reinitialize the SimpleSetup with the updated space info.
-        super().__init__(self.space_information)
-        self.setPlanner(self.planner_type)
-        self.setOptimizationObjective(self.objective)
+        if objective is not None:
+            self.setOptimizationObjective(objective)
+
+    def set_constraint_function(self, constraint_function) -> None:
+        self._validity_checker.constraint_function = constraint_function
+
+    def set_clearance_function(self, clearance_function) -> None:
+        self._validity_checker.clearance_function = clearance_function
+
+    def set_collision_check_function(self, collision_check_function) -> None:
+        self._validity_checker.collision_check_function = collision_check_function
 
     def setOptimizationObjective(self, objective) -> None:
         """
@@ -400,12 +460,9 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
         Args:
             objective (class or None): The optimization objective class to set.
         """
-        self.objective = objective
         if objective is not None:
             super().setOptimizationObjective(
-                objective(self.space_information))
-        else:
-            super().setOptimizationObjective(None)
+                objective(self._si))
 
     def setPlanner(self, planner_type) -> None:
         """
@@ -414,8 +471,7 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
         Args:
             planner_type: The planner class/type to instantiate.
         """
-        self.planner = planner_type(self.space_information)
-        super().setPlanner(self.planner)
+        super().setPlanner(planner_type(self._si))
 
     def set_interpolation_precision(self, precision: float) -> None:
         """
@@ -424,7 +480,7 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
         Args:
             precision (float): Distance between interpolated states.
         """
-        self.interpolation_precision = precision
+        self._interpolation_precision = precision
 
     def setStartAndGoalStates(self, start: dict, goal: dict) -> None:
         """
@@ -434,10 +490,10 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
             start (dict): The starting joint configuration.
             goal (dict): The goal joint configuration.
         """
-        start_list = self.state_space.dict_to_list(start)
-        goal_list = self.state_space.dict_to_list(goal)
-        start_state = self.state_space.list_to_state(start_list)
-        goal_state = self.state_space.list_to_state(goal_list)
+        start_list = self._state_space.dict_to_list(start)
+        goal_list = self._state_space.dict_to_list(goal)
+        start_state = self._state_space.list_to_state(start_list)
+        goal_state = self._state_space.list_to_state(goal_list)
         super().setStartAndGoalStates(start_state, goal_state)
 
     def plan_start_goal(self, start: dict, goal: dict,
@@ -458,7 +514,7 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
             valid path was found.
         """
         self.clear()
-        self.planner.clear()
+        self._planner.clear()
         self.setStartAndGoalStates(start, goal)
         self.setup()
 
@@ -470,14 +526,14 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
                 self.simplifySolution(simplify)
             sol_path = self.getSolutionPath()
             path_length = sol_path.length()
-            interpolation_num = int(path_length / self.interpolation_precision)
+            interpolation_num = int(path_length / self._interpolation_precision)
             sol_path.interpolate(interpolation_num)
             states = sol_path.getStates()
-            path_list = np.array([self.state_space.state_to_list(st)
+            path_list = np.array([self._state_space.state_to_list(st)
                                   for st in states])
             print("Number of solution states: ", len(states))
             joint_path = JointPath(path_list.transpose(),
-                                   tuple(self.state_space.joint_order))
+                                   tuple(self._state_space.joint_order))
         else:
             print("No solution found")
         return solved, joint_path

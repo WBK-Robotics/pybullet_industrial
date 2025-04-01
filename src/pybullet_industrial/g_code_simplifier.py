@@ -1,12 +1,63 @@
 import numpy as np
 
+JOINT_KEY = 'RA'
+
 
 class GCodeSimplifier:
     """
     Methods are provided to simplify G-code.
-    It is assumed that G-code is provided as a list of
-    dictionaries.
+    It is assumed that G-code is provided as a list of dicts.
     """
+
+    @staticmethod
+    def round_pose_values(g_code, round_xyz: int = 4,
+                          round_abc: int = 4):
+        """
+        Rounds Cartesian and angular values in G-code commands.
+
+        Cartesian coordinates (X, Y, Z) are rounded to round_xyz
+        decimal places. Angular coordinates (A, B, C) are rounded
+        to round_abc decimal places.
+
+        Parameters:
+            g_code (list): List of G-code command dictionaries.
+            round_xyz (int): Decimal places for Cartesian coordinates.
+            round_abc (int): Decimal places for angular coordinates.
+
+        Returns:
+            list: G-code commands with rounded values.
+        """
+        for g_code_line in g_code:
+            for key in g_code_line:
+                if key in ['X', 'Y', 'Z']:
+                    g_code_line[key] = round(g_code_line[key], round_xyz)
+                elif key in ['A', 'B', 'C']:
+                    g_code_line[key] = round(g_code_line[key], round_abc)
+        return g_code
+
+    @staticmethod
+    def round_joint_positions(g_code, round_dec: int = 5):
+        """
+        Rounds joint positions in G-code commands using the JOINT_KEY
+        prefix.
+
+        For each key in the command, if the key starts with JOINT_KEY
+        and the remainder consists only of digits, the corresponding
+        value is rounded to round_dec decimal places.
+
+        Parameters:
+            g_code (list): List of G-code command dictionaries.
+            round_dec (int): Decimal places for joint positions.
+
+        Returns:
+            list: G-code commands with rounded joint positions.
+        """
+        for command in g_code:
+            for key in list(command.keys()):
+                if (key.startswith(JOINT_KEY) and
+                        key[len(JOINT_KEY):].isdigit()):
+                    command[key] = round(command[key], round_dec)
+        return g_code
 
     @staticmethod
     def scale_g_code(g_code, scaling, keys):

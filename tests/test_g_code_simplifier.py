@@ -17,6 +17,24 @@ class TestGCodeSimplifier(unittest.TestCase):
             {'RA1': 90, 'G': 1}
         ]
 
+    def test_round_pose_values(self):
+        g_code = deepcopy(self.g_code)
+        result = GCodeSimplifier.round_pose_values(g_code, 2, 2)
+        self.assertEqual(result[0]['X'], round(10, 2))
+        self.assertEqual(result[0]['A'], round(30, 2))
+        self.assertEqual(result[1]['X'], round(15, 2))
+        self.assertEqual(result[2]['C'], round(60, 2))
+
+    def test_round_joint_positions(self):
+        g_code = deepcopy(self.g_code)
+        # Modify joint values for testing
+        g_code.append({'RA2': 45.67891, 'RAx': 50.12345})
+        result = GCodeSimplifier.round_joint_positions(g_code, 3)
+        self.assertEqual(result[3]['RA1'], round(90, 3))
+        self.assertEqual(result[4]['RA2'], round(45.67891, 3))
+        # Key 'RAx' should not be rounded since 'x' is not a digit
+        self.assertEqual(result[4]['RAx'], 50.12345)
+
     def test_scale_g_code(self):
         scaling = 2.0
         keys = ['X', 'Y']

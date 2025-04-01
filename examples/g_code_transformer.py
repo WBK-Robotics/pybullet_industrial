@@ -99,13 +99,13 @@ def setup_envirnoment(working_dir: str):
     # Robots and Objects Loading
     # -------------------------------
     # --- Robot Loading ---
-    start_pos_robot_C= np.array([2.135, 0, 0])
+    start_pos_robot_C = np.array([2.135, 0, 0])
     start_orientation_robot_C = p.getQuaternionFromEuler([0, 0, np.pi])
     robot_C = pi.RobotBase(
         urdf_comau, start_pos_robot_C, start_orientation_robot_C
     )
 
-    start_pos_robot_D= np.array([-2.135, 0, 0])
+    start_pos_robot_D = np.array([-2.135, 0, 0])
     start_orientation_robot_D = p.getQuaternionFromEuler([0, 0, 0])
     robot_D = pi.RobotBase(
         urdf_comau, start_pos_robot_D, start_orientation_robot_D

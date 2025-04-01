@@ -32,7 +32,8 @@ class Test_GCodeLogger(unittest.TestCase):
             {'G': 1, 'RA1': 0.5, 'RA2': 1.2, 'RA3': 0.8,
              'RA4': 1.5, 'RA5': 1.0, 'RA6': 1.8},
             {'T': 2, 'M': 5},
-            {'M': 11}
+            {'M': 11},
+            {'RA1': 1e-10}
         ]
         # Create a temporary text file
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
@@ -52,11 +53,33 @@ class Test_GCodeLogger(unittest.TestCase):
                 'G1 RA1=0.5 RA2=1.2 RA3=0.8 RA4=1.5 RA5=1 RA6=1.8\n',
                 'T2 M5\n',
                 '%@example_call\n',
+                'RA1=0.0000000001\n',
                 '%postfix\n'
             ]
             self.assertEqual(written_content, expected_content)
         # Delete the temporary file
         os.remove(temp_file_path)
+
+        # Write G-Code translate is None
+        g_code = [
+            {'M': 11}
+        ]
+        # Create a temporary text file
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+            temp_file_path = temp_file.name
+        # Write G-code to the temporary text file
+        pi.GCodeLogger.write_g_code(g_code, temp_file_path)
+        # Check if the file was created and contains the expected content
+        self.assertTrue(os.path.isfile(temp_file_path))
+        with open(temp_file_path, 'r') as file:
+            written_content = file.readlines()
+            expected_content = [
+                'M11\n'
+            ]
+            self.assertEqual(written_content, expected_content)
+        # Delete the temporary file
+        os.remove(temp_file_path)
+
 
     def test_uppdate_g_code(self):
         dirname = os.path.dirname(__file__)
@@ -96,6 +119,8 @@ class Test_GCodeLogger(unittest.TestCase):
                 'A': -1.57, 'B': 0.0, 'C': 0.0},
             {'G': 1, 'X': 4.5, 'Y': -6.0, 'Z': 1.5,
                 'A': -0.79, 'B': 0.0, 'C': 0.0},
+            {'G': 1, 'X': 4.5, 'Y': -6.0, 'Z': 2.0,
+                'A': -0.79, 'B': 0.0, 'C': 0.0},
         ]
         # Run first entry
         g_code_processor.g_code = [input_g_code[0]]
@@ -106,6 +131,13 @@ class Test_GCodeLogger(unittest.TestCase):
         run_simulation(g_code_iterator)
         g_code_logger.update_g_code_robot_view()
         # Compare G-Codes
+        output_g_code_robot_view = round_float_values(
+            g_code_logger.g_code_robot_view, 2)
+        self.assertEqual(input_g_code[:2], output_g_code_robot_view)
+        # Run second entry
+        g_code_processor.g_code = [input_g_code[2]]
+        run_simulation(g_code_iterator)
+        g_code_logger.update_g_code_robot_view(False)
         output_g_code_robot_view = round_float_values(
             g_code_logger.g_code_robot_view, 2)
         self.assertEqual(input_g_code, output_g_code_robot_view)
@@ -119,14 +151,24 @@ class Test_GCodeLogger(unittest.TestCase):
         # Run first entry
         g_code_processor.g_code = [input_g_code[0]]
         run_simulation(g_code_iterator)
-        g_code_logger.update_g_code_joint_position()
+        g_code_logger.update_g_code_joint_position(False)
         # Run second entry
         g_code_processor.g_code = [input_g_code[1]]
         run_simulation(g_code_iterator)
-        g_code_logger.update_g_code_joint_position()
+        g_code_logger.update_g_code()
         # Compare G-Codes
         output_g_code_joint_position = round_float_values(
             g_code_logger.g_code_joint_position, 2)
+        g_code_logger = pi.GCodeLogger(robot)
+        robot.reset_joint_position({'q1': 10, 'q2': -10}, True)
+        g_code_logger.update_g_code_joint_position()
+        self.assertAlmostEqual(
+            g_code_logger.g_code_joint_position[0]['RA1'], 3.14, delta=0.01)
+        self.assertAlmostEqual(
+            g_code_logger.g_code_joint_position[0]['RA2'], -1.31, delta=0.01)
+
+
+
         p.disconnect()
         self.assertEqual(input_g_code, output_g_code_joint_position)
 

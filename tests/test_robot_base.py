@@ -112,14 +112,14 @@ class TestRobotBase(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         parentDir = os.path.dirname(dirname)
         urdf_file = os.path.join(
-            parentDir, 'examples', 'robot_descriptions', 'comau_nj290_robot.urdf')
-
+            parentDir, 'examples', 'robot_descriptions',
+            'comau_nj290_robot.urdf'
+        )
         physics_client = p.connect(p.DIRECT)
         p.setPhysicsEngineParameter(numSolverIterations=1000)
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
         robot = pi.RobotBase(urdf_file, [0, 0, 0], start_orientation)
 
-        # --- Test reset_joint_position ---
         precision = 1e-6
         within_precision = True
         joint_names, _ = robot.get_moveable_joints()
@@ -135,10 +135,8 @@ class TestRobotBase(unittest.TestCase):
                 )
                 for idx, name in enumerate(joint_names)
             }
-
             robot.reset_joint_position(target_state)
             actual_positions = robot.get_joint_position()
-
             for name in joint_names:
                 error = abs(target_state[name] - actual_positions[name])
                 within_precision = within_precision and (error <= precision)
@@ -148,28 +146,53 @@ class TestRobotBase(unittest.TestCase):
             msg="reset_joint_position did not set joints precisely."
         )
 
-        # --- Test reset_endeffector_pose ---
+        invalid_target = {'invalid_joint': 0.0}
+        with self.assertRaises(KeyError):
+            robot.reset_joint_position(invalid_target)
+
+        invalid_target = {}
+        for idx, name in enumerate(joint_names):
+            if idx == 0:
+                invalid_target[name] = lower_limits[name] - 1.0
+            else:
+                invalid_target[name] = np.clip(
+                    0.0, lower_limits[name], upper_limits[name]
+                )
+        with self.assertRaises(ValueError):
+            robot.reset_joint_position(invalid_target)
+
         pos_precision = 0.02
         within_precision = True
-
         for i in range(10):
             target_pose = np.array([i / 400 + 1.0, -i / 400, 1.2])
             robot.reset_endeffector_pose(
-                target_position=target_pose,
-                endeffector_name='link6'
+                target_position=target_pose, endeffector_name='link6'
             )
-
             current_pose, _ = robot.get_endeffector_pose('link6')
             position_error = np.linalg.norm(current_pose - target_pose)
-            within_precision = within_precision and (
-                position_error <= pos_precision
+            within_precision = within_precision and (position_error <= pos_precision)
+
+        try:
+            target_pose_default = np.array([0.7, 0.0, 0.8])
+            target_orientation_default = p.getQuaternionFromEuler([0, 0, 0])
+            robot.reset_endeffector_pose(
+                target_position=target_pose_default,
+                target_orientation=target_orientation_default)
+        except Exception as e:
+            self.fail(
+                "reset_endeffector_pose (default branch) raised an unexpected "
+                "exception: " + str(e)
             )
+        current_pose_default, _ = robot.get_endeffector_pose()
+        self.assertIsInstance(current_pose_default, np.ndarray)
 
         p.disconnect()
         self.assertTrue(
             within_precision,
-            msg="reset_endeffector_pose did not reach target positions accurately."
+            msg="reset_endeffector_pose did not reach target positions "
+                "accurately."
         )
+
 
 if __name__ == '__main__':
     unittest.main()

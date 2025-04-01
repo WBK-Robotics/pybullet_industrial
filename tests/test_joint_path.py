@@ -58,6 +58,9 @@ class TestJointPath(unittest.TestCase):
     def test_prepend(self):
         other = JointPath(self.joint_values, self.joint_order,
                           self.tool_activations)
+        wrong_joint_order = ['q2', 'q1', 'q3']
+        wrong_joint_path = JointPath(self.joint_values, wrong_joint_order)
+        self.assertRaises(ValueError, self.path.prepend, wrong_joint_path)
         self.path.prepend(other)
         self.assertEqual(len(self.path), 6)
         np.testing.assert_array_equal(
@@ -80,7 +83,8 @@ class TestJointPath(unittest.TestCase):
         ]
         expected_tools = [True, False, True]
 
-        for (config, tool), exp_conf, exp_tool in zip(self.path, expected_configs, expected_tools):
+        for (config, tool), exp_conf, exp_tool in zip(
+                self.path, expected_configs, expected_tools):
             self.assertEqual(config, exp_conf)
             self.assertEqual(tool, exp_tool)
 

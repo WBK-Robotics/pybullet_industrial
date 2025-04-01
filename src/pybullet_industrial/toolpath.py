@@ -25,7 +25,7 @@ class ToolPath:
     """
 
     def __init__(self, positions: np.array, orientations: np.array = None,
-                tool_activations: np.array = None):
+                 tool_activations: np.array = None):
 
         self.positions = positions
         if orientations is None:
@@ -38,7 +38,7 @@ class ToolPath:
             self.orientations = orientations
 
         if tool_activations is None:
-            self.tool_activations = np.zeros(len(self.positions[0]), dtype=bool)
+            self.tool_activations = np.zeros(len(self.positions[0]))
         else:
             if len(tool_activations) != len(positions[0]):
                 raise ValueError(

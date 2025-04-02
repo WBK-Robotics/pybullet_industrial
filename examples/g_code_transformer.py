@@ -281,6 +281,10 @@ def setup_planner_gui(robots, gripper, objects):
         """Returns True if the end-effector is upright."""
         return all([check_endeffector_upright(robots[0])])
 
+    def constraint_function_robot_D() -> bool:
+        """Returns True if the end-effector is upright."""
+        return all([check_endeffector_upright(robots[1])])
+
     # Define objective functions.
     def maximize_min_clearance_objective(si):
         return pi.PbiMaximizeMinClearanceObjective(si)
@@ -385,7 +389,6 @@ def setup_planner_gui(robots, gripper, objects):
     )
     path_planner_4.name = "2nd Solely Robot"
 
-
     # -------------------------------
     # GUI Setup
     # -------------------------------
@@ -401,7 +404,7 @@ def setup_planner_gui(robots, gripper, objects):
         None, clearance_objective, maximize_min_clearance_objective,
         state_cost_integral_objective, path_length_objective, multi_objective
     ]
-    constraint_list = [None, constraint_function]
+    constraint_list = [None, constraint_function, constraint_function_robot_D]
 
     # Create and run the GUI.
     root = tk.Tk()

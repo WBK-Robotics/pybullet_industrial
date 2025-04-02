@@ -342,6 +342,8 @@ class PbiClearanceObjective(ob.StateCostIntegralObjective):
         self.importance = importance
         self.target_clearance = target_clearance
         self.max_clearance = max_clearance
+        self.num_samples = 10
+
 
     def stateCost(self, state: ob.State) -> ob.Cost:
         """
@@ -367,6 +369,19 @@ class PbiClearanceObjective(ob.StateCostIntegralObjective):
                     (self.max_clearance - self.target_clearance)) * (
                         clearance - self.target_clearance)
         return ob.Cost(float(cost))
+
+    def motionCost(self, s1, s2):
+        # Integrate state cost (1/clearance) over interpolated segment
+        total_cost = 0.0
+        temp = self._si.getStateSpace().allocState()
+
+        for i in range(self.num_samples + 1):
+            t = i / float(self.num_samples)
+            self._si.getStateSpace().interpolate(s1, s2, t, temp)
+            total_cost += self.stateCost(temp).value()
+
+        self._si.getStateSpace().freeState(temp)
+        return ob.Cost(total_cost * 1000 / (self.num_samples + 1))  # average cost
 
 
 # Planner constants.
@@ -412,6 +427,8 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
 
         # Initialize the state space using the robot's joint limits.
         self._state_space = PbiStateSpace(robot)
+        self._state_space.setValidSegmentCountFactor(2)
+        #print(self._state_space.getLongestValidSegmentFraction())
 
         # Create and assign the space information.
         super().__init__(PbiSpaceInformation(self._state_space, object_mover))

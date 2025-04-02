@@ -87,7 +87,7 @@ class PathPlannerGUI:
         self.constraint_function = (
             self.planner_setup._validity_checker.constraint_function or []
         )
-        self.object_mover = self.planner_setup._si.object_mover
+        self.object_mover = self.planner_setup._si._object_mover
         self.obstacles = obstacles
         self._init_obstacles()
 
@@ -323,7 +323,7 @@ class PathPlannerGUI:
                 text="-",
                 command=lambda i=i: self.decrement_workspace(i),
                 width=2
-            ).grid(row=row, column=1, padx=2, pady=1)
+            ).grid(row=row, column=2, padx=2, pady=1)
             tk.Entry(
                 workspace_frame,
                 textvariable=self.workspace_values[i],
@@ -334,7 +334,7 @@ class PathPlannerGUI:
                 text="+",
                 command=lambda i=i: self.increment_workspace(i),
                 width=2
-            ).grid(row=row, column=2, padx=2, pady=1)
+            ).grid(row=row, column=1, padx=2, pady=1)
 
     def _create_obstacle_frame(self, parent: tk.Frame) -> None:
         """
@@ -659,7 +659,7 @@ class PathPlannerGUI:
         self.constraint_function = (
             self.planner_setup._validity_checker.constraint_function or []
         )
-        self.object_mover = self.planner_setup._si.object_mover
+        self.object_mover = self.planner_setup._si._object_mover
         self.update_workspace_values()
         self.update_joint_positions()
         print(f"Selected setup: {selection}")

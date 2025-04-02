@@ -209,7 +209,7 @@ def setup_envirnoment(working_dir: str):
 
     gripper = [srg_gripper]
     robots = [robot_C, robot_D]
-    objects = [emo_sr, box, wall, table, fixture]
+    objects = [emo_sr, box, wall, table, fixture, srg_gripper.urdf]
 
     return robots, gripper, objects
 

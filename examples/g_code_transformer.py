@@ -290,22 +290,20 @@ def setup_planner_gui(robots, gripper, objects):
         return pi.PbiMaximizeMinClearanceObjective(si)
 
     def clearance_objective(si):
-        importance = 0.8
+        importance = 1
         target_clearance = 0.5
-        max_clearance = 3.0
+        max_clearance = 3
         return pi.PbiClearanceObjective(si, importance,
                                         target_clearance,
                                         max_clearance)
 
-    def state_cost_integral_objective(si):
-        return ob.StateCostIntegralObjective(si)
-
     def path_length_objective(si):
         return ob.PathLengthOptimizationObjective(si)
 
-    objective_weight: float = 1.0
+    objective_weight: float = 0.02
     objectives = []
     objectives.append((path_length_objective, objective_weight))
+    objectives.append((clearance_objective, 1 - objective_weight))
 
     def multi_objective(si):
         return pi.PbiMultiOptimizationObjective(si, objectives)
@@ -397,12 +395,10 @@ def setup_planner_gui(robots, gripper, objects):
         path_planner_4, path_planner_4
     ]
     planner_list = [
-        aitstar, abitstar, bitstar, rrt, rrtstar,  rrtsharp, informed_rrtstar,
-        rrtconnect, fmt, sbl, bfmt, lbkpiece1
-    ]
+        abitstar, bitstar, rrt, rrtstar, informed_rrtstar]
     objective_list = [
         None, clearance_objective, maximize_min_clearance_objective,
-        state_cost_integral_objective, path_length_objective, multi_objective
+        path_length_objective, multi_objective
     ]
     constraint_list = [None, constraint_function, constraint_function_robot_D]
 

@@ -77,7 +77,7 @@ class PathPlannerGUI:
                                  constraint_list)
 
         # Set planning time variable.
-        self.planning_time_var = tk.IntVar(value=5)
+        self.planning_time_var = tk.IntVar(value=60)
 
         # Setup robot and obstacles.
         self.robot = self.planner_setup._robot
@@ -521,7 +521,7 @@ class PathPlannerGUI:
             None
         """
         files = [f for f in os.listdir(self.gui_states_folder)
-                 if f.endswith('.json')]
+                if f.endswith('.json')]
         files.sort()
         self.gui_state_options = files
         menu = self.state_dropdown["menu"]
@@ -531,7 +531,9 @@ class PathPlannerGUI:
                 label=file,
                 command=lambda file=file: self.load_gui_state(file)
             )
-        self.saved_state_var.set(files[0] if files else "")
+        # Set the dropdown field to empty instead of selecting a file.
+        self.saved_state_var.set("")
+
 
     def save_gui_state(self) -> None:
         """
@@ -598,7 +600,6 @@ class PathPlannerGUI:
         with open(full_path, "r") as f:
             state = json.load(f)
 
-        # Load robot information.
         for index, joint_state in state["robot_information"]:
             self.planner_setups[index]._robot.reset_joint_position(joint_state)
 
@@ -609,16 +610,13 @@ class PathPlannerGUI:
         self.selected_constraint_var.set(state["constraint"])
         self.planning_time_var.set(state["planning_time"])
 
-        # Reload joint path, start, and goal configurations.
         if state["joint_path_values"]:
             self.joint_path = pi.JointPath(
-                np.array(state["joint_path_values"]), self.joint_order
-            )
+                np.array(state["joint_path_values"]), self.joint_order)
             self.start = state["start"]
             self.goal = state["goal"]
         print(f"Loaded GUI state from {filename}")
 
-        # Reset obstacles' positions and orientations.
         if "obstacles_state" in state:
             obstacles_state = state["obstacles_state"]
             for obs, name in zip(self.obstacles, self.obstacle_names):
@@ -629,16 +627,18 @@ class PathPlannerGUI:
                     orn_q = p.getQuaternionFromEuler(orn_e)
                     p.resetBasePositionAndOrientation(obs, pos, orn_q)
 
+        self.saved_state_var.set(filename)
         self.update_joint_positions()
         self.update_workspace_values()
-        self.update_constraints(state["constraint"])
         self.update_selected_planner(state["planner_setup"])
         self.update_planner_type(state["planner_type"])
+        self.update_constraints(state["constraint"])
         self.update_objective(state["objective"])
         self.set_initial_obstacle_values()
         self.get_current_obstacle()
         self.update_obstacle()
         self.update_status()
+
 
     # ------------------- Update Methods -------------------
     def update_selected_planner(self, selection: str) -> None:

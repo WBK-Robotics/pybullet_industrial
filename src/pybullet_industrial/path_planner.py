@@ -3,6 +3,8 @@ from ompl import base as ob
 from ompl import geometric as og
 import pybullet as p
 from pybullet_industrial import (RobotBase, JointPath)
+import sys
+import copy
 
 
 class PbiObjectMover:
@@ -304,16 +306,18 @@ class PbiMaximizeMinClearanceObjective(ob.MaximizeMinClearanceObjective):
 
     def stateCost(self, state: ob.State) -> ob.Cost:
         """
-        The cost for a state is computed based on its minimum clearance.
+        Computes the cost for a given state based on its minimum clearance.
 
         Args:
             state (ob.State): The state to evaluate.
 
         Returns:
-            ob.Cost: The computed cost, where lower clearance yields a higher
-            cost.
+            ob.Cost: The computed cost, where states with lower clearance
+            incur a higher cost. A small constant is added to avoid division
+            by zero.
         """
-        return self._si.getStateValidityChecker().clearance(state)
+        return ob.Cost(1 / (self.si_.getStateValidityChecker().clearance(state) +
+                            sys.float_info.min))
 
 
 class PbiClearanceObjective(ob.StateCostIntegralObjective):
@@ -342,8 +346,6 @@ class PbiClearanceObjective(ob.StateCostIntegralObjective):
         self.importance = importance
         self.target_clearance = target_clearance
         self.max_clearance = max_clearance
-        self.num_samples = 10
-
 
     def stateCost(self, state: ob.State) -> ob.Cost:
         """
@@ -369,19 +371,6 @@ class PbiClearanceObjective(ob.StateCostIntegralObjective):
                     (self.max_clearance - self.target_clearance)) * (
                         clearance - self.target_clearance)
         return ob.Cost(float(cost))
-
-    def motionCost(self, s1, s2):
-        # Integrate state cost (1/clearance) over interpolated segment
-        total_cost = 0.0
-        temp = self._si.getStateSpace().allocState()
-
-        for i in range(self.num_samples + 1):
-            t = i / float(self.num_samples)
-            self._si.getStateSpace().interpolate(s1, s2, t, temp)
-            total_cost += self.stateCost(temp).value()
-
-        self._si.getStateSpace().freeState(temp)
-        return ob.Cost(total_cost * 1000 / (self.num_samples + 1))  # average cost
 
 
 # Planner constants.
@@ -427,9 +416,6 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
 
         # Initialize the state space using the robot's joint limits.
         self._state_space = PbiStateSpace(robot)
-        self._state_space.setValidSegmentCountFactor(2)
-        #print(self._state_space.getLongestValidSegmentFraction())
-
         # Create and assign the space information.
         super().__init__(PbiSpaceInformation(self._state_space, object_mover))
         self._si = self.getSpaceInformation()
@@ -551,47 +537,60 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
             start (dict): Starting joint configuration.
             goal (dict): Goal joint configuration.
             allowed_time (float): Maximum planning time in seconds.
-            simplify (float): Factor for solution simplification
+            simplify (bool): Whether to attempt solution simplification.
 
         Returns:
-            tuple: (solved (bool), JointPath or None) indicating whether
-                a valid path was found and the corresponding joint path.
+            tuple: (solved (bool), JointPath or None) indicating whether a valid
+            path was found and the corresponding joint path.
         """
-        # Clear previous planning data.
         self.clear()
         if self.getPlanner() is not None:
             self.getPlanner().clear()
 
-        # Define start and goal states.
         self.setStartAndGoalStates(start, goal)
         self.setup()
 
-        # Attempt to solve the planning problem.
         solved = self.solve(allowed_time)
         joint_path = None
 
-        # Process solution if a valid path is found.
         if solved:
-            # Simplify the solution if requested.
-            if simplify:
-                self.simplifySolution(True)
-
-            # Retrieve and process the solution path.
             sol_path = self.getSolutionPath()
+            optimization_objective = self.getOptimizationObjective()
+
             path_length = sol_path.length()
+            states = sol_path.getStates()
+
+            if simplify:
+                if optimization_objective is not None:
+                    original_cost = sol_path.cost(optimization_objective)
+                else:
+                    original_cost = sol_path.length()
+                # Deep copy of the original solution.
+                original_sol = sol_path.getStates()
+                original_length = sol_path.length()
+
+                self.simplifySolution(True)
+                if optimization_objective is not None:
+                    new_cost = sol_path.cost(optimization_objective)
+                else:
+                    new_cost = sol_path.length()
+
+                if new_cost.value() > original_cost.value():
+                    print("Path Simplification rejected as cost increased to",
+                          new_cost)
+                    path_length = original_length
+                    states = original_sol
+
             interpolation_num = int(
                 path_length / self._interpolation_precision)
             sol_path.interpolate(interpolation_num)
 
-            # Convert states to a joint configuration path.
-            states = sol_path.getStates()
             path_list = np.array([self._state_space.state_to_list(st)
                                   for st in states])
-            joint_path = JointPath(path_list.transpose(),
-                                   tuple(self._state_space._joint_order))
+            joint_path = JointPath(
+                path_list.transpose(),
+                tuple(self._state_space._joint_order))
         else:
-            # Inform that no valid solution was found.
             print("No solution found")
 
-        # Return the planning outcome and joint path.
         return solved, joint_path

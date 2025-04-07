@@ -145,6 +145,28 @@ class PbiStateSpace(ob.RealVectorStateSpace):
             bounds.setHigh(i, upper_limit[joint])
         super().setBounds(bounds)
 
+    def path_to_joint_path(self, path: ob.Path,
+                           interpolation_precision: float) -> JointPath:
+        """
+        Converts an OMPL path to a joint configuration path using a
+        specified interpolation precision.
+
+        Args:
+            path (ob.Path): OMPL path containing states.
+            interpolation_precision (float): Interpolation precision.
+
+        Returns:
+            JointPath: The resulting joint configuration path.
+        """
+        path_length = path.length()
+        num_interp = int(path_length / interpolation_precision)
+        num_interp = max(num_interp, 2)
+        path.interpolate(num_interp)
+        states = path.getStates()
+        joint_array = np.array([self.state_to_list(st) for st in states])
+        return JointPath(joint_array.transpose(),
+                         tuple(self._joint_order))
+
 
 class PbiSpaceInformation(ob.SpaceInformation):
     """
@@ -288,38 +310,6 @@ class PbiMultiOptimizationObjective(ob.MultiOptimizationObjective):
         self.lock()
 
 
-class PbiMaximizeMinClearanceObjective(ob.MaximizeMinClearanceObjective):
-    """
-    A cost objective is defined that rewards paths with higher obstacle
-    clearance.
-    """
-
-    def __init__(self, si: PbiSpaceInformation) -> None:
-        """
-        The clearance objective is initialized.
-
-        Args:
-            si (PbiSpaceInformation): The robot's space information.
-        """
-        super().__init__(si)
-        self._si = si
-
-    def stateCost(self, state: ob.State) -> ob.Cost:
-        """
-        Computes the cost for a given state based on its minimum clearance.
-
-        Args:
-            state (ob.State): The state to evaluate.
-
-        Returns:
-            ob.Cost: The computed cost, where states with lower clearance
-            incur a higher cost. A small constant is added to avoid division
-            by zero.
-        """
-        return ob.Cost(1 / (self.si_.getStateValidityChecker().clearance(state) +
-                            sys.float_info.min))
-
-
 class PbiClearanceObjective(ob.StateCostIntegralObjective):
     """
     The cost is computed based on state clearance. Lower cost is preferable.
@@ -327,10 +317,7 @@ class PbiClearanceObjective(ob.StateCostIntegralObjective):
     above target incur lower cost until a cap is reached.
     """
 
-    def __init__(self, si: PbiSpaceInformation,
-                 importance: float = 0.5,
-                 target_clearance: float = 1.0,
-                 max_clearance: float = 2.0) -> None:
+    def __init__(self, si: PbiSpaceInformation) -> None:
         """
         The clearance objective is initialized with provided parameters.
 
@@ -343,9 +330,6 @@ class PbiClearanceObjective(ob.StateCostIntegralObjective):
         """
         super(PbiClearanceObjective, self).__init__(si, True)
         self._si = si
-        self.importance = importance
-        self.target_clearance = target_clearance
-        self.max_clearance = max_clearance
 
     def stateCost(self, state: ob.State) -> ob.Cost:
         """
@@ -358,19 +342,63 @@ class PbiClearanceObjective(ob.StateCostIntegralObjective):
             ob.Cost: The computed cost, where lower clearance yields a higher
             cost.
         """
-        clearance = self._si.getStateValidityChecker().clearance(state)
-        if clearance < 0:
-            cost = self.importance
-        elif clearance > self.max_clearance:
-            cost = 1 - self.importance
-        elif clearance < self.target_clearance:
-            cost = (-(self.importance / self.target_clearance) * clearance +
-                    self.importance)
+        if self._si.getStateValidityChecker().clearance(state) is None:
+            return ob.Cost(0)
         else:
-            cost = ((1 - self.importance) /
-                    (self.max_clearance - self.target_clearance)) * (
-                        clearance - self.target_clearance)
-        return ob.Cost(float(cost))
+            return ob.Cost(1 / (
+                self._si.getStateValidityChecker().clearance(
+                    state) + sys.float_info.min))
+
+
+class PbiEndeffectorPathLengthObjective(ob.OptimizationObjective):
+    """
+    The cost is computed based on the length of the end-effector path.
+    """
+
+    def __init__(self, si: PbiSpaceInformation, robot) -> None:
+        """
+        The end-effector path length objective is initialized.
+
+        Args:
+            si (PbiSpaceInformation): The robot's space information.
+        """
+        super(PbiEndeffectorPathLengthObjective, self).__init__(si)
+        self._si = si
+        self._robot = robot
+
+    def stateCost(self, state: ob.State) -> ob.Cost:
+        return ob.Cost(0)
+
+    def motionCost(self, s1: ob.State, s2: ob.State) -> ob.Cost:
+        """
+        The cost for a motion between two states is computed based on
+        the SE(3) distance between the end effector poses obtained from
+        the states.
+
+        Args:
+            s1 (ob.State): Starting state.
+            s2 (ob.State): Ending state.
+
+        Returns:
+            ob.Cost: The computed cost for the motion.
+        """
+
+        self._si.set_state(s1)
+        pos1, ori1 = self._robot.get_endeffector_pose()
+        self._si.set_state(s2)
+        pos2, ori2 = self._robot.get_endeffector_pose()
+
+        # Compute Euclidean distance between translations.
+        trans_diff = np.linalg.norm(pos1 - pos2)
+
+        # Compute rotational difference between quaternions.
+        # Quaternions are assumed to be normalized np arrays [x, y, z, w].
+        dot = np.abs(np.dot(ori1, ori2))
+        dot = np.clip(dot, -1.0, 1.0)
+        rot_diff = 2.0 * np.arccos(dot)
+
+        total_dist = np.sqrt(trans_diff**2 + rot_diff**2)
+        return ob.Cost(total_dist)
 
 
 # Planner constants.
@@ -527,6 +555,24 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
         # Define start and goal states in the parent class.
         super().setStartAndGoalStates(start_state, goal_state)
 
+    def get_path_cost_value(self, path: ob.Path):
+        """
+        The cost of a path is computed using the optimization objective.
+
+        Args:
+            ob.Path: The OMPL path to evaluate.
+
+        Returns:
+            float: The cost of the path.
+        """
+        objective = self.getOptimizationObjective()
+        if objective is not None:
+            cost = path.cost(
+                objective)
+        else:
+            cost = path.length()
+        return cost.value()
+
     def plan_start_goal(self, start: dict, goal: dict,
                         allowed_time: float = 5.0,
                         simplify: bool = True) -> tuple:
@@ -537,60 +583,42 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
             start (dict): Starting joint configuration.
             goal (dict): Goal joint configuration.
             allowed_time (float): Maximum planning time in seconds.
-            simplify (bool): Whether to attempt solution simplification.
+            simplify (float): Factor for solution simplification
 
         Returns:
-            tuple: (solved (bool), JointPath or None) indicating whether a valid
-            path was found and the corresponding joint path.
+            tuple: (solved (bool), JointPath or None) indicating whether
+                a valid path was found and the corresponding joint path.
         """
+        # Clear previous planning data.
         self.clear()
+        joint_path = None
         if self.getPlanner() is not None:
             self.getPlanner().clear()
 
+        # Define start and goal states.
         self.setStartAndGoalStates(start, goal)
         self.setup()
 
+        # Attempt to solve the planning problem.
         solved = self.solve(allowed_time)
         joint_path = None
 
+        # Process solution if a valid path is found.
         if solved:
-            sol_path = self.getSolutionPath()
-            optimization_objective = self.getOptimizationObjective()
-
-            path_length = sol_path.length()
-            states = sol_path.getStates()
-
+            path = self.getSolutionPath()
+            cost = self.get_path_cost_value(path)
+            joint_path = self._state_space.path_to_joint_path(
+                path, self._interpolation_precision)
+            # Simplify the solution if requested.
             if simplify:
-                if optimization_objective is not None:
-                    original_cost = sol_path.cost(optimization_objective)
-                else:
-                    original_cost = sol_path.length()
-                # Deep copy of the original solution.
-                original_sol = sol_path.getStates()
-                original_length = sol_path.length()
-
                 self.simplifySolution(True)
-                if optimization_objective is not None:
-                    new_cost = sol_path.cost(optimization_objective)
+                simplified_path = self.getSolutionPath()
+                new_cost = self.get_path_cost_value(simplified_path)
+                if new_cost <= cost:
+                    joint_path = self._state_space.path_to_joint_path(
+                        simplified_path, self._interpolation_precision)
                 else:
-                    new_cost = sol_path.length()
+                    print("Simplified path rejected, as cost increased.")
 
-                if new_cost.value() > original_cost.value():
-                    print("Path Simplification rejected as cost increased to",
-                          new_cost)
-                    path_length = original_length
-                    states = original_sol
-
-            interpolation_num = int(
-                path_length / self._interpolation_precision)
-            sol_path.interpolate(interpolation_num)
-
-            path_list = np.array([self._state_space.state_to_list(st)
-                                  for st in states])
-            joint_path = JointPath(
-                path_list.transpose(),
-                tuple(self._state_space._joint_order))
-        else:
-            print("No solution found")
-
+        # Return the planning outcome and joint path.
         return solved, joint_path

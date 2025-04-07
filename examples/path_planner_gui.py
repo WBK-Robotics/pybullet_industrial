@@ -79,6 +79,9 @@ class PathPlannerGUI:
         # Set planning time variable.
         self.planning_time_var = tk.IntVar(value=60)
 
+        # Set simplify option
+        self.simplify = tk.BooleanVar(value=True)
+
         # Setup robot and obstacles.
         self.robot = self.planner_setup._robot
         self.collision_check = (
@@ -385,9 +388,6 @@ class PathPlannerGUI:
             ).grid(row=i+1, column=3, padx=2, pady=1)
 
     def _create_mid_frame(self) -> None:
-        """
-        Creates the mid frame with planner and status controls.
-        """
         mid_frame = tk.Frame(self.root)
         mid_frame.grid(row=1, column=0, columnspan=2,
                        padx=3, pady=3, sticky="ew")
@@ -429,6 +429,12 @@ class PathPlannerGUI:
             *self.constraint_mapping.keys(),
             command=self.update_constraints
         ).grid(row=0, column=7, padx=2)
+        # New Checkbutton for Simplify option
+        tk.Checkbutton(
+            planner_frame,
+            text="Simplify",
+            variable=self.simplify
+        ).grid(row=0, column=8, padx=2)
 
         status_frame = tk.Frame(mid_frame)
         status_frame.grid(row=0, column=1, padx=3, pady=3, sticky="e")
@@ -521,7 +527,7 @@ class PathPlannerGUI:
             None
         """
         files = [f for f in os.listdir(self.gui_states_folder)
-                if f.endswith('.json')]
+                 if f.endswith('.json')]
         files.sort()
         self.gui_state_options = files
         menu = self.state_dropdown["menu"]
@@ -533,7 +539,6 @@ class PathPlannerGUI:
             )
         # Set the dropdown field to empty instead of selecting a file.
         self.saved_state_var.set("")
-
 
     def save_gui_state(self) -> None:
         """
@@ -639,8 +644,8 @@ class PathPlannerGUI:
         self.update_obstacle()
         self.update_status()
 
-
     # ------------------- Update Methods -------------------
+
     def update_selected_planner(self, selection: str) -> None:
         """
         Updates the selected planner setup and associated variables.
@@ -897,8 +902,8 @@ class PathPlannerGUI:
         self.update_workspace_values()
         self.update_status()
 
-
     # ------------------- Obstacle Methods -------------------
+
     def set_initial_obstacle_values(self) -> None:
         """
         Sets the initial values for the selected obstacle.
@@ -1006,25 +1011,22 @@ class PathPlannerGUI:
         print("Goal set:", self.goal)
 
     def plan(self) -> None:
-        """
-        Plans a path from start to goal using the selected planner.
-
-        Returns:
-            None
-        """
         planning_time = self.planning_time_var.get()
         print(f"Planning (allowed time = {planning_time}s)...")
         if self.start is None or self.goal is None:
             print("Error: Start and goal configurations must be set "
-                  "before planning.")
+                "before planning.")
             return
         try:
             result, joint_path = self.planner_setup.plan_start_goal(
-                self.start, self.goal, allowed_time=planning_time
+                self.start,
+                self.goal,
+                allowed_time=planning_time,
+                simplify=self.simplify.get()
             )
             if not result:
                 print("Planning failed: No solution found within "
-                      "the given time.")
+                    "the given time.")
                 self.joint_path = None
             else:
                 self.joint_path = joint_path

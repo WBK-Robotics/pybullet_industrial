@@ -260,6 +260,13 @@ def setup_planner_gui(robots, gripper, objects):
     # Clearance object for both robots
     robot_clearance = pi.CollisionChecker([robots[0].urdf,
                                            robots[1].urdf])
+    robot_clearance.remove_link_id(robots[0].urdf, -1)
+    robot_clearance.remove_link_id(robots[0].urdf, 0)
+    robot_clearance.remove_link_id(robots[0].urdf, 1)
+    robot_clearance.remove_link_id(robots[0].urdf, 2)
+    robot_clearance.remove_link_id(robots[0].urdf, 3)
+    robot_clearance.remove_link_id(robots[0].urdf, 4)
+
     robot_clearance.make_robot_static(robots[0].urdf)
     robot_clearance.make_robot_static(robots[1].urdf)
 
@@ -290,19 +297,17 @@ def setup_planner_gui(robots, gripper, objects):
         return pi.PbiMaximizeMinClearanceObjective(si)
 
     def clearance_objective(si):
-        importance = 1
-        target_clearance = 0.5
-        max_clearance = 3
-        return pi.PbiClearanceObjective(si, importance,
-                                        target_clearance,
-                                        max_clearance)
+        return pi.PbiClearanceObjective(si)
 
     def path_length_objective(si):
         return ob.PathLengthOptimizationObjective(si)
 
-    objective_weight: float = 0.02
+    def endeffector_path_length_objective(si):
+        return pi.PbiEndeffectorPathLengthObjective(si,robots[0])
+
+    objective_weight: float = 0.5
     objectives = []
-    objectives.append((path_length_objective, objective_weight))
+    objectives.append((endeffector_path_length_objective, objective_weight))
     objectives.append((clearance_objective, 1 - objective_weight))
 
     def multi_objective(si):
@@ -314,7 +319,7 @@ def setup_planner_gui(robots, gripper, objects):
 
     def rrt(si):
         rrt_inst = og.RRT(si)
-        rrt_inst.setGoalBias(0.5)
+        rrt_inst.setGoalBias(0.2)
         return rrt_inst
 
     def bitstar(si):
@@ -354,7 +359,7 @@ def setup_planner_gui(robots, gripper, objects):
         return motor_clearance.get_external_distance(3)
 
     def get_robot_clearance():
-        return robot_clearance.get_external_distance(3)
+        return robot_clearance.get_external_distance(0.3)
 
     # Initialize planner setups.
     path_planner_1 = pi.PbiPlannerSimpleSetup(
@@ -397,7 +402,7 @@ def setup_planner_gui(robots, gripper, objects):
     planner_list = [
         abitstar, bitstar, rrt, rrtstar, informed_rrtstar]
     objective_list = [
-        None, clearance_objective, maximize_min_clearance_objective,
+        None, clearance_objective, endeffector_path_length_objective,
         path_length_objective, multi_objective
     ]
     constraint_list = [None, constraint_function, constraint_function_robot_D]

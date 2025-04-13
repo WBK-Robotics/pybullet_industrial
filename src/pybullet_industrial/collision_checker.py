@@ -457,7 +457,7 @@ class CollisionChecker:
             if body_distance is not None:
                 if result is None or body_distance < result:
                     result = body_distance
-                distance = result
+                distance = result  # Update threshold to current minimum
         return result
 
 
@@ -483,12 +483,14 @@ class CollisionChecker:
                 min_distance = None
                 for linkA, linkB in link_pairs:
                     curr_dist = CollisionChecker.get_distance(
-                        bodyA, bodyB, distance, linkA, linkB
-                    )
+                        bodyA, bodyB, distance, linkA, linkB)
+                    if curr_dist is None:
+                        continue
                     if min_distance is None or curr_dist < min_distance:
                         min_distance = curr_dist
                 return min_distance
         return None
+
 
     @staticmethod
     def get_bodies_external_collisions(bodyA: int, bodyB: int,
@@ -631,4 +633,4 @@ class CollisionChecker:
                                       linkIndexB=linkB)
         if contacts:
             return min(contact[8] for contact in contacts)
-        return distance
+        return None

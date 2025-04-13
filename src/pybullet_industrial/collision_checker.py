@@ -1,6 +1,5 @@
 import pybullet as p
 from itertools import combinations, product
-import warnings
 
 BASE_LINK = -1
 MAX_DISTANCE_INTERNAL = 0.0
@@ -192,7 +191,6 @@ class CollisionChecker:
             if body['body_id'] == body_id:
                 if link_id in body['collision_links']:
                     body['collision_links'].remove(link_id)
-                    # Rebuild internal collision pairs using the updated links.
                     body['collision_pairs'] = (
                         CollisionChecker.__build_internal_collision_pairs(
                             body['collision_links']
@@ -460,7 +458,6 @@ class CollisionChecker:
                 distance = result  # Update threshold to current minimum
         return result
 
-
     def get_body_distance(self, bodyA: int, bodyB: int, distance: float):
         """
         Determines the smallest distance between any collision pair
@@ -490,7 +487,6 @@ class CollisionChecker:
                         min_distance = curr_dist
                 return min_distance
         return None
-
 
     @staticmethod
     def get_bodies_external_collisions(bodyA: int, bodyB: int,

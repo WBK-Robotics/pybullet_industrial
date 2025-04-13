@@ -126,7 +126,10 @@ class TestCollisionChecker(unittest.TestCase):
                                  if b['body_type'] == 'robot'])
         self.assertEqual(len(col_checker._internal_collision_pairs),
                          expected_internal)
-
+        # Remove base link of the second robot
+        col_checker.remove_link_id(robot_b.urdf, -1)
+        self.assertEqual(
+            len(col_checker._bodies_information[1]['collision_links']), 6)
         # Remove the second robot and verify that updates occur.
         col_checker.remove_body_id(robot_b.urdf)
         self.assertEqual(len(col_checker._bodies_information), 1)
@@ -287,7 +290,7 @@ class TestCollisionChecker(unittest.TestCase):
 
         # Distance at least treshold
         distance = col_checker.get_body_distance(box1_id, box2_id, 0.0)
-        self.assertEqual(distance, 0.0)
+        self.assertEqual(distance, None)
 
         # Validate minimum external distance using get_external_distance.
         min_distance = col_checker.get_external_distance(0.11)
@@ -308,7 +311,7 @@ class TestCollisionChecker(unittest.TestCase):
         self.assertTrue(col_checker.is_external_collision_free())
         visual_box = create_visual_box([0, 0, 0])
         distance = col_checker.get_body_distance(box1_id, visual_box, 1.0)
-        self.assertEqual(distance, 1.0)
+        self.assertEqual(distance, None)
 
 
 if __name__ == '__main__':

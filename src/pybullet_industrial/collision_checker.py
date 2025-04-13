@@ -1,6 +1,5 @@
 import pybullet as p
 from itertools import combinations, product
-import warnings
 
 BASE_LINK = -1
 MAX_DISTANCE_INTERNAL = 0.0
@@ -176,6 +175,28 @@ class CollisionChecker:
         """
         self._bodies_information = [body for body in self._bodies_information
                                     if body['body_id'] != body_id]
+        self.__update_internal_collision_pairs()
+        self.__update_external_collision_pairs()
+
+    def remove_link_id(self, body_id: int, link_id: int) -> None:
+        """
+        Removes the specified link from the collision information
+        for a given body and updates collision pairs.
+
+        Args:
+            body_id (int): Unique identifier of the body.
+            link_id (int): Link index to be removed.
+        """
+        for body in self._bodies_information:
+            if body['body_id'] == body_id:
+                if link_id in body['collision_links']:
+                    body['collision_links'].remove(link_id)
+                    body['collision_pairs'] = (
+                        CollisionChecker.__build_internal_collision_pairs(
+                            body['collision_links']
+                        )
+                    )
+                    break
         self.__update_internal_collision_pairs()
         self.__update_external_collision_pairs()
 
@@ -417,7 +438,7 @@ class CollisionChecker:
                     ((bodyA, bodyB), colliding_links))
         return global_external_collisions
 
-    def get_external_distance(self, distance: float) -> float:
+    def get_external_distance(self, distance: float):
         """
         Determines the smallest distance across all external collision pairs.
 
@@ -425,23 +446,24 @@ class CollisionChecker:
             distance (float): An initial maximum distance threshold.
 
         Returns:
-            float: The smallest distance found among the external pairs.
+            Optional[float]: The smallest distance found among the external
+            pairs, or None if no collision link pair is found.
         """
-        min_distance = distance
+        result = None
         for (bodyA, bodyB), _ in self._external_collision_pairs:
-            curr_distance = self.get_body_distance(bodyA, bodyB,
-                                                   min_distance)
-            if curr_distance < min_distance:
-                min_distance = curr_distance
-        return min_distance
+            body_distance = self.get_body_distance(bodyA, bodyB, distance)
+            if body_distance is not None:
+                if result is None or body_distance < result:
+                    result = body_distance
+                distance = result  # Update threshold to current minimum
+        return result
 
-    def get_body_distance(self, bodyA: int, bodyB: int,
-                          distance: float) -> float:
+    def get_body_distance(self, bodyA: int, bodyB: int, distance: float):
         """
         Determines the smallest distance between any collision pair
         (i.e. link pair) for a given pair of bodies by inspecting
-        external collision pairs. If no collision link pair is found, an
-        error is raised.
+        external collision pairs. If no collision link pair is found,
+        None is returned.
 
         Args:
             bodyA (int): Unique identifier of the first body.
@@ -449,27 +471,22 @@ class CollisionChecker:
             distance (float): The initial maximum distance threshold.
 
         Returns:
-            float: The smallest distance found among the pairs.
-
-        Raises:
-            ValueError: If no collision link pair is found for the specified
-                        body pair.
+            Optional[float]: The smallest distance found among the pairs,
+            or None if no collision link pair is found.
         """
         pair_key = tuple(sorted([bodyA, bodyB]))
-        for (bodies, link_pairs) in self._external_collision_pairs:
+        for bodies, link_pairs in self._external_collision_pairs:
             if bodies == pair_key:
-                min_distance = distance
+                min_distance = None
                 for linkA, linkB in link_pairs:
                     curr_dist = CollisionChecker.get_distance(
-                        bodyA, bodyB, distance, linkA, linkB
-                    )
-                    if curr_dist < min_distance:
+                        bodyA, bodyB, distance, linkA, linkB)
+                    if curr_dist is None:
+                        continue
+                    if min_distance is None or curr_dist < min_distance:
                         min_distance = curr_dist
                 return min_distance
-        warnings.warn(
-            f"No collision link pair for body pair {bodyA} and {bodyB} found."
-            )
-        return distance
+        return None
 
     @staticmethod
     def get_bodies_external_collisions(bodyA: int, bodyB: int,
@@ -612,4 +629,4 @@ class CollisionChecker:
                                       linkIndexB=linkB)
         if contacts:
             return min(contact[8] for contact in contacts)
-        return distance
+        return None

@@ -299,18 +299,26 @@ def setup_planner_gui(robots, gripper, objects):
     def clearance_objective(si):
         return pi.PbiClearanceObjective(si)
 
-    def path_length_objective(si):
+    def joint_path_length_objective(si):
         return ob.PathLengthOptimizationObjective(si)
 
     def endeffector_path_length_objective(si):
-        return pi.PbiEndeffectorPathLengthObjective(si,robots[0])
+        return pi.PbiEndeffectorPathLengthObjective(si)
 
     objective_weight: float = 0.5
     objectives = []
     objectives.append((endeffector_path_length_objective, objective_weight))
     objectives.append((clearance_objective, 1 - objective_weight))
 
-    def multi_objective(si):
+    def endeffector_path_clearance_objective(si):
+        return pi.PbiMultiOptimizationObjective(si, objectives)
+
+    objective_weight: float = 0.5
+    objectives = []
+    objectives.append((joint_path_length_objective, objective_weight))
+    objectives.append((clearance_objective, 1 - objective_weight))
+
+    def joint_path_clearance_objective(si):
         return pi.PbiMultiOptimizationObjective(si, objectives)
 
     # Define planner types.
@@ -359,7 +367,7 @@ def setup_planner_gui(robots, gripper, objects):
         return motor_clearance.get_external_distance(3)
 
     def get_robot_clearance():
-        return robot_clearance.get_external_distance(0.3)
+        return robot_clearance.get_external_distance(0.5)
 
     # Initialize planner setups.
     path_planner_1 = pi.PbiPlannerSimpleSetup(
@@ -403,7 +411,8 @@ def setup_planner_gui(robots, gripper, objects):
         abitstar, bitstar, rrt, rrtstar, informed_rrtstar]
     objective_list = [
         None, clearance_objective, endeffector_path_length_objective,
-        path_length_objective, multi_objective
+        joint_path_length_objective, endeffector_path_clearance_objective,
+        joint_path_clearance_objective
     ]
     constraint_list = [None, constraint_function, constraint_function_robot_D]
 

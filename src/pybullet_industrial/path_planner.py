@@ -355,7 +355,7 @@ class PbiEndeffectorPathLengthObjective(ob.OptimizationObjective):
     The cost is computed based on the length of the end-effector path.
     """
 
-    def __init__(self, si: PbiSpaceInformation, robot) -> None:
+    def __init__(self, si: PbiSpaceInformation) -> None:
         """
         The end-effector path length objective is initialized.
 
@@ -364,7 +364,7 @@ class PbiEndeffectorPathLengthObjective(ob.OptimizationObjective):
         """
         super(PbiEndeffectorPathLengthObjective, self).__init__(si)
         self._si = si
-        self._robot = robot
+        self.setCostToGoHeuristic(ob.CostToGoHeuristic(self.costToGo))
 
     def stateCost(self, state: ob.State) -> ob.Cost:
         return ob.Cost(0)
@@ -384,9 +384,9 @@ class PbiEndeffectorPathLengthObjective(ob.OptimizationObjective):
         """
 
         self._si.set_state(s1)
-        pos1, ori1 = self._robot.get_endeffector_pose()
+        pos1, ori1 = self._si._robot.get_endeffector_pose()
         self._si.set_state(s2)
-        pos2, ori2 = self._robot.get_endeffector_pose()
+        pos2, ori2 = self._si._robot.get_endeffector_pose()
 
         # Compute Euclidean distance between translations.
         trans_diff = np.linalg.norm(pos1 - pos2)
@@ -399,6 +399,29 @@ class PbiEndeffectorPathLengthObjective(ob.OptimizationObjective):
 
         total_dist = np.sqrt(trans_diff**2 + rot_diff**2)
         return ob.Cost(total_dist)
+
+    def costToGo(self, state: ob.State, goal: ob.Goal) -> ob.Cost:
+        """
+        Heuristic cost from 'state' to the goal based on the SE(3) distance
+        between the end-effector pose of the given state and the goal state.
+        If the goal is an instance of ob.GoalState, its representative state
+        is used.
+
+        Args:
+            state (ob.State): The current state.
+            goal (ob.Goal): The goal or goal state.
+
+        Returns:
+            ob.Cost: The heuristic cost estimate.
+        """
+        # If the goal has a getState method, extract the state.
+        if hasattr(goal, "getState"):
+            goal_state = goal.getState()
+        else:
+            goal_state = goal
+        return self.motionCost(state, goal_state)
+
+
 
 
 # Planner constants.
@@ -475,6 +498,14 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
 
         # Assign a custom name or a default name.
         self.name = name if name is not None else "PbiPlannerSimpleSetup"
+
+        self.clearance_objective = PbiClearanceObjective(self._si)
+        self.endeffector_path_length_objective = (
+            PbiEndeffectorPathLengthObjective(self._si)
+        )
+        self.joint_path_length_objective = ob.PathLengthOptimizationObjective(
+            self._si
+        )
 
     def set_constraint_function(self, constraint_function: callable) -> None:
         """
@@ -555,7 +586,7 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
         # Define start and goal states in the parent class.
         super().setStartAndGoalStates(start_state, goal_state)
 
-    def get_path_cost_value(self, path: ob.Path):
+    def get_path_cost_value(self, path: ob.Path, objective=None):
         """
         The cost of a path is computed using the optimization objective.
 
@@ -565,7 +596,8 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
         Returns:
             float: The cost of the path.
         """
-        objective = self.getOptimizationObjective()
+        if objective is None:
+            objective = self.getOptimizationObjective()
         if objective is not None:
             cost = path.cost(
                 objective)
@@ -607,6 +639,15 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
         if solved:
             path = self.getSolutionPath()
             cost = self.get_path_cost_value(path)
+            print("Path cost after simplification: ", cost)
+            print("Clearance Value:", self.get_path_cost_value(
+                path, self.clearance_objective))
+            print("Path Length Ojbective Value:",
+                  self.get_path_cost_value(
+                      path, self.joint_path_length_objective))
+            print("Endeffector Path Length Objective Value:",
+                  self.get_path_cost_value(
+                      path, self.endeffector_path_length_objective))
             joint_path = self._state_space.path_to_joint_path(
                 path, self._interpolation_precision)
             # Simplify the solution if requested.
@@ -614,6 +655,16 @@ class PbiPlannerSimpleSetup(og.SimpleSetup):
                 self.simplifySolution(True)
                 simplified_path = self.getSolutionPath()
                 new_cost = self.get_path_cost_value(simplified_path)
+                print("Path cost after simplification: ", new_cost)
+                print("Clearance Value:", self.get_path_cost_value(
+                    simplified_path, self.clearance_objective))
+                print("Path Length Ojbective Value:",
+                      self.get_path_cost_value(
+                          simplified_path, self.joint_path_length_objective))
+                print("Endeffector Path Length Objective Value:",
+                      self.get_path_cost_value(
+                          simplified_path, self.endeffector_path_length_objective))
+                # Only accept the simplified path if the cost is not higher.
                 if new_cost <= cost:
                     joint_path = self._state_space.path_to_joint_path(
                         simplified_path, self._interpolation_precision)

@@ -744,9 +744,12 @@ class PathPlannerGUI:
             clearance_val = (
                 self.planner_setup._validity_checker.clearance_function()
             )
-            self.clearance_label.config(text=f"{clearance_val:.2f}")
+            if clearance_val is None:
+                self.clearance_label.config(text="OOR")
+            else:
+                self.clearance_label.config(text=f"{clearance_val:.2f}")
         else:
-            self.clearance_label.config(text="N/A")
+            self.clearance_label.config(text="n.d.")
 
     def update_constraint_status(self) -> None:
         """

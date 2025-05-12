@@ -292,7 +292,7 @@ if __name__ == "__main__":
     # plain RRT
     tree, g = rrt(Node(start.x, start.y), Node(goal.x, goal.y),
                   obs, step=step)
-    plot_initial(start, goal, obs, "Initial Configuration (Iteration 0)")
+    plot_initial(start, goal, obs, "")
     if g:
         plot_path(tree, extract_path(g), start, goal, obs,
                   f"RRT (step size={step} | number of nodes={len(tree)})")

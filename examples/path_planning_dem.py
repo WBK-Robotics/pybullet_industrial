@@ -254,11 +254,33 @@ def plot_grid_path(grid_path, start, goal, obstacles, h,
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
 
+def plot_initial(start, goal, obstacles, title):
+    plt.figure()
+    ax = plt.gca()
+    plt.grid(False)
+
+    for x, y, r in obstacles:
+        ax.add_patch(plt.Circle((x, y), r, color='gray', fill=True, zorder=2))
+
+    plt.scatter(start.x, start.y, c='green', s=100, label="Start", zorder=10)
+    plt.scatter(goal.x, goal.y, c='red', s=100, label="Goal", zorder=10)
+
+    plt.xlim(0, 1)
+    plt.ylim(0, 1)
+    plt.title(title)
+
+    lg = ax.legend(loc='lower right', fancybox=True, shadow=True, frameon=True)
+    lg.set_zorder(20)
+
+    plt.tight_layout()
+    plt.show()
 
 # --------------------------------------------------------------------------- #
 # main demo                                                                   #
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
+
+
     start = Node(0.1, 0.1)
     goal = Node(0.9, 0.9)
     obs = [(0.2, 0.8, 0.1),
@@ -270,6 +292,7 @@ if __name__ == "__main__":
     # plain RRT
     tree, g = rrt(Node(start.x, start.y), Node(goal.x, goal.y),
                   obs, step=step)
+    plot_initial(start, goal, obs, "Initial Configuration (Iteration 0)")
     if g:
         plot_path(tree, extract_path(g), start, goal, obs,
                   f"RRT (step size={step} | number of nodes={len(tree)})")

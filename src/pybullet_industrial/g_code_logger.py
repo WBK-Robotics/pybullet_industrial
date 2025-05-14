@@ -51,6 +51,18 @@ class GCodeLogger:
                 Defaults to None.
         """
         def format_value(value):
+            """
+            Format a numerical value for G-code output.
+
+            - Uses fixed-point notation for scientific format.
+            - Removes trailing zeros and decimal points for clean output.
+
+            Args:
+                value (float): The numerical value to format.
+
+            Returns:
+                str: Formatted string representation.
+            """
             str_val = str(value)
             if 'e' in str_val.lower():
                 str_val = f'{value:.10f}'
@@ -94,7 +106,12 @@ class GCodeLogger:
 
     def update_g_code(self, only_changed_values=True):
         """
-        Update both G-codes based on changes in robot state.
+        Update both G-code logs (robot view and joint positions).
+
+        Args:
+            only_changed_values (bool): If True, only changed values
+                are written to the G-code log. If False, all values
+                are written regardless of change.
         """
         self.update_g_code_robot_view(only_changed_values)
         self.update_g_code_joint_position(only_changed_values)

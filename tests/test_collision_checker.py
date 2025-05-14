@@ -288,7 +288,7 @@ class TestCollisionChecker(unittest.TestCase):
         distance = col_checker.get_body_distance(box1_id, box2_id, 0.11)
         self.assertAlmostEqual(distance, 0.1, delta=1e-2)
 
-        # Distance at least treshold
+        # Validate that the distance is None when the gap is too small.
         distance = col_checker.get_body_distance(box1_id, box2_id, 0.0)
         self.assertEqual(distance, None)
 

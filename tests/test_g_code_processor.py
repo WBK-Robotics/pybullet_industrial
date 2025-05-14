@@ -88,13 +88,19 @@ class Test_GCodeProcessor(unittest.TestCase):
                          'G': 2, 'X': 3.0, 'Y': 4.0, 'Z': 5.0})
 
     def test_tool_path_to_g_code(self):
+        """
+        Test the conversion of a ToolPath object to G-code.
 
+        Verifies that the output G-code contains the correct sequence of
+        workspace positions and orientations corresponding to the input
+        tool path data.
+        """
         positions = np.array([[1.0, 2.0],
                               [1.5, 2.5],
                               [2.0, 3.0]])
         orientations = np.array([[0, 0],
                                 [0, 0],
-                                [0, 0],
+                                [0, 1],
                                 [1, 1]])
         tool_activations = np.array([False, True])
         tool_path = pi.ToolPath(positions, orientations, tool_activations)
@@ -103,13 +109,18 @@ class Test_GCodeProcessor(unittest.TestCase):
             {'G': 1, 'X': 1.0, 'Y': 1.5, 'Z': 2.0,
              'A': 0.0, 'B': 0.0, 'C': 0.0},
             {'G': 1, 'X': 2.0, 'Y': 2.5, 'Z': 3.0,
-             'A': 0.0, 'B': 0.0, 'C': 0.0}
+             'A': 0.0, 'B': 0.0, 'C': 1.5707963267948966}
         ]
         self.assertEqual(len(g_code), 2)
         self.assertEqual(g_code, expected)
 
     def test_joint_path_to_g_code(self):
+        """
+        Test the conversion of a JointPath object to G-code.
 
+        Verifies that joint values are correctly mapped to sequential
+        RA-keyed G-code commands and preserve input order and values.
+        """
         joint_order = ["q1", "q2", "q3"]
         joint_values = np.array([[0.1, 0.2],
                                 [0.3, 0.4],

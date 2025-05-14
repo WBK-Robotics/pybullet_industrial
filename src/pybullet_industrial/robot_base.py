@@ -65,6 +65,44 @@ class RobotBase:
         for joint_number in range(self.number_of_joints):
             p.resetJointState(self.urdf, joint_number, targetValue=0)
 
+    def get_joint_limits(self):
+        """
+        Returns the lower and upper joint limits of the robot's moving joints.
+
+        Returns:
+            Tuple[dict, dict]: Two dictionaries containing lower and
+                upper joint limits keyed by joint names.
+        """
+        lower_joint_limit = {}
+        upper_joint_limit = {}
+
+        for joint_name in self._joint_name_to_index:
+            index = self._joint_name_to_index[joint_name]
+            lower_joint_limit[joint_name] = self._lower_joint_limit[index]
+            upper_joint_limit[joint_name] = self._upper_joint_limit[index]
+
+        return lower_joint_limit, upper_joint_limit
+
+    def get_moveable_joints(self):
+        """
+        Retrieves the names and indices of the robot's moveable joints,
+        sorted by their indices.
+
+        Returns:
+            Tuple[List[str], List[int]]:
+                - A list of joint names (`joint_order`)
+                - A list of corresponding joint indices (`joint_index`)
+        """
+        joint_items = self._joint_name_to_index.items()
+
+        # Sort the joints by their indices
+        sorted_joint_items = sorted(joint_items, key=lambda item: item[1])
+
+        # Extract the joint names and indices in sorted order
+        joint_order = [key for key, _ in sorted_joint_items]
+        joint_index = [self._joint_name_to_index[key] for key in joint_order]
+
+        return joint_order, joint_index
 
     def get_joint_state(self):
         """Returns the position of each joint as a dictionary keyed with their name
@@ -117,6 +155,45 @@ class RobotBase:
                                     force=self.max_joint_force[joint_number],
                                     targetPosition=joint_position)
 
+    def reset_joint_position(self, target: Dict[str, float], ignore_limits=False):
+        """
+        Resets the robot's joints to specified positions.
+
+        This method sets joint positions instantaneously using PyBullet's
+        `resetJointState`, without requiring stepping through the simulation.
+
+        Args:
+            target (Dict[str, float]): A dictionary containing the joint states
+                to be set.
+            ignore_limits (bool, optional): If True, bypasses joint limit checks.
+                Defaults to False.
+
+        Raises:
+            KeyError: If one or more joints in `target` are not part of the robot.
+            ValueError: If a joint position is outside its limits and
+                `ignore_limits` is False.
+        """
+        if not all(key in self._joint_state_shape for key in target):
+            raise KeyError('One or more joints are not part of the robot. ' +
+                           'correct keys are: '+str(self._joint_state_shape.keys()))
+
+        for joint, joint_position in target.items():
+            joint_number = self._joint_name_to_index[joint]
+
+            if ignore_limits is False:
+                lower_joint_limit = self._lower_joint_limit[joint_number]
+                upper_joint_limit = self._upper_joint_limit[joint_number]
+                if joint_position > upper_joint_limit or joint_position < lower_joint_limit:
+                    raise ValueError('The joint position '+str(joint_position) +
+                                     ' is out of limit for joint '+joint+'. Its limits are:\n' +
+                                     str(lower_joint_limit)+' and '+str(upper_joint_limit))
+
+            p.resetJointState(
+                self.urdf,
+                joint_number,
+                targetValue=joint_position
+            )
+
     def get_endeffector_pose(self, endeffector_name: str = None):
         """Returns the position of the endeffector in world coordinates
 
@@ -137,6 +214,23 @@ class RobotBase:
         position = np.array(link_state[0])
         orientation = np.array(link_state[1])
         return position, orientation
+
+    def get_joint_position(self):
+        """
+        Retrieves the current positions of all moveable joints.
+
+        Returns:
+            Dict[str, float]: A dictionary mapping joint names to their positions.
+        """
+        joint_states = self.get_joint_state()
+        moveable_joint_names, _ = self.get_moveable_joints()
+
+        joint_positions = {
+            joint_name: joint_states[joint_name]['position']
+            for joint_name in moveable_joint_names
+        }
+
+        return joint_positions
 
     def set_endeffector_pose(self, target_position: np.array, target_orientation: np.array = None,
                              endeffector_name: str = None):
@@ -173,6 +267,55 @@ class RobotBase:
             p.setJointMotorControl2(self.urdf, joint_number, p.POSITION_CONTROL,
                                     force=self.max_joint_force[joint_number],
                                     targetPosition=joint_position)
+
+    def reset_endeffector_pose(self,
+                               target_position: np.array,
+                               target_orientation: np.array = None,
+                               endeffector_name: str = None):
+        """
+        Resets the pose of a robot's end-effector by computing joint positions
+        through inverse kinematics and directly setting joint states.
+
+        This method uses PyBullet's `resetJointState` to move joints
+        instantaneously, without requiring simulation stepping.
+
+        Args:
+            target_position (np.array): The desired 3D position.
+            target_orientation (np.array, optional): The desired orientation as a
+                quaternion. Defaults to None.
+            endeffector_name (str, optional): Name of an alternative end-effector.
+                Defaults to None.
+        """
+        if endeffector_name is None:
+            endeffector_id = self._default_endeffector_id
+        else:
+            endeffector_id = self._convert_endeffector(endeffector_name)
+
+        if target_orientation is None:
+            joint_poses = p.calculateInverseKinematics(
+                self.urdf,
+                endeffector_id,
+                target_position,
+                lowerLimits=self._lower_joint_limit,
+                upperLimits=self._upper_joint_limit
+            )
+        else:
+            joint_poses = p.calculateInverseKinematics(
+                self.urdf,
+                endeffector_id,
+                target_position,
+                targetOrientation=target_orientation,
+                lowerLimits=self._lower_joint_limit,
+                upperLimits=self._upper_joint_limit
+            )
+
+        for index, joint_position in enumerate(joint_poses):
+            joint_number = self._kinematic_solver_map[index]
+            p.resetJointState(
+                self.urdf,
+                joint_number,
+                targetValue=joint_position
+            )
 
     def reset_robot(self, start_position: np.array, start_orientation: np.array,
                     joint_values: list = None):

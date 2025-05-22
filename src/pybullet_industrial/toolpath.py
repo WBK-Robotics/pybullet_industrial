@@ -40,7 +40,7 @@ class ToolPath:
         if tool_acivations is None:
             self.tool_activations = np.zeros(len(self.positions[0]))
         else:
-            if len(tool_acivations[0]) != len(positions[0]):
+            if len(tool_acivations) != len(positions[0]):
                 raise ValueError(
                     "The position and tool activation paths need to have the same length")
             self.tool_activations = tool_acivations

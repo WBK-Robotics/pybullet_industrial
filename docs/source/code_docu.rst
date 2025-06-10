@@ -90,6 +90,19 @@ Utility functionality
    :members:
 
 
+*****************
+G Code Processors
+*****************
+
+.. automodule:: pybullet_industrial.gcode_processor
+   :members:
+
+.. automodule:: pybullet_industrial.gcode_logger
+   :members:
+
+.. automodule:: pybullet_industrial.gcode_simplifier
+   :members:
+
 
 
 
